@@ -6,9 +6,11 @@ import { DashboardPage } from './routes/DashboardPage'
 import { LoginPage } from './routes/LoginPage'
 import { MaterialsPage } from './routes/MaterialsPage'
 import { NadesPage } from './routes/NadesPage'
+import { OpponentsPage } from './routes/OpponentsPage'
 import { RegisterPage } from './routes/RegisterPage'
 import { ResultsPage } from './routes/ResultsPage'
 import { RosterPage } from './routes/RosterPage'
+import { StatsPage } from './routes/StatsPage'
 import { TasksPage } from './routes/TasksPage'
 
 export function AppRouter() {
@@ -63,6 +65,22 @@ export function AppRouter() {
           element={
             <ProtectedRoute>
               <MaterialsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/stats"
+          element={
+            <ProtectedRoute>
+              <StatsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/opponents"
+          element={
+            <ProtectedRoute>
+              <OpponentsPage />
             </ProtectedRoute>
           }
         />

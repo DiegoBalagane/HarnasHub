@@ -24,6 +24,10 @@ export const API_ENDPOINTS = {
   nades: '/api/nades',
   nadeById: (nadeId: string) => `/api/nades/${nadeId}`,
   trainingMaterials: '/api/training-materials',
+  matchStats: (matchResultId: string) => `/api/matches/${matchResultId}/stats`,
+  statsMine: '/api/stats/mine',
+  teamTrend: '/api/stats/team-trend',
+  opponents: '/api/opponents',
 } as const
 
 export const STORAGE_KEYS = {

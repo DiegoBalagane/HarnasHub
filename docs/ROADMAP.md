@@ -24,9 +24,10 @@ Uwaga: rejestracja jest wciąż otwarta (każdy może sobie założyć konto jak
 - [x] Materiały treningowe (linki, kategorie) — dodaje Coach/Manager, widzi cała drużyna
 
 ## Faza 3 — Rozwój i analiza
-- [ ] Statystyki graczy (K/D, ADR, HS%, rating) wpisywane ręcznie per mecz
-- [ ] Trend drużynowy w czasie (wygrane mecze, punkty/ranking) — wykresy
-- [ ] Analizy przeciwników (notatki + materiały przed konkretnym meczem)
+- [x] Statystyki graczy (K/D, ADR, HS%, rating) wpisywane ręcznie per mecz — Coach/Manager dodaje, rozwijany panel na liście wyników; jeden wpis na gracza na mecz
+- [x] Trend drużynowy w czasie (wygrane mecze, skuteczność %) — liczony bezpośrednio z `MatchResults` (bez osobnej encji punktów/ELO — patrz "Rozważane później"), wykres na `/stats` + kafelek na dashboardzie
+- [x] Osobista historia statystyk gracza (średni rating, K/D/A/ADR/HS% per mecz)
+- [x] Analizy przeciwników (notatki + link do materiału, filtr po nazwie) — dodaje Coach/Manager, widzi cała drużyna
 
 ## Faza 4 — Wygoda
 - [ ] PWA — instalacja na telefonie, powiadomienia push

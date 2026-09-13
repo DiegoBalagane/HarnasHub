@@ -13,6 +13,8 @@ public interface IApplicationDbContext
     DbSet<MatchResult> MatchResults { get; }
     DbSet<NadeEntry> NadeEntries { get; }
     DbSet<TrainingMaterial> TrainingMaterials { get; }
+    DbSet<PlayerMatchStat> PlayerMatchStats { get; }
+    DbSet<OpponentNote> OpponentNotes { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken);
 }
