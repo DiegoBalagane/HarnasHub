@@ -1,10 +1,13 @@
+import { useState } from 'react'
+import { MatchStatsPanel } from '../../stats/components/MatchStatsPanel'
 import { useResults } from '../hooks/useResults'
 
 const dateFormatter = new Intl.DateTimeFormat('pl-PL', { dateStyle: 'medium' })
 
-/** Lists logged results with the win/loss outcome highlighted. */
+/** Lists logged results with the win/loss outcome highlighted; clicking one expands its per-player stats. */
 export function ResultList() {
   const { data: results, isLoading, isError } = useResults()
+  const [expandedId, setExpandedId] = useState<string | null>(null)
 
   if (isLoading) {
     return <p className="text-neutral-400">Ładowanie wyników…</p>
@@ -24,7 +27,10 @@ export function ResultList() {
         const won = result.ourScore > result.opponentScore
         return (
           <li key={result.id} className="rounded-md border border-neutral-800 p-4">
-            <div className="flex items-center justify-between">
+            <button
+              className="flex w-full items-center justify-between text-left"
+              onClick={() => setExpandedId(expandedId === result.id ? null : result.id)}
+            >
               <p className="font-medium">
                 vs {result.opponent}{' '}
                 <span className={won ? 'text-green-400' : 'text-red-400'}>
@@ -34,7 +40,7 @@ export function ResultList() {
               <span className="text-sm text-neutral-500">
                 {dateFormatter.format(new Date(result.playedAtUtc))}
               </span>
-            </div>
+            </button>
             {result.mapName && <p className="text-sm text-neutral-400">Mapa: {result.mapName}</p>}
             {result.notes && <p className="mt-1 text-sm text-neutral-400">{result.notes}</p>}
             {result.demoUrl && (
@@ -46,6 +52,12 @@ export function ResultList() {
               >
                 Demka
               </a>
+            )}
+
+            {expandedId === result.id && (
+              <div className="mt-3">
+                <MatchStatsPanel matchResultId={result.id} />
+              </div>
             )}
           </li>
         )

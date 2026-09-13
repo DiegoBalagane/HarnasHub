@@ -21,7 +21,7 @@ export function Layout({ children }: PropsWithChildren) {
           </Link>
 
           {isAuthenticated && (
-            <nav className="flex gap-4 text-sm text-neutral-400">
+            <nav className="flex flex-wrap gap-4 text-sm text-neutral-400">
               <Link to="/dashboard" className="hover:text-white">
                 Dashboard
               </Link>
@@ -33,6 +33,12 @@ export function Layout({ children }: PropsWithChildren) {
               </Link>
               <Link to="/results" className="hover:text-white">
                 Wyniki
+              </Link>
+              <Link to="/stats" className="hover:text-white">
+                Rozwój
+              </Link>
+              <Link to="/opponents" className="hover:text-white">
+                Przeciwnicy
               </Link>
               <Link to="/nades" className="hover:text-white">
                 Granaty

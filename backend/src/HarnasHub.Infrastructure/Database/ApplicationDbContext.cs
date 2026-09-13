@@ -17,6 +17,8 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     public DbSet<MatchResult> MatchResults => Set<MatchResult>();
     public DbSet<NadeEntry> NadeEntries => Set<NadeEntry>();
     public DbSet<TrainingMaterial> TrainingMaterials => Set<TrainingMaterial>();
+    public DbSet<PlayerMatchStat> PlayerMatchStats => Set<PlayerMatchStat>();
+    public DbSet<OpponentNote> OpponentNotes => Set<OpponentNote>();
 
     #endregion
 
