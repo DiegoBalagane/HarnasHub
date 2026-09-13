@@ -29,7 +29,10 @@ export function RosterList() {
     <ul className="flex w-full max-w-sm flex-col divide-y divide-neutral-800 rounded-md border border-neutral-800">
       {roster?.map((member) => (
         <li key={member.id} className="flex items-center justify-between px-4 py-3">
-          <span className="font-medium">{member.displayName}</span>
+          <span className="flex items-center gap-2 font-medium">
+            {member.avatarUrl && <img src={member.avatarUrl} alt="" className="h-6 w-6 rounded-full" />}
+            {member.displayName}
+          </span>
 
           {canManageRoles && member.id !== userId ? (
             <select

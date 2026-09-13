@@ -5,7 +5,7 @@ Kolejność wdrażania od MVP do pełnej wersji. Każda faza powinna być używa
 ## Faza 0 — Fundament
 - [x] Scaffold solution .NET (Core / Application / Infrastructure / Api / Tests) + projekt React (Vite + TS + Tailwind)
 - [x] Docker Compose: PostgreSQL lokalnie (port hosta 5433 — 5432 bywa zajęty przez lokalną instalację Postgresa)
-- [x] Auth: rejestracja, logowanie (JWT), role Player/Coach/Manager (nowe konta zawsze startują jako Player)
+- [x] Auth: logowanie przez **Discord OAuth2** (bez haseł, bez przechowywania danych logowania), role Player/Coach/Manager (nowe konta zawsze startują jako Player) — z weryfikacją członkostwa w serwerze Discord drużyny (`DiscordOAuth:RequiredGuildId`), przetestowane na prawdziwym koncie
 - [x] Roster drużyny (lista graczy, role) + zmiana roli przez Managera (własnej roli zmienić nie można)
 - [x] CI: build + testy na GitHub Actions
 
@@ -15,7 +15,7 @@ Kolejność wdrażania od MVP do pełnej wersji. Każda faza powinna być używa
 - [x] Dostępność graczy per wydarzenie (klik: dostępny / niepewny / niedostępny) + widok zbiorczy dla całej drużyny
 - [x] Zadania: coach/manager przydziela, zawodnik odhacza status (widok tylko własnych zadań)
 
-Uwaga: rejestracja jest wciąż otwarta (każdy może sobie założyć konto jako Player) — prawdziwe zaproszenia e-mailem to osobna, większa funkcja, poza zakresem MVP.
+Uwaga: każdy z serwera Discord drużyny może się zalogować i dostaje konto jako Player — nie ma osobnego kroku "zaproszenia". To celowe (drużyna to zamknięta grupa na Discordzie, więc to już jest naturalna kontrola dostępu); jeśli kiedyś appka miałaby wyjść poza jeden serwer Discord, trzeba by dodać sprawdzanie członkostwa w konkretnym serwerze przy logowaniu.
 
 ## Faza 2 — Wyniki i wiedza
 - [x] Wyniki sparingów/meczów/turniejów + notatki pomeczowe — dodaje Coach/Manager, widzi cała drużyna

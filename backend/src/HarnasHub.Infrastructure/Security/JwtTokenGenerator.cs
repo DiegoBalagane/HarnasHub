@@ -22,13 +22,17 @@ public class JwtTokenGenerator(IOptions<JwtSettings> jwtSettings) : IJwtTokenGen
 
     public string GenerateToken(User user)
     {
-        var claims = new[]
+        var claims = new List<Claim>
         {
-            new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
-            new Claim(JwtRegisteredClaimNames.Email, user.Email),
-            new Claim(ClaimTypes.Name, user.DisplayName),
-            new Claim(ClaimTypes.Role, user.Role.ToString())
+            new(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
+            new(ClaimTypes.Name, user.DisplayName),
+            new(ClaimTypes.Role, user.Role.ToString())
         };
+
+        if (!string.IsNullOrWhiteSpace(user.AvatarUrl))
+        {
+            claims.Add(new Claim("avatar_url", user.AvatarUrl));
+        }
 
         var signingKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtSettings.Secret));
         var credentials = new SigningCredentials(signingKey, SecurityAlgorithms.HmacSha256);

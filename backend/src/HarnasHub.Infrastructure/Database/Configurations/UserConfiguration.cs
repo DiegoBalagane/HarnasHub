@@ -14,11 +14,11 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
         builder.ToTable("Users");
         builder.HasKey(u => u.Id);
 
-        builder.Property(u => u.Email).IsRequired().HasMaxLength(256);
-        builder.HasIndex(u => u.Email).IsUnique();
+        builder.Property(u => u.DiscordId).IsRequired().HasMaxLength(32);
+        builder.HasIndex(u => u.DiscordId).IsUnique();
 
         builder.Property(u => u.DisplayName).IsRequired().HasMaxLength(50);
-        builder.Property(u => u.PasswordHash).IsRequired();
+        builder.Property(u => u.AvatarUrl).HasMaxLength(500);
         builder.Property(u => u.Role).HasConversion<string>().HasMaxLength(20);
     }
 

@@ -16,7 +16,7 @@ public class GetRosterHandler(IApplicationDbContext dbContext)
     {
         return await dbContext.Users
             .OrderBy(u => u.DisplayName)
-            .Select(u => new TeamMemberDto(u.Id, u.DisplayName, u.Role.ToString()))
+            .Select(u => new TeamMemberDto(u.Id, u.DisplayName, u.Role.ToString(), u.AvatarUrl))
             .ToListAsync(cancellationToken);
     }
 
