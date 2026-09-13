@@ -1,0 +1,17 @@
+{
+  "name": "harnashub",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Team management platform for HArnasiESport (CS2).",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/DiegoBalagane/HarnasHub.git"
+  },
+  "scripts": {
+    "prepare": "husky"
+  },
+  "devDependencies": {
+    "husky": "^9.1.7",
+    "lint-staged": "^17.5.1"
+  }
+}

@@ -3,17 +3,20 @@
 Kolejność wdrażania od MVP do pełnej wersji. Każda faza powinna być używalna sama w sobie (drużyna dostaje wartość po każdej fazie, nie dopiero na końcu).
 
 ## Faza 0 — Fundament
-- [ ] Scaffold solution .NET (Core / Application / Infrastructure / Api / Tests) + projekt React (Vite + TS + Tailwind)
-- [ ] Docker Compose: PostgreSQL lokalnie
-- [ ] Auth: rejestracja/zaproszenie do drużyny, logowanie (JWT), role Player/Coach/Manager
-- [ ] Roster drużyny (lista graczy, role, podstawowy profil)
-- [ ] CI: build + testy na GitHub Actions
+- [x] Scaffold solution .NET (Core / Application / Infrastructure / Api / Tests) + projekt React (Vite + TS + Tailwind)
+- [x] Docker Compose: PostgreSQL lokalnie (port hosta 5433 — 5432 bywa zajęty przez lokalną instalację Postgresa)
+- [x] Auth: rejestracja, logowanie (JWT), role Player/Coach/Manager (nowe konta zawsze startują jako Player)
+- [x] Roster drużyny (lista graczy, role) + zmiana roli przez Managera (własnej roli zmienić nie można)
+- [x] CI: build + testy na GitHub Actions
+- [ ] Zaproszenia do drużyny / promowanie na Coach/Manager (na razie rola zmieniana tylko ręcznie w bazie)
 
 ## Faza 1 — Organizacja
-- [ ] Dashboard (na razie: najbliższe wydarzenie + otwarte zadania, statyczny layout)
-- [ ] Kalendarz wydarzeń (Match / Tournament / Training / PickupGame)
-- [ ] Dostępność graczy per wydarzenie (klik: dostępny / niepewny / niedostępny) + widok zbiorczy dla coacha
-- [ ] Zadania: coach/manager przydziela, zawodnik odhacza status
+- [x] Dashboard (najbliższe wydarzenie + liczba otwartych zadań)
+- [x] Kalendarz wydarzeń (Match / Tournament / Training / PickupGame) — tworzenie: Coach/Manager
+- [x] Dostępność graczy per wydarzenie (klik: dostępny / niepewny / niedostępny) + widok zbiorczy dla całej drużyny
+- [x] Zadania: coach/manager przydziela, zawodnik odhacza status (widok tylko własnych zadań)
+
+Uwaga: rejestracja jest wciąż otwarta (każdy może sobie założyć konto jako Player) — prawdziwe zaproszenia e-mailem to osobna, większa funkcja, poza zakresem MVP.
 
 ## Faza 2 — Wyniki i wiedza
 - [ ] Wyniki sparingów/meczów/turniejów + notatki pomeczowe

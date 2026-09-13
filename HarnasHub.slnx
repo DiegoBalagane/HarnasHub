@@ -1,1 +1,12 @@
-<Solution />
+<Solution>
+  <Folder Name="/backend/" />
+  <Folder Name="/backend/src/">
+    <Project Path="backend/src/HarnasHub.Api/HarnasHub.Api.csproj" />
+    <Project Path="backend/src/HarnasHub.Application/HarnasHub.Application.csproj" />
+    <Project Path="backend/src/HarnasHub.Core/HarnasHub.Core.csproj" />
+    <Project Path="backend/src/HarnasHub.Infrastructure/HarnasHub.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/backend/tests/">
+    <Project Path="backend/tests/HarnasHub.Tests/HarnasHub.Tests.csproj" />
+  </Folder>
+</Solution>

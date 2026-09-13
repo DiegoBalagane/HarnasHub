@@ -1,0 +1,5 @@
+{
+  "frontend/src/**/*.{ts,tsx}": ["npx --prefix frontend oxlint", "npx --prefix frontend prettier --write"],
+  "frontend/src/**/*.css": ["npx --prefix frontend prettier --write"],
+  "backend/**/*.cs": ["dotnet format HarnasHub.slnx --include"]
+}
