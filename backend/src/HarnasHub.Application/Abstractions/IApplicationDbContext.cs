@@ -10,6 +10,9 @@ public interface IApplicationDbContext
     DbSet<Event> Events { get; }
     DbSet<Availability> Availabilities { get; }
     DbSet<TaskItem> Tasks { get; }
+    DbSet<MatchResult> MatchResults { get; }
+    DbSet<NadeEntry> NadeEntries { get; }
+    DbSet<TrainingMaterial> TrainingMaterials { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken);
 }

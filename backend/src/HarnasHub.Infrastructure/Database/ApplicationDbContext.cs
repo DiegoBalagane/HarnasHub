@@ -14,6 +14,9 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     public DbSet<Event> Events => Set<Event>();
     public DbSet<Availability> Availabilities => Set<Availability>();
     public DbSet<TaskItem> Tasks => Set<TaskItem>();
+    public DbSet<MatchResult> MatchResults => Set<MatchResult>();
+    public DbSet<NadeEntry> NadeEntries => Set<NadeEntry>();
+    public DbSet<TrainingMaterial> TrainingMaterials => Set<TrainingMaterial>();
 
     #endregion
 

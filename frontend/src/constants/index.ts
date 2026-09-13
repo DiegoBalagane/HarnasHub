@@ -20,6 +20,10 @@ export const API_ENDPOINTS = {
     assign: '/api/tasks',
     complete: (taskId: string) => `/api/tasks/${taskId}/complete`,
   },
+  results: '/api/results',
+  nades: '/api/nades',
+  nadeById: (nadeId: string) => `/api/nades/${nadeId}`,
+  trainingMaterials: '/api/training-materials',
 } as const
 
 export const STORAGE_KEYS = {

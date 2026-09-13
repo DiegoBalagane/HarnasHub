@@ -31,6 +31,15 @@ export function Layout({ children }: PropsWithChildren) {
               <Link to="/tasks" className="hover:text-white">
                 Zadania
               </Link>
+              <Link to="/results" className="hover:text-white">
+                Wyniki
+              </Link>
+              <Link to="/nades" className="hover:text-white">
+                Granaty
+              </Link>
+              <Link to="/materials" className="hover:text-white">
+                Materiały
+              </Link>
               <Link to="/roster" className="hover:text-white">
                 Skład
               </Link>
