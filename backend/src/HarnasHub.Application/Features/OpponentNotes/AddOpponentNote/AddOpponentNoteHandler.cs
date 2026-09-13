@@ -7,7 +7,7 @@ using MediatR;
 namespace HarnasHub.Application.Features.OpponentNotes.AddOpponentNote;
 
 /// <summary>Handles <see cref="AddOpponentNoteCommand"/> by persisting the new scouting note.</summary>
-public class AddOpponentNoteHandler(IApplicationDbContext dbContext, ICurrentUserService currentUser)
+public class AddOpponentNoteHandler(IApplicationDbContext dbContext, ICurrentUserService currentUser, IRealtimeNotifier realtimeNotifier)
     : IRequestHandler<AddOpponentNoteCommand, ErrorOr<OpponentNoteDto>>
 {
     #region Public Methods
@@ -26,6 +26,7 @@ public class AddOpponentNoteHandler(IApplicationDbContext dbContext, ICurrentUse
 
         dbContext.OpponentNotes.Add(note);
         await dbContext.SaveChangesAsync(cancellationToken);
+        await realtimeNotifier.NotifyAsync("opponents", cancellationToken);
 
         return new OpponentNoteDto(note.Id, note.OpponentName, note.Content, note.MaterialUrl, note.CreatedAtUtc);
     }

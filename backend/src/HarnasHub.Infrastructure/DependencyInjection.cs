@@ -1,6 +1,8 @@
 using HarnasHub.Application.Abstractions;
 using HarnasHub.Core.Options;
+using HarnasHub.Infrastructure.BackgroundServices;
 using HarnasHub.Infrastructure.Database;
+using HarnasHub.Infrastructure.Notifications;
 using HarnasHub.Infrastructure.Security;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -8,7 +10,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace HarnasHub.Infrastructure;
 
-/// <summary>Registers the DbContext, security services, and options bound to configuration.</summary>
+/// <summary>Registers the DbContext, security services, notifications, and options bound to configuration.</summary>
 public static class DependencyInjection
 {
     #region Public Methods
@@ -21,9 +23,14 @@ public static class DependencyInjection
         services.AddScoped<IApplicationDbContext>(provider => provider.GetRequiredService<ApplicationDbContext>());
 
         services.Configure<JwtSettings>(configuration.GetSection(JwtSettings.SectionName));
+        services.Configure<DiscordSettings>(configuration.GetSection(DiscordSettings.SectionName));
+        services.Configure<ReminderSettings>(configuration.GetSection(ReminderSettings.SectionName));
 
         services.AddScoped<IPasswordHasher, PasswordHasher>();
         services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
+
+        services.AddHttpClient<IDiscordNotifier, DiscordWebhookNotifier>();
+        services.AddHostedService<EventReminderService>();
 
         return services;
     }

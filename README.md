@@ -17,11 +17,13 @@ HarnasHub is a full-stack web app built for a competitive Counter-Strike 2 team 
 - **Team dashboard** — upcoming events, open tasks, and recent results at a glance.
 - **Calendar & availability** — matches, tournaments, trainings, and pickup games; players mark their availability and see the roster's at a glance.
 - **Coach-assigned tasks** — coach/manager assigns action items to players, with status tracking.
-- **Match results & demos** — scrim/match/tournament results with post-match notes and demo file uploads.
+- **Match results & demos** — scrim/match/tournament results with post-match notes and a demo link.
 - **Per-map nade library** — organized smoke/flash/molotov lineups with embedded YouTube clips and position notes.
 - **Training materials** — a categorized library of learning resources.
 - **Opponent scouting** — notes and materials prepared ahead of a specific match.
-- **Player & team stats** — individual performance (K/D, ADR, HS%, rating) and team trend over time.
+- **Player & team stats** — individual performance (K/D, ADR, HS%, rating) and a win-rate trend chart over time.
+- **Discord notifications** — new events/tasks and pre-event reminders posted to a team webhook.
+- **Live updates** — SignalR pushes changes (availability, tasks, results, ...) to every connected client, no polling.
 - **Installable PWA** — add-to-homescreen on mobile, no app store needed.
 
 ## Tech stack
@@ -32,9 +34,9 @@ HarnasHub is a full-stack web app built for a competitive Counter-Strike 2 team 
 | Database | PostgreSQL |
 | Frontend | React 18, TypeScript, Vite, TailwindCSS, TanStack Query, Zustand |
 | Real-time | SignalR |
-| File storage | S3-compatible (demo files, training materials) |
+| Deployment | Single Docker image (backend serves the built frontend) |
 
-See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the full layer breakdown and design decisions, and [docs/ROADMAP.md](docs/ROADMAP.md) for the delivery plan.
+See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the full layer breakdown and design decisions, [docs/ROADMAP.md](docs/ROADMAP.md) for the delivery plan, and [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) for how it ships to production.
 
 ## Getting started
 
@@ -55,6 +57,13 @@ npm install
 npm run dev
 ```
 
+Or build and run the whole app as a single container (see [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)):
+
+```bash
+docker build -t harnashub .
+docker run -p 8080:8080 -e ConnectionStrings__Database="..." -e Jwt__Secret="..." harnashub
+```
+
 ## Status
 
-🚧 Early development — see [docs/ROADMAP.md](docs/ROADMAP.md) for current progress.
+All four MVP phases are built and tested — see [docs/ROADMAP.md](docs/ROADMAP.md) for the detailed breakdown.

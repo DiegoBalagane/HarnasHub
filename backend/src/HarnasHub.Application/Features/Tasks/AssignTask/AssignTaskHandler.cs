@@ -8,17 +8,20 @@ using TaskItem = HarnasHub.Core.Entities.TaskItem;
 
 namespace HarnasHub.Application.Features.Tasks.AssignTask;
 
-/// <summary>Handles <see cref="AssignTaskCommand"/> by persisting the new task.</summary>
-public class AssignTaskHandler(IApplicationDbContext dbContext, ICurrentUserService currentUser)
-    : IRequestHandler<AssignTaskCommand, ErrorOr<TaskItemDto>>
+/// <summary>Handles <see cref="AssignTaskCommand"/> by persisting the new task and notifying the team.</summary>
+public class AssignTaskHandler(
+    IApplicationDbContext dbContext,
+    ICurrentUserService currentUser,
+    IDiscordNotifier discordNotifier,
+    IRealtimeNotifier realtimeNotifier) : IRequestHandler<AssignTaskCommand, ErrorOr<TaskItemDto>>
 {
     #region Public Methods
 
     public async Task<ErrorOr<TaskItemDto>> Handle(AssignTaskCommand request, CancellationToken cancellationToken)
     {
-        var assigneeExists = await dbContext.Users.AnyAsync(u => u.Id == request.AssignedToUserId, cancellationToken);
+        var assignee = await dbContext.Users.FirstOrDefaultAsync(u => u.Id == request.AssignedToUserId, cancellationToken);
 
-        if (!assigneeExists)
+        if (assignee is null)
         {
             return TaskErrors.AssigneeNotFound;
         }
@@ -37,6 +40,10 @@ public class AssignTaskHandler(IApplicationDbContext dbContext, ICurrentUserServ
 
         dbContext.Tasks.Add(task);
         await dbContext.SaveChangesAsync(cancellationToken);
+
+        await discordNotifier.SendAsync($"📋 Nowe zadanie dla **{assignee.DisplayName}**: {task.Title}", cancellationToken);
+        await realtimeNotifier.NotifyAsync("tasks", cancellationToken);
+        await realtimeNotifier.NotifyAsync("dashboard", cancellationToken);
 
         return new TaskItemDto(task.Id, task.Title, task.Description, task.Status.ToString(), task.DueAtUtc, task.CreatedAtUtc);
     }

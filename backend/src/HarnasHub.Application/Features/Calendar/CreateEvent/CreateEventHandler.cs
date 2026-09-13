@@ -2,13 +2,17 @@ using ErrorOr;
 using HarnasHub.Application.Abstractions;
 using HarnasHub.Application.Features.Calendar.Shared;
 using HarnasHub.Core.Entities;
+using HarnasHub.Core.Enums;
 using MediatR;
 
 namespace HarnasHub.Application.Features.Calendar.CreateEvent;
 
-/// <summary>Handles <see cref="CreateEventCommand"/> by persisting the new event.</summary>
-public class CreateEventHandler(IApplicationDbContext dbContext, ICurrentUserService currentUser)
-    : IRequestHandler<CreateEventCommand, ErrorOr<EventDto>>
+/// <summary>Handles <see cref="CreateEventCommand"/> by persisting the new event and notifying the team.</summary>
+public class CreateEventHandler(
+    IApplicationDbContext dbContext,
+    ICurrentUserService currentUser,
+    IDiscordNotifier discordNotifier,
+    IRealtimeNotifier realtimeNotifier) : IRequestHandler<CreateEventCommand, ErrorOr<EventDto>>
 {
     #region Public Methods
 
@@ -28,6 +32,21 @@ public class CreateEventHandler(IApplicationDbContext dbContext, ICurrentUserSer
 
         dbContext.Events.Add(calendarEvent);
         await dbContext.SaveChangesAsync(cancellationToken);
+
+        var typeLabel = calendarEvent.Type switch
+        {
+            EventType.Training => "Trening",
+            EventType.PickupGame => "Gra luźna",
+            EventType.Match => "Mecz",
+            EventType.Tournament => "Turniej",
+            _ => calendarEvent.Type.ToString()
+        };
+
+        await discordNotifier.SendAsync(
+            $"📅 Nowe wydarzenie: **{calendarEvent.Title}** ({typeLabel}) — {calendarEvent.StartsAtUtc:dd.MM HH:mm}",
+            cancellationToken);
+        await realtimeNotifier.NotifyAsync("calendar", cancellationToken);
+        await realtimeNotifier.NotifyAsync("dashboard", cancellationToken);
 
         return new EventDto(
             calendarEvent.Id,

@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore;
 namespace HarnasHub.Application.Features.Nades.DeleteNade;
 
 /// <summary>Handles <see cref="DeleteNadeCommand"/>.</summary>
-public class DeleteNadeHandler(IApplicationDbContext dbContext, ICurrentUserService currentUser)
+public class DeleteNadeHandler(IApplicationDbContext dbContext, ICurrentUserService currentUser, IRealtimeNotifier realtimeNotifier)
     : IRequestHandler<DeleteNadeCommand, ErrorOr<Success>>
 {
     #region Public Methods
@@ -31,6 +31,7 @@ public class DeleteNadeHandler(IApplicationDbContext dbContext, ICurrentUserServ
 
         dbContext.NadeEntries.Remove(entry);
         await dbContext.SaveChangesAsync(cancellationToken);
+        await realtimeNotifier.NotifyAsync("nades", cancellationToken);
 
         return Result.Success;
     }

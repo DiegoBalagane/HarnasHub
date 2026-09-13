@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore;
 namespace HarnasHub.Application.Features.Stats.AddPlayerStat;
 
 /// <summary>Handles <see cref="AddPlayerStatCommand"/> by persisting the player's stat line for the match.</summary>
-public class AddPlayerStatHandler(IApplicationDbContext dbContext)
+public class AddPlayerStatHandler(IApplicationDbContext dbContext, IRealtimeNotifier realtimeNotifier)
     : IRequestHandler<AddPlayerStatCommand, ErrorOr<PlayerMatchStatDto>>
 {
     #region Public Methods
@@ -53,6 +53,9 @@ public class AddPlayerStatHandler(IApplicationDbContext dbContext)
 
         dbContext.PlayerMatchStats.Add(stat);
         await dbContext.SaveChangesAsync(cancellationToken);
+
+        await realtimeNotifier.NotifyAsync($"match-stats:{request.MatchResultId}", cancellationToken);
+        await realtimeNotifier.NotifyAsync("stats", cancellationToken);
 
         return new PlayerMatchStatDto(
             stat.Id, player.Id, player.DisplayName, stat.Kills, stat.Deaths, stat.Assists, stat.Adr, stat.HeadshotPercentage, stat.Rating);
