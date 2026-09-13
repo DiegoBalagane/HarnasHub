@@ -4,7 +4,7 @@ using HarnasHub.Application.Abstractions;
 
 namespace HarnasHub.Api.Common;
 
-/// <summary>Reads the authenticated user's id from the JWT "sub" claim of the current request.</summary>
+/// <summary>Reads the authenticated user's id and role from the JWT claims of the current request.</summary>
 public class CurrentUserService(IHttpContextAccessor httpContextAccessor) : ICurrentUserService
 {
     #region Public Properties
@@ -27,6 +27,8 @@ public class CurrentUserService(IHttpContextAccessor httpContextAccessor) : ICur
             return userId;
         }
     }
+
+    public string Role => httpContextAccessor.HttpContext?.User.FindFirst(ClaimTypes.Role)?.Value ?? string.Empty;
 
     #endregion
 }

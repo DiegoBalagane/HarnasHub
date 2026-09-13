@@ -31,18 +31,17 @@ Warstwy zależą do wewnątrz: `Api`/`Infrastructure` → `Application` → `Cor
 
 ## Backend — .NET 10 / ASP.NET Core
 
-- **Vertical Slices** zamiast klasycznych warstw Service/Repository — każdy use case (`Features/Calendar/CreateEvent/`, `Features/Tasks/AssignTask/`) ma własny `Command`/`Query`, `Validator` (FluentValidation), `Handler` (MediatR).
-- **Wynik operacji**: `ErrorOr<T>` jako typ zwracany z handlerów zamiast rzucania wyjątków dla oczekiwanych błędów biznesowych (np. "termin już zajęty").
-- **EF Core + PostgreSQL** — kluczowe relacje:
-  - `User` → `TeamMember` (rola: Player / Coach / Manager)
-  - `Event` (Match / Tournament / Training / PickupGame) → `Availability` (per user, per event)
-  - `Event` → `Result` → `DemoFile` (referencja do pliku w storage, nie w bazie)
-  - `Task` → przypisany `User`, status
-  - `Map` → `NadeEntry` (typ granatu, opis pozycji, link YouTube, screenshot)
-  - `MatchStat` (per gracz, per mecz) → agregacja do trendu w czasie
-- **Auth**: JWT + refresh tokeny, role-based authorization (Player/Coach/Manager/Admin).
-- **SignalR** — hub do live update dostępności i dashboardu bez odświeżania strony.
-- **Storage plików**: demka CS2 bywają duże (100–300 MB) — nie trzymać w repo/DB. Lokalnie wolumin Docker, docelowo S3-compatible (Cloudflare R2 — darmowy egress).
+- **Vertical Slices** zamiast klasycznych warstw Service/Repository — każdy use case (`Features/Calendar/CreateEvent/`, `Features/Tasks/AssignTask/`) ma własny `Command`/`Query`, `Validator` (FluentValidation), `Handler` (MediatR, przypięty na `12.5.0` — wersje 13+ wymagają płatnej licencji, patrz [CLAUDE.md](../CLAUDE.md)).
+- **Wynik operacji**: `ErrorOr<T>` jako typ zwracany z handlerów zamiast rzucania wyjątków dla oczekiwanych błędów biznesowych (np. "termin już zajęty", "nie możesz zmienić własnej roli").
+- **EF Core + PostgreSQL** — encje (`HarnasHub.Core/Entities`):
+  - `User` (rola: Player / Coach / Manager, zmieniana tylko przez Managera, nie na sobie samym)
+  - `Event` (Match / Tournament / Training / PickupGame) → `Availability` (per user, per event, unikalny indeks na parze)
+  - `TaskItem` → przypisany do `User`, status Todo/Done
+  - `MatchResult` — wynik + opcjonalny link do demki (`DemoUrl`, zwykły string, nie plik)
+  - `NadeEntry` — per mapa (`MapName` jako string, nie enum — pula map w CS2 się rotuje), typ granatu, link YouTube
+  - `TrainingMaterial` — link + kategoria
+- **Autoryzacja**: JWT (bez refresh tokenów na razie), `RequireRole` na poziomie endpointu dla akcji Coach/Manager-only; tam gdzie trzeba sprawdzić "właściciel zasobu LUB Coach/Manager" (np. usuwanie granatu), logika jedzie w handlerze przez `ICurrentUserService.Role`.
+- **Storage plików**: demka CS2 bywają duże (100–300 MB) — świadomie NIE wdrożono własnego uploadu do S3-compatible storage w tej fazie (brak realnych danych dostępowych do bucketa do przetestowania). `MatchResult.DemoUrl` to zwykły link do zewnętrznie hostowanego pliku (Drive, itp.); prawdziwy upload z presigned URL to follow-up, gdy pojawi się konto np. na Cloudflare R2.
 
 ## Frontend — React + TypeScript
 

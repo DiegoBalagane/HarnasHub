@@ -4,7 +4,10 @@ import { ProtectedRoute } from './ProtectedRoute'
 import { CalendarPage } from './routes/CalendarPage'
 import { DashboardPage } from './routes/DashboardPage'
 import { LoginPage } from './routes/LoginPage'
+import { MaterialsPage } from './routes/MaterialsPage'
+import { NadesPage } from './routes/NadesPage'
 import { RegisterPage } from './routes/RegisterPage'
+import { ResultsPage } from './routes/ResultsPage'
 import { RosterPage } from './routes/RosterPage'
 import { TasksPage } from './routes/TasksPage'
 
@@ -36,6 +39,30 @@ export function AppRouter() {
           element={
             <ProtectedRoute>
               <TasksPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/results"
+          element={
+            <ProtectedRoute>
+              <ResultsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/nades"
+          element={
+            <ProtectedRoute>
+              <NadesPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/materials"
+          element={
+            <ProtectedRoute>
+              <MaterialsPage />
             </ProtectedRoute>
           }
         />
