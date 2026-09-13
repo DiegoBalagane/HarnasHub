@@ -8,8 +8,7 @@ export const API_SETTINGS = {
 
 export const API_ENDPOINTS = {
   auth: {
-    register: '/api/auth/register',
-    login: '/api/auth/login',
+    discordLogin: '/api/auth/discord/login',
   },
   roster: '/api/roster',
   rosterRole: (userId: string) => `/api/roster/${userId}/role`,

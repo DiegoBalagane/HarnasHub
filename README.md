@@ -14,6 +14,7 @@ HarnasHub is a full-stack web app built for a competitive Counter-Strike 2 team 
 
 ## Features
 
+- **Sign in with Discord** — OAuth2, no local passwords; the team already lives on Discord.
 - **Team dashboard** — upcoming events, open tasks, and recent results at a glance.
 - **Calendar & availability** — matches, tournaments, trainings, and pickup games; players mark their availability and see the roster's at a glance.
 - **Coach-assigned tasks** — coach/manager assigns action items to players, with status tracking.
@@ -61,7 +62,13 @@ Or build and run the whole app as a single container (see [docs/DEPLOYMENT.md](d
 
 ```bash
 docker build -t harnashub .
-docker run -p 8080:8080 -e ConnectionStrings__Database="..." -e Jwt__Secret="..." harnashub
+docker run -p 8080:8080 \
+  -e ConnectionStrings__Database="..." \
+  -e Jwt__Secret="..." \
+  -e DiscordOAuth__ClientId="..." \
+  -e DiscordOAuth__ClientSecret="..." \
+  -e DiscordOAuth__RedirectUri="http://localhost:8080/api/auth/discord/callback" \
+  harnashub
 ```
 
 ## Status

@@ -30,7 +30,7 @@ public class UpdateUserRoleHandler(IApplicationDbContext dbContext, ICurrentUser
         await dbContext.SaveChangesAsync(cancellationToken);
         await realtimeNotifier.NotifyAsync("roster", cancellationToken);
 
-        return new TeamMemberDto(user.Id, user.DisplayName, user.Role.ToString());
+        return new TeamMemberDto(user.Id, user.DisplayName, user.Role.ToString(), user.AvatarUrl);
     }
 
     #endregion

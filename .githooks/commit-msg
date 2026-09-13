@@ -1,0 +1,8 @@
+#!/bin/sh
+# Strips any line mentioning "claude" (Co-Authored-By trailers, stray mentions) from every
+# commit message in this repo — regardless of what tool created the commit.
+#
+# Enable once per clone with:
+#   git config core.hooksPath .githooks
+
+sed -i '/[Cc]laude/d' "$1"

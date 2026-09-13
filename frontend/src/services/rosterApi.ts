@@ -7,6 +7,7 @@ export interface TeamMember {
   id: string
   displayName: string
   role: TeamRole
+  avatarUrl: string | null
 }
 
 export const rosterApi = {

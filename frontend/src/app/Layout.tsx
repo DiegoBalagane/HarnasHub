@@ -4,7 +4,7 @@ import { useAuthStore } from '../features/auth/stores/useAuthStore'
 
 /** Shared page chrome: top bar with branding and session controls. */
 export function Layout({ children }: PropsWithChildren) {
-  const { isAuthenticated, displayName, clearSession } = useAuthStore()
+  const { isAuthenticated, displayName, avatarUrl, clearSession } = useAuthStore()
   const navigate = useNavigate()
 
   function handleLogout() {
@@ -54,7 +54,8 @@ export function Layout({ children }: PropsWithChildren) {
         </div>
 
         {isAuthenticated && (
-          <div className="flex items-center gap-4 text-sm">
+          <div className="flex items-center gap-3 text-sm">
+            {avatarUrl && <img src={avatarUrl} alt="" className="h-7 w-7 rounded-full" />}
             <span className="text-neutral-400">{displayName}</span>
             <button onClick={handleLogout} className="text-neutral-400 hover:text-white">
               Wyloguj

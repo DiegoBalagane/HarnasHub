@@ -1,37 +1,46 @@
 import { create } from 'zustand'
 import { STORAGE_KEYS } from '../../../constants'
-import type { AuthResult } from '../../../services/authApi'
 import { decodeSessionFromToken } from '../../../services/jwt'
 
 interface AuthState {
   userId: string | null
   displayName: string | null
   role: string | null
+  avatarUrl: string | null
   isAuthenticated: boolean
-  setSession: (result: AuthResult) => void
+  loginWithToken: (token: string) => boolean
   clearSession: () => void
 }
 
 const existingToken = localStorage.getItem(STORAGE_KEYS.accessToken)
 const restoredSession = existingToken ? decodeSessionFromToken(existingToken) : null
 
-/** Holds the current session. The JWT is the source of truth in localStorage; userId/displayName/role are decoded from it on load so a page reload doesn't drop them. */
+/** Holds the current session. The JWT (from Discord OAuth) is the source of truth in localStorage; every other field is decoded from it. */
 export const useAuthStore = create<AuthState>((set) => ({
   userId: restoredSession?.userId ?? null,
   displayName: restoredSession?.displayName ?? null,
   role: restoredSession?.role ?? null,
+  avatarUrl: restoredSession?.avatarUrl ?? null,
   isAuthenticated: restoredSession !== null,
-  setSession: (result) => {
-    localStorage.setItem(STORAGE_KEYS.accessToken, result.accessToken)
+  loginWithToken: (token) => {
+    const session = decodeSessionFromToken(token)
+
+    if (!session) {
+      return false
+    }
+
+    localStorage.setItem(STORAGE_KEYS.accessToken, token)
     set({
-      userId: result.userId,
-      displayName: result.displayName,
-      role: result.role,
+      userId: session.userId,
+      displayName: session.displayName,
+      role: session.role,
+      avatarUrl: session.avatarUrl,
       isAuthenticated: true,
     })
+    return true
   },
   clearSession: () => {
     localStorage.removeItem(STORAGE_KEYS.accessToken)
-    set({ userId: null, displayName: null, role: null, isAuthenticated: false })
+    set({ userId: null, displayName: null, role: null, avatarUrl: null, isAuthenticated: false })
   },
 }))

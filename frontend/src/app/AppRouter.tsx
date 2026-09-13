@@ -1,13 +1,13 @@
 import { Navigate, Route, Routes } from 'react-router-dom'
 import { Layout } from './Layout'
 import { ProtectedRoute } from './ProtectedRoute'
+import { AuthCallbackPage } from './routes/AuthCallbackPage'
 import { CalendarPage } from './routes/CalendarPage'
 import { DashboardPage } from './routes/DashboardPage'
 import { LoginPage } from './routes/LoginPage'
 import { MaterialsPage } from './routes/MaterialsPage'
 import { NadesPage } from './routes/NadesPage'
 import { OpponentsPage } from './routes/OpponentsPage'
-import { RegisterPage } from './routes/RegisterPage'
 import { ResultsPage } from './routes/ResultsPage'
 import { RosterPage } from './routes/RosterPage'
 import { StatsPage } from './routes/StatsPage'
@@ -19,7 +19,7 @@ export function AppRouter() {
       <Routes>
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
         <Route path="/login" element={<LoginPage />} />
-        <Route path="/register" element={<RegisterPage />} />
+        <Route path="/auth/callback" element={<AuthCallbackPage />} />
         <Route
           path="/dashboard"
           element={

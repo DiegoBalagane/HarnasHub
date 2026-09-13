@@ -1,47 +1,50 @@
-using HarnasHub.Api.Common;
-using HarnasHub.Application.Features.Auth.Login;
-using HarnasHub.Application.Features.Auth.Register;
-using HarnasHub.Core.Enums;
+using HarnasHub.Application.Features.Auth.DiscordLogin;
+using HarnasHub.Core.Options;
 using MediatR;
+using Microsoft.AspNetCore.WebUtilities;
+using Microsoft.Extensions.Options;
 
 namespace HarnasHub.Api.Endpoints.Auth;
 
-/// <summary>Register and login endpoints under /api/auth.</summary>
+/// <summary>"Sign in with Discord" endpoints under /api/auth/discord.</summary>
 public class AuthEndpoints : IEndpoint
 {
     #region Public Methods
 
     public static void MapEndpoints(IEndpointRouteBuilder app)
     {
-        var group = app.MapGroup("/api/auth").WithTags("Auth");
+        var group = app.MapGroup("/api/auth/discord").WithTags("Auth");
 
-        group.MapPost("/register", async (RegisterRequest request, ISender sender, CancellationToken cancellationToken) =>
+        group.MapGet("/login", (IOptions<DiscordOAuthSettings> settings) =>
         {
-            // New accounts always start as Player — role upgrades are a Manager action, never chosen by the registrant.
-            var command = new RegisterCommand(request.Email, request.DisplayName, request.Password, UserRole.Player);
-            var result = await sender.Send(command, cancellationToken);
+            var options = settings.Value;
+            var authorizeUrl = QueryHelpers.AddQueryString("https://discord.com/oauth2/authorize", new Dictionary<string, string?>
+            {
+                ["client_id"] = options.ClientId,
+                ["redirect_uri"] = options.RedirectUri,
+                ["response_type"] = "code",
+                ["scope"] = "identify guilds"
+            });
 
-            return result.Match(
-                success => Results.Ok(success),
-                errors => errors.ToProblemResult());
+            return Results.Redirect(authorizeUrl);
         });
 
-        group.MapPost("/login", async (LoginRequest request, ISender sender, CancellationToken cancellationToken) =>
+        group.MapGet("/callback", async (string? code, string? error, ISender sender, IOptions<DiscordOAuthSettings> settings, CancellationToken cancellationToken) =>
         {
-            var query = new LoginQuery(request.Email, request.Password);
-            var result = await sender.Send(query, cancellationToken);
+            var frontendUrl = settings.Value.FrontendCallbackUrl;
+
+            if (error is not null || code is null)
+            {
+                return Results.Redirect($"{frontendUrl}/login?error=discord_denied");
+            }
+
+            var result = await sender.Send(new DiscordLoginCommand(code), cancellationToken);
 
             return result.Match(
-                success => Results.Ok(success),
-                errors => errors.ToProblemResult());
+                success => Results.Redirect($"{frontendUrl}/auth/callback#token={Uri.EscapeDataString(success.AccessToken)}"),
+                errors => Results.Redirect($"{frontendUrl}/login?error=discord_failed"));
         });
     }
 
     #endregion
 }
-
-/// <summary>Request body for POST /api/auth/register.</summary>
-public record RegisterRequest(string Email, string DisplayName, string Password);
-
-/// <summary>Request body for POST /api/auth/login.</summary>
-public record LoginRequest(string Email, string Password);
