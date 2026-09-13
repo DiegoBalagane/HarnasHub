@@ -1,0 +1,30 @@
+# .NET
+bin/
+obj/
+*.user
+.vs/
+*.suo
+
+# Node / React
+node_modules/
+dist/
+build/
+.env
+.env.local
+
+# Baza danych lokalna / Docker
+*.db
+postgres-data/
+
+# Duże pliki demek CS2 (przechowywane poza repo)
+*.dem
+
+# IDE
+.idea/
+*.swp
+
+# Claude Code / AI-assisted dev — never pushed
+CLAUDE.md
+CLAUDE.local.md
+.claude/
+.mcp.json
