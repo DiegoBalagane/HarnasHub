@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore;
 namespace HarnasHub.Application.Features.Tasks.CompleteTask;
 
 /// <summary>Handles <see cref="CompleteTaskCommand"/>.</summary>
-public class CompleteTaskHandler(IApplicationDbContext dbContext, ICurrentUserService currentUser)
+public class CompleteTaskHandler(IApplicationDbContext dbContext, ICurrentUserService currentUser, IRealtimeNotifier realtimeNotifier)
     : IRequestHandler<CompleteTaskCommand, ErrorOr<Success>>
 {
     #region Public Methods
@@ -29,6 +29,8 @@ public class CompleteTaskHandler(IApplicationDbContext dbContext, ICurrentUserSe
 
         task.Status = TaskItemStatus.Done;
         await dbContext.SaveChangesAsync(cancellationToken);
+        await realtimeNotifier.NotifyAsync("tasks", cancellationToken);
+        await realtimeNotifier.NotifyAsync("dashboard", cancellationToken);
 
         return Result.Success;
     }

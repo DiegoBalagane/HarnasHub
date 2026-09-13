@@ -1,5 +1,8 @@
 export const API_SETTINGS = {
-  baseUrl: import.meta.env.VITE_API_BASE_URL ?? 'https://localhost:5001',
+  // Empty string = same-origin relative requests. That's the production default: the backend
+  // serves this built frontend itself (see docs/DEPLOYMENT.md), so there's no separate API host.
+  // Local dev overrides this via .env.development (VITE_API_BASE_URL) to point at the dotnet process.
+  baseUrl: import.meta.env.VITE_API_BASE_URL ?? '',
   timeoutMs: 10_000,
 } as const
 

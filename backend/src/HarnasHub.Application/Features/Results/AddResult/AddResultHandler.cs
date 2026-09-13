@@ -7,7 +7,7 @@ using MediatR;
 namespace HarnasHub.Application.Features.Results.AddResult;
 
 /// <summary>Handles <see cref="AddResultCommand"/> by persisting the new match result.</summary>
-public class AddResultHandler(IApplicationDbContext dbContext, ICurrentUserService currentUser)
+public class AddResultHandler(IApplicationDbContext dbContext, ICurrentUserService currentUser, IRealtimeNotifier realtimeNotifier)
     : IRequestHandler<AddResultCommand, ErrorOr<MatchResultDto>>
 {
     #region Public Methods
@@ -30,6 +30,10 @@ public class AddResultHandler(IApplicationDbContext dbContext, ICurrentUserServi
 
         dbContext.MatchResults.Add(result);
         await dbContext.SaveChangesAsync(cancellationToken);
+
+        await realtimeNotifier.NotifyAsync("results", cancellationToken);
+        await realtimeNotifier.NotifyAsync("stats", cancellationToken);
+        await realtimeNotifier.NotifyAsync("dashboard", cancellationToken);
 
         return new MatchResultDto(
             result.Id,

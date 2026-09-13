@@ -23,6 +23,15 @@ async function request<TResponse>(path: string, init?: RequestInit): Promise<TRe
   })
 
   if (!response.ok) {
+    // A 401 on a request that carried a token means the token expired/was revoked — the credentials-check
+    // path (login) never sends a token, so this never fires for "wrong password" there.
+    if (response.status === 401 && token) {
+      localStorage.removeItem(STORAGE_KEYS.accessToken)
+      if (!window.location.pathname.startsWith('/login')) {
+        window.location.assign('/login')
+      }
+    }
+
     const problem = await response.json().catch(() => null)
     throw new ApiError(response.status, problem?.detail ?? problem?.title ?? 'Wystąpił błąd zapytania.')
   }

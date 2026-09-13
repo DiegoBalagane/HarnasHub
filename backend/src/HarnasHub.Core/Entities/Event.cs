@@ -15,6 +15,7 @@ public class Event
     public string? Notes { get; set; }
     public Guid CreatedByUserId { get; set; }
     public DateTime CreatedAtUtc { get; set; }
+    public DateTime? ReminderSentAtUtc { get; set; }
 
     #endregion
 }

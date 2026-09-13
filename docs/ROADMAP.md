@@ -30,11 +30,15 @@ Uwaga: rejestracja jest wciąż otwarta (każdy może sobie założyć konto jak
 - [x] Analizy przeciwników (notatki + link do materiału, filtr po nazwie) — dodaje Coach/Manager, widzi cała drużyna
 
 ## Faza 4 — Wygoda
-- [ ] PWA — instalacja na telefonie, powiadomienia push
-- [ ] Webhook powiadomień na Discorda (nowe zadanie, nowe wydarzenie, przypomnienie)
-- [ ] SignalR — live update dashboardu/dostępności bez odświeżania
+- [x] PWA — instalowalna (prawdziwe ikony, manifest, service worker), działa offline dla statycznych widoków. Bez prawdziwych powiadomień push (VAPID + zgoda przeglądarki na urządzeniu) — świadomie odłożone do realnego wdrożenia, patrz `docs/DEPLOYMENT.md`
+- [x] Webhook na Discorda — nowe wydarzenie, nowe zadanie, automatyczne przypomnienie przed startem wydarzenia (`EventReminderService`, jednorazowo per wydarzenie)
+- [x] SignalR — live-update kalendarza/dostępności/zadań/wyników/granatów/materiałów/przeciwników/rosteru bez odświeżania, przetestowane na dwóch kartach jednocześnie
+- [x] Pojedynczy deploy (backend serwuje zbudowany frontend) + `Dockerfile`, zweryfikowany lokalnie end-to-end (build obrazu, kontener, rejestracja→JWT→chroniony endpoint, SPA fallback, manifest PWA)
+- [x] Plan wdrożenia i testowania na produkcji — `docs/DEPLOYMENT.md`
 
 ## Rozważane później
 - Automatyczne parsowanie demek CS2 (statystyki bez ręcznego wpisywania)
 - Integracja z FACEIT/Steam API
 - Wewnętrzny ranking/ELO na bazie sparingów
+- Prawdziwe powiadomienia push (VAPID + custom service worker) — po realnym wdrożeniu
+- Upload plików (demek) do własnego storage (Cloudflare R2) zamiast linków

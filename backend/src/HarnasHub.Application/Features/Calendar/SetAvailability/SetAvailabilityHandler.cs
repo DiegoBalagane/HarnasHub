@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore;
 namespace HarnasHub.Application.Features.Calendar.SetAvailability;
 
 /// <summary>Handles <see cref="SetAvailabilityCommand"/> by upserting the caller's availability row.</summary>
-public class SetAvailabilityHandler(IApplicationDbContext dbContext, ICurrentUserService currentUser)
+public class SetAvailabilityHandler(IApplicationDbContext dbContext, ICurrentUserService currentUser, IRealtimeNotifier realtimeNotifier)
     : IRequestHandler<SetAvailabilityCommand, ErrorOr<Success>>
 {
     #region Public Methods
@@ -45,6 +45,7 @@ public class SetAvailabilityHandler(IApplicationDbContext dbContext, ICurrentUse
         }
 
         await dbContext.SaveChangesAsync(cancellationToken);
+        await realtimeNotifier.NotifyAsync($"availability:{request.EventId}", cancellationToken);
 
         return Result.Success;
     }

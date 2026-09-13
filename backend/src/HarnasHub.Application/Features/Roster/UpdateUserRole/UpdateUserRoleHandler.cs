@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore;
 namespace HarnasHub.Application.Features.Roster.UpdateUserRole;
 
 /// <summary>Handles <see cref="UpdateUserRoleCommand"/> by updating the target user's role.</summary>
-public class UpdateUserRoleHandler(IApplicationDbContext dbContext, ICurrentUserService currentUser)
+public class UpdateUserRoleHandler(IApplicationDbContext dbContext, ICurrentUserService currentUser, IRealtimeNotifier realtimeNotifier)
     : IRequestHandler<UpdateUserRoleCommand, ErrorOr<TeamMemberDto>>
 {
     #region Public Methods
@@ -28,6 +28,7 @@ public class UpdateUserRoleHandler(IApplicationDbContext dbContext, ICurrentUser
 
         user.Role = request.Role;
         await dbContext.SaveChangesAsync(cancellationToken);
+        await realtimeNotifier.NotifyAsync("roster", cancellationToken);
 
         return new TeamMemberDto(user.Id, user.DisplayName, user.Role.ToString());
     }
