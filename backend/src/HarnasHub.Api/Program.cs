@@ -95,6 +95,18 @@ app.UseCors("Frontend");
 app.UseAuthentication();
 app.UseAuthorization();
 
+// Some client-side proxies (VPN extensions, corporate caches) will otherwise cache API
+// GET responses (e.g. the Discord OAuth redirect) and keep serving a stale one forever.
+app.Use(async (context, next) =>
+{
+    if (context.Request.Path.StartsWithSegments("/api"))
+    {
+        context.Response.Headers.CacheControl = "no-store";
+    }
+
+    await next();
+});
+
 app.MapAllEndpoints();
 app.MapHub<TeamHub>("/hubs/team");
 

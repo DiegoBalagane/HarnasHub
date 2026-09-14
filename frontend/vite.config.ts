@@ -11,6 +11,13 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.svg', 'apple-touch-icon.png'],
+      workbox: {
+        // The PWA's offline navigation fallback must never intercept API/hub calls — a plain
+        // `<a href>` navigation to e.g. /api/auth/discord/login is still "mode: navigate", so
+        // without this the service worker served the cached app shell instead of hitting the
+        // network, breaking Discord OAuth (redirect never happened).
+        navigateFallbackDenylist: [/^\/api\//, /^\/hubs\//],
+      },
       manifest: {
         name: 'HarnasHub',
         short_name: 'HarnasHub',
