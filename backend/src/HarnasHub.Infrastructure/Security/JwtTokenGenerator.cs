@@ -12,40 +12,40 @@ namespace HarnasHub.Infrastructure.Security;
 /// <summary>Issues signed JWT access tokens using the configured <see cref="JwtSettings"/>.</summary>
 public class JwtTokenGenerator(IOptions<JwtSettings> jwtSettings) : IJwtTokenGenerator
 {
-    #region Private Fields
+	#region Private Fields
 
-    private readonly JwtSettings _jwtSettings = jwtSettings.Value;
+	private readonly JwtSettings _jwtSettings = jwtSettings.Value;
 
-    #endregion
+	#endregion
 
-    #region Public Methods
+	#region Public Methods
 
-    public string GenerateToken(User user)
-    {
-        var claims = new List<Claim>
-        {
-            new(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
-            new(ClaimTypes.Name, user.DisplayName),
-            new(ClaimTypes.Role, user.Role.ToString())
-        };
+	public string GenerateToken(User user)
+	{
+		var claims = new List<Claim>
+		{
+			new(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
+			new(ClaimTypes.Name, user.DisplayName),
+			new(ClaimTypes.Role, user.Role.ToString())
+		};
 
-        if (!string.IsNullOrWhiteSpace(user.AvatarUrl))
-        {
-            claims.Add(new Claim("avatar_url", user.AvatarUrl));
-        }
+		if (!string.IsNullOrWhiteSpace(user.AvatarUrl))
+		{
+			claims.Add(new Claim("avatar_url", user.AvatarUrl));
+		}
 
-        var signingKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtSettings.Secret));
-        var credentials = new SigningCredentials(signingKey, SecurityAlgorithms.HmacSha256);
+		var signingKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtSettings.Secret));
+		var credentials = new SigningCredentials(signingKey, SecurityAlgorithms.HmacSha256);
 
-        var token = new JwtSecurityToken(
-            issuer: _jwtSettings.Issuer,
-            audience: _jwtSettings.Audience,
-            claims: claims,
-            expires: DateTime.UtcNow.AddMinutes(_jwtSettings.ExpiryMinutes),
-            signingCredentials: credentials);
+		var token = new JwtSecurityToken(
+			issuer: _jwtSettings.Issuer,
+			audience: _jwtSettings.Audience,
+			claims: claims,
+			expires: DateTime.UtcNow.AddMinutes(_jwtSettings.ExpiryMinutes),
+			signingCredentials: credentials);
 
-        return new JwtSecurityTokenHandler().WriteToken(token);
-    }
+		return new JwtSecurityTokenHandler().WriteToken(token);
+	}
 
-    #endregion
+	#endregion
 }

@@ -6,43 +6,43 @@ namespace HarnasHub.Tests.Application.Features.Tasks.AssignTask;
 
 public class AssignTaskCommandValidatorTests
 {
-    #region Private Fields
+	#region Private Fields
 
-    private readonly AssignTaskCommandValidator _validator = new();
+	private readonly AssignTaskCommandValidator _validator = new();
 
-    #endregion
+	#endregion
 
-    #region Public Methods
+	#region Public Methods
 
-    [Fact]
-    public void Should_have_error_when_title_is_empty()
-    {
-        var command = new AssignTaskCommand(string.Empty, null, Guid.NewGuid(), null);
+	[Fact]
+	public void Should_have_error_when_title_is_empty()
+	{
+		var command = new AssignTaskCommand(string.Empty, null, Guid.NewGuid(), null);
 
-        var result = _validator.TestValidate(command);
+		var result = _validator.TestValidate(command);
 
-        result.ShouldHaveValidationErrorFor(x => x.Title);
-    }
+		result.ShouldHaveValidationErrorFor(x => x.Title);
+	}
 
-    [Fact]
-    public void Should_have_error_when_assignee_is_empty()
-    {
-        var command = new AssignTaskCommand("Obejrzyj demo", null, Guid.Empty, null);
+	[Fact]
+	public void Should_have_error_when_assignee_is_empty()
+	{
+		var command = new AssignTaskCommand("Obejrzyj demo", null, Guid.Empty, null);
 
-        var result = _validator.TestValidate(command);
+		var result = _validator.TestValidate(command);
 
-        result.ShouldHaveValidationErrorFor(x => x.AssignedToUserId);
-    }
+		result.ShouldHaveValidationErrorFor(x => x.AssignedToUserId);
+	}
 
-    [Fact]
-    public void Should_not_have_errors_for_a_valid_command()
-    {
-        var command = new AssignTaskCommand("Obejrzyj demo", "Mecz z drużyną X", Guid.NewGuid(), DateTime.UtcNow.AddDays(2));
+	[Fact]
+	public void Should_not_have_errors_for_a_valid_command()
+	{
+		var command = new AssignTaskCommand("Obejrzyj demo", "Mecz z drużyną X", Guid.NewGuid(), DateTime.UtcNow.AddDays(2));
 
-        var result = _validator.TestValidate(command);
+		var result = _validator.TestValidate(command);
 
-        result.ShouldNotHaveAnyValidationErrors();
-    }
+		result.ShouldNotHaveAnyValidationErrors();
+	}
 
-    #endregion
+	#endregion
 }
