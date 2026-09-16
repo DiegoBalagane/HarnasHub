@@ -8,18 +8,18 @@ namespace HarnasHub.Application;
 /// <summary>Registers MediatR handlers, FluentValidation validators, and the validation pipeline behavior.</summary>
 public static class DependencyInjection
 {
-    #region Public Methods
+	#region Public Methods
 
-    public static IServiceCollection AddApplication(this IServiceCollection services)
-    {
-        var assembly = Assembly.GetExecutingAssembly();
+	public static IServiceCollection AddApplication(this IServiceCollection services)
+	{
+		var assembly = Assembly.GetExecutingAssembly();
 
-        services.AddMediatR(configuration => configuration.RegisterServicesFromAssembly(assembly));
-        services.AddValidatorsFromAssembly(assembly);
-        services.AddTransient(typeof(MediatR.IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
+		services.AddMediatR(configuration => configuration.RegisterServicesFromAssembly(assembly));
+		services.AddValidatorsFromAssembly(assembly);
+		services.AddTransient(typeof(MediatR.IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
 
-        return services;
-    }
+		return services;
+	}
 
-    #endregion
+	#endregion
 }
