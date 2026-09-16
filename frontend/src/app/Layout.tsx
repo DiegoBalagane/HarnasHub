@@ -1,11 +1,18 @@
 import type { PropsWithChildren } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { useIsGuest } from '../features/auth/hooks/useIsGuest'
 import { useAuthStore } from '../features/auth/stores/useAuthStore'
+import { NicknameEditor } from '../features/roster/components/NicknameEditor'
+import { useSyncOwnNickname } from '../features/roster/hooks/useSyncOwnNickname'
+import { MainNav } from './MainNav'
 
 /** Shared page chrome: top bar with branding and session controls. */
 export function Layout({ children }: PropsWithChildren) {
-  const { isAuthenticated, displayName, avatarUrl, clearSession } = useAuthStore()
+  const { isAuthenticated, avatarUrl, clearSession } = useAuthStore()
+  const isGuest = useIsGuest()
   const navigate = useNavigate()
+
+  useSyncOwnNickname()
 
   function handleLogout() {
     clearSession()
@@ -20,43 +27,19 @@ export function Layout({ children }: PropsWithChildren) {
             Harnas<span className="text-red-500">Hub</span>
           </Link>
 
-          {isAuthenticated && (
-            <nav className="flex flex-wrap gap-4 text-sm text-neutral-400">
-              <Link to="/dashboard" className="hover:text-white">
-                Dashboard
-              </Link>
-              <Link to="/calendar" className="hover:text-white">
-                Kalendarz
-              </Link>
-              <Link to="/tasks" className="hover:text-white">
-                Zadania
-              </Link>
-              <Link to="/results" className="hover:text-white">
-                Wyniki
-              </Link>
-              <Link to="/stats" className="hover:text-white">
-                Rozwój
-              </Link>
-              <Link to="/opponents" className="hover:text-white">
-                Przeciwnicy
-              </Link>
-              <Link to="/nades" className="hover:text-white">
-                Granaty
-              </Link>
-              <Link to="/materials" className="hover:text-white">
-                Materiały
-              </Link>
-              <Link to="/roster" className="hover:text-white">
-                Skład
-              </Link>
-            </nav>
+          {isAuthenticated && !isGuest && <MainNav />}
+
+          {isAuthenticated && isGuest && (
+            <span className="text-xs text-neutral-500">
+              Konto oczekuje na przydzielenie roli przez managera
+            </span>
           )}
         </div>
 
         {isAuthenticated && (
           <div className="flex items-center gap-3 text-sm">
             {avatarUrl && <img src={avatarUrl} alt="" className="h-7 w-7 rounded-full" />}
-            <span className="text-neutral-400">{displayName}</span>
+            {!isGuest && <NicknameEditor />}
             <button onClick={handleLogout} className="text-neutral-400 hover:text-white">
               Wyloguj
             </button>

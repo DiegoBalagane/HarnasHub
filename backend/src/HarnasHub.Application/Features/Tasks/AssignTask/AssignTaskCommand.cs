@@ -6,7 +6,7 @@ namespace HarnasHub.Application.Features.Tasks.AssignTask;
 
 /// <summary>Assigns a new task to a player. Coach/Manager only — enforced at the endpoint.</summary>
 public record AssignTaskCommand(
-    string Title,
-    string? Description,
-    Guid AssignedToUserId,
-    DateTime? DueAtUtc) : IRequest<ErrorOr<TaskItemDto>>;
+	string Title,
+	string? Description,
+	Guid AssignedToUserId,
+	DateTime? DueAtUtc) : IRequest<ErrorOr<TaskItemDto>>;

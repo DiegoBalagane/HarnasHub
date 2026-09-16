@@ -7,43 +7,43 @@ namespace HarnasHub.Tests.Application.Features.Nades.AddNade;
 
 public class AddNadeCommandValidatorTests
 {
-    #region Private Fields
+	#region Private Fields
 
-    private readonly AddNadeCommandValidator _validator = new();
+	private readonly AddNadeCommandValidator _validator = new();
 
-    #endregion
+	#endregion
 
-    #region Public Methods
+	#region Public Methods
 
-    [Fact]
-    public void Should_have_error_when_map_name_is_empty()
-    {
-        var command = new AddNadeCommand(string.Empty, GrenadeType.Smoke, "Mid smoke", null, null);
+	[Fact]
+	public void Should_have_error_when_map_is_outside_the_current_pool()
+	{
+		var command = new AddNadeCommand((MapName)99, GrenadeType.Smoke, "Mid smoke", null, null);
 
-        var result = _validator.TestValidate(command);
+		var result = _validator.TestValidate(command);
 
-        result.ShouldHaveValidationErrorFor(x => x.MapName);
-    }
+		result.ShouldHaveValidationErrorFor(x => x.MapName);
+	}
 
-    [Fact]
-    public void Should_have_error_when_youtube_url_is_malformed()
-    {
-        var command = new AddNadeCommand("Mirage", GrenadeType.Smoke, "Mid smoke", null, "not-a-url");
+	[Fact]
+	public void Should_have_error_when_youtube_url_is_malformed()
+	{
+		var command = new AddNadeCommand(MapName.Mirage, GrenadeType.Smoke, "Mid smoke", null, "not-a-url");
 
-        var result = _validator.TestValidate(command);
+		var result = _validator.TestValidate(command);
 
-        result.ShouldHaveValidationErrorFor(x => x.YoutubeUrl);
-    }
+		result.ShouldHaveValidationErrorFor(x => x.YoutubeUrl);
+	}
 
-    [Fact]
-    public void Should_not_have_errors_for_a_valid_command()
-    {
-        var command = new AddNadeCommand("Mirage", GrenadeType.Smoke, "Mid smoke", "Z T spawn", "https://youtube.com/watch?v=abc");
+	[Fact]
+	public void Should_not_have_errors_for_a_valid_command()
+	{
+		var command = new AddNadeCommand(MapName.Mirage, GrenadeType.Smoke, "Mid smoke", "Z T spawn", "https://youtube.com/watch?v=abc");
 
-        var result = _validator.TestValidate(command);
+		var result = _validator.TestValidate(command);
 
-        result.ShouldNotHaveAnyValidationErrors();
-    }
+		result.ShouldNotHaveAnyValidationErrors();
+	}
 
-    #endregion
+	#endregion
 }

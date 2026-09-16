@@ -1,3 +1,4 @@
+import { useAuthStore } from '../features/auth/stores/useAuthStore'
 import { API_SETTINGS, STORAGE_KEYS } from '../constants'
 
 export class ApiError extends Error {
@@ -23,10 +24,11 @@ async function request<TResponse>(path: string, init?: RequestInit): Promise<TRe
   })
 
   if (!response.ok) {
-    // A 401 on a request that carried a token means the token expired/was revoked — the credentials-check
-    // path (login) never sends a token, so this never fires for "wrong password" there.
+    // A 401 on a request that carried a token means the token expired/was revoked — drop the whole session
+    // (not just the stored token) so the user lands on a readable login screen instead of silent failures.
+    // A 403 is deliberately left alone: that's a Guest hitting team data, handled by ProtectedRoute.
     if (response.status === 401 && token) {
-      localStorage.removeItem(STORAGE_KEYS.accessToken)
+      useAuthStore.getState().clearSession()
       if (!window.location.pathname.startsWith('/login')) {
         window.location.assign('/login')
       }

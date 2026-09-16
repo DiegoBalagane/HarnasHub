@@ -24,53 +24,55 @@ builder.Services.AddSignalR();
 builder.Services.AddSingleton<IRealtimeNotifier, SignalRRealtimeNotifier>();
 
 var jwtSettings = builder.Configuration.GetSection(JwtSettings.SectionName).Get<JwtSettings>()
-    ?? throw new InvalidOperationException("Sekcja konfiguracji 'Jwt' jest wymagana.");
+	?? throw new InvalidOperationException("Sekcja konfiguracji 'Jwt' jest wymagana.");
 
 builder.Services
-    .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-    .AddJwtBearer(options =>
-    {
-        options.TokenValidationParameters = new TokenValidationParameters
-        {
-            ValidateIssuer = true,
-            ValidateAudience = true,
-            ValidateLifetime = true,
-            ValidateIssuerSigningKey = true,
-            ValidIssuer = jwtSettings.Issuer,
-            ValidAudience = jwtSettings.Audience,
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings.Secret))
-        };
+	.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+	.AddJwtBearer(options =>
+	{
+		options.TokenValidationParameters = new TokenValidationParameters
+		{
+			ValidateIssuer = true,
+			ValidateAudience = true,
+			ValidateLifetime = true,
+			ValidateIssuerSigningKey = true,
+			ValidIssuer = jwtSettings.Issuer,
+			ValidAudience = jwtSettings.Audience,
+			IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings.Secret))
+		};
 
-        // SignalR's browser transports can't set an Authorization header, so accept the JWT via query string for hub requests.
-        options.Events = new JwtBearerEvents
-        {
-            OnMessageReceived = context =>
-            {
-                var accessToken = context.Request.Query["access_token"];
+		// SignalR's browser transports can't set an Authorization header, so accept the JWT via query string for hub requests.
+		options.Events = new JwtBearerEvents
+		{
+			OnMessageReceived = context =>
+			{
+				var accessToken = context.Request.Query["access_token"];
 
-                if (!string.IsNullOrEmpty(accessToken) && context.HttpContext.Request.Path.StartsWithSegments("/hubs"))
-                {
-                    context.Token = accessToken;
-                }
+				if (!string.IsNullOrEmpty(accessToken) && context.HttpContext.Request.Path.StartsWithSegments("/hubs"))
+				{
+					context.Token = accessToken;
+				}
 
-                return Task.CompletedTask;
-            }
-        };
-    });
+				return Task.CompletedTask;
+			}
+		};
+	});
 
-builder.Services.AddAuthorization();
+// Guests (freshly signed-in accounts awaiting a Manager's decision) are authenticated but must not reach any team data.
+builder.Services.AddAuthorization(options =>
+	options.AddPolicy(AuthorizationPolicies.TeamMember, policy => policy.RequireRole("Player", "Coach", "Manager")));
 
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("Frontend", policy =>
-    {
-        var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? [];
-        policy.WithOrigins(allowedOrigins).AllowAnyHeader().AllowAnyMethod().AllowCredentials();
-    });
+	options.AddPolicy("Frontend", policy =>
+	{
+		var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? [];
+		policy.WithOrigins(allowedOrigins).AllowAnyHeader().AllowAnyMethod().AllowCredentials();
+	});
 });
 
 builder.Services.ConfigureHttpJsonOptions(options =>
-    options.SerializerOptions.Converters.Add(new JsonStringEnumConverter()));
+	options.SerializerOptions.Converters.Add(new JsonStringEnumConverter()));
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
@@ -80,14 +82,14 @@ var app = builder.Build();
 // Applies pending migrations on boot so a fresh deploy never needs a manual "dotnet ef database update" step.
 using (var scope = app.Services.CreateScope())
 {
-    var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-    await dbContext.Database.MigrateAsync();
+	var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+	await dbContext.Database.MigrateAsync();
 }
 
 if (app.Environment.IsDevelopment())
 {
-    app.UseSwagger();
-    app.UseSwaggerUI();
+	app.UseSwagger();
+	app.UseSwaggerUI();
 }
 
 app.UseHttpsRedirection();
@@ -99,12 +101,12 @@ app.UseAuthorization();
 // GET responses (e.g. the Discord OAuth redirect) and keep serving a stale one forever.
 app.Use(async (context, next) =>
 {
-    if (context.Request.Path.StartsWithSegments("/api"))
-    {
-        context.Response.Headers.CacheControl = "no-store";
-    }
+	if (context.Request.Path.StartsWithSegments("/api"))
+	{
+		context.Response.Headers.CacheControl = "no-store";
+	}
 
-    await next();
+	await next();
 });
 
 app.MapAllEndpoints();

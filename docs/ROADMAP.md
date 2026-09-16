@@ -5,23 +5,25 @@ Kolejność wdrażania od MVP do pełnej wersji. Każda faza powinna być używa
 ## Faza 0 — Fundament
 - [x] Scaffold solution .NET (Core / Application / Infrastructure / Api / Tests) + projekt React (Vite + TS + Tailwind)
 - [x] Docker Compose: PostgreSQL lokalnie (port hosta 5433 — 5432 bywa zajęty przez lokalną instalację Postgresa)
-- [x] Auth: logowanie przez **Discord OAuth2** (bez haseł, bez przechowywania danych logowania), role Player/Coach/Manager (nowe konta zawsze startują jako Player) — z weryfikacją członkostwa w serwerze Discord drużyny (`DiscordOAuth:RequiredGuildId`), przetestowane na prawdziwym koncie
+- [x] Auth: logowanie przez **Discord OAuth2** (bez haseł, bez przechowywania danych logowania), role Guest/Player/Coach/Manager (nowe konta zawsze startują jako Guest, bez dostępu do danych drużyny) — z weryfikacją członkostwa w serwerze Discord drużyny (`DiscordOAuth:RequiredGuildId`), przetestowane na prawdziwym koncie
 - [x] Roster drużyny (lista graczy, role) + zmiana roli przez Managera (własnej roli zmienić nie można)
+- [x] Rola w drużynie (IGL / Entry fragger / Support / AWPer / Lurker / Rifler) ustawiana przez Coacha/Managera + własny nick w grze, który każdy zmienia tylko sobie (wyświetlany zamiast nazwy z Discorda)
 - [x] CI: build + testy na GitHub Actions
 
 ## Faza 1 — Organizacja
-- [x] Dashboard (najbliższe wydarzenie + liczba otwartych zadań)
+- [x] Dashboard (najbliższe wydarzenie + liczba otwartych zadań + sekcje „Dzisiaj"/„Jutro": kto gra, kto ma urlop, wydarzenie danego dnia)
 - [x] Kalendarz wydarzeń (Match / Tournament / Training / PickupGame) — tworzenie: Coach/Manager
 - [x] Dostępność graczy per wydarzenie (klik: dostępny / niepewny / niedostępny) + widok zbiorczy dla całej drużyny
 - [x] Zadania: coach/manager przydziela, zawodnik odhacza status (widok tylko własnych zadań)
 
-Uwaga: każdy z serwera Discord drużyny może się zalogować i dostaje konto jako Player — nie ma osobnego kroku "zaproszenia". To celowe (drużyna to zamknięta grupa na Discordzie, więc to już jest naturalna kontrola dostępu); jeśli kiedyś appka miałaby wyjść poza jeden serwer Discord, trzeba by dodać sprawdzanie członkostwa w konkretnym serwerze przy logowaniu.
+Uwaga: każdy z serwera Discord drużyny może się zalogować, ale dostaje konto jako **Gość** — widzi tylko ekran „Poczekaj na przydzielenie roli", a wszystkie grupy API z danymi drużyny odpowiadają mu 403. Dostęp otwiera dopiero Manager, nadając rolę w `/roster`. To zastępuje wcześniejsze podejście „każdy zalogowany od razu jest Playerem" i pełni funkcję kroku zaproszenia bez dodatkowej infrastruktury.
 
 ## Faza 2 — Wyniki i wiedza
 - [x] Wyniki sparingów/meczów/turniejów + notatki pomeczowe — dodaje Coach/Manager, widzi cała drużyna
 - [x] Demka jako link (nie plik) — bez własnego storage S3 na razie; wymagałoby prawdziwych danych do bucketa, którego nie mamy skonfigurowanego. Realny upload plików to osobny follow-up, gdy pojawi się konto na Cloudflare R2/podobne.
 - [x] Baza granatów per mapa (smoke/flash/molotov/frag), osadzone wideo YouTube, opis pozycji — dodaje każdy zalogowany, usuwa autor wpisu lub Coach/Manager
 - [x] Materiały treningowe (linki, kategorie) — dodaje Coach/Manager, widzi cała drużyna
+- [x] Pozycje startowe na mapie — radar mapy z przeciąganymi pinezkami graczy per strona (CT/T), ustawia Coach/Manager, reszta drużyny tylko podgląd
 
 ## Faza 3 — Rozwój i analiza
 - [x] Statystyki graczy (K/D, ADR, HS%, rating) wpisywane ręcznie per mecz — Coach/Manager dodaje, rozwijany panel na liście wyników; jeden wpis na gracza na mecz
@@ -32,7 +34,7 @@ Uwaga: każdy z serwera Discord drużyny może się zalogować i dostaje konto j
 ## Faza 4 — Wygoda
 - [x] PWA — instalowalna (prawdziwe ikony, manifest, service worker), działa offline dla statycznych widoków. Bez prawdziwych powiadomień push (VAPID + zgoda przeglądarki na urządzeniu) — świadomie odłożone do realnego wdrożenia, patrz `docs/DEPLOYMENT.md`
 - [x] Webhook na Discorda — nowe wydarzenie, nowe zadanie, automatyczne przypomnienie przed startem wydarzenia (`EventReminderService`, jednorazowo per wydarzenie)
-- [x] SignalR — live-update kalendarza/dostępności/zadań/wyników/granatów/materiałów/przeciwników/rosteru bez odświeżania, przetestowane na dwóch kartach jednocześnie
+- [x] SignalR — live-update kalendarza/dostępności/zadań/wyników/granatów/pozycji na mapie/materiałów/przeciwników/rosteru bez odświeżania, przetestowane na dwóch kartach jednocześnie
 - [x] Pojedynczy deploy (backend serwuje zbudowany frontend) + `Dockerfile`, zweryfikowany lokalnie end-to-end (build obrazu, kontener, rejestracja→JWT→chroniony endpoint, SPA fallback, manifest PWA)
 - [x] Plan wdrożenia i testowania na produkcji — `docs/DEPLOYMENT.md`
 
