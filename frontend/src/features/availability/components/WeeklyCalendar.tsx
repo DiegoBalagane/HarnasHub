@@ -17,6 +17,7 @@ import {
 } from '../weekDates'
 import { DayAvailabilityEditor } from './DayAvailabilityEditor'
 import { DayStatusBadge } from './DayStatusBadge'
+import { NoteHint } from './NoteHint'
 
 const dayNumberFormatter = new Intl.DateTimeFormat('pl-PL', { day: '2-digit', month: '2-digit' })
 const navButtonClass =
@@ -167,12 +168,20 @@ export function WeeklyCalendar() {
                     {dayNumberFormatter.format(parseIsoDate(date))}
                   </p>
                   <p
-                    title="Ilu członków składu zadeklarowało dostępność tego dnia"
+                    title="Ilu z głównego składu zadeklarowało dostępność tego dnia"
                     className={`mt-1 text-[11px] font-medium ${
-                      summary.availableCount === summary.totalCount ? 'text-green-400' : 'text-neutral-400'
+                      summary.main.totalCount > 0 && summary.main.availableCount === summary.main.totalCount
+                        ? 'text-green-400'
+                        : 'text-neutral-400'
                     }`}
                   >
-                    {summary.availableCount}/{summary.totalCount} dostępnych
+                    Main: {summary.main.availableCount}/{summary.main.totalCount}
+                  </p>
+                  <p
+                    title="Ilu z reszty drużyny zadeklarowało dostępność tego dnia"
+                    className="text-[11px] text-neutral-500"
+                  >
+                    Reszta: {summary.rest.availableCount}/{summary.rest.totalCount}
                   </p>
                   {summary.commonWindow && (
                     <p className="text-[10px] text-neutral-500">
@@ -244,12 +253,14 @@ export function WeeklyCalendar() {
               return (
                 <div key={date} className="mt-2 flex flex-wrap gap-1 border-t border-neutral-800 pt-2">
                   {absentMembers.map((member) => (
-                    <span
-                      key={member.userId}
-                      title={member.inGameNickname ?? member.displayName}
-                      className="rounded-full border border-neutral-700 bg-neutral-900 px-2 py-0.5 text-[10px] text-neutral-400"
-                    >
-                      {toInitials(member.inGameNickname ?? member.displayName)}
+                    <span key={member.userId} className="relative inline-block">
+                      <span
+                        title={member.inGameNickname ?? member.displayName}
+                        className="rounded-full border border-neutral-700 bg-neutral-900 px-2 py-0.5 text-[10px] text-neutral-400"
+                      >
+                        {toInitials(member.inGameNickname ?? member.displayName)}
+                      </span>
+                      <NoteHint note={entryFor(member, date)?.note ?? null} />
                     </span>
                   ))}
                 </div>

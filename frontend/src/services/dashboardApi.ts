@@ -7,6 +7,7 @@ import type { CalendarEvent } from './calendarApi'
 export interface MemberDayStatus {
   userId: string
   displayName: string
+  inGameNickname: string | null
   teamRole: string | null
   status: DayStatus
   /** HH:mm:ss, only set for PartiallyAvailable. */

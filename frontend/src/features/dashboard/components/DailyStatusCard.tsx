@@ -20,7 +20,7 @@ function isPlaying(member: MemberDayStatus): boolean {
 const MemberRow = React.memo(function MemberRow({ member }: { member: MemberDayStatus }) {
   return (
     <li className="flex items-center justify-between gap-2">
-      <span className="truncate text-sm text-neutral-200">{member.displayName}</span>
+      <span className="truncate text-sm text-neutral-200">{member.inGameNickname ?? member.displayName}</span>
       <span className="w-28 shrink-0">
         <DayStatusBadge entry={member} />
       </span>

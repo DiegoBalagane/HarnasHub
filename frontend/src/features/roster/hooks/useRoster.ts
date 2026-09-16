@@ -82,6 +82,19 @@ export function useUpdateOwnPinColor() {
   })
 }
 
+/** Saves (or clears) the caller's own map-radar pin mark — open to every roster member. */
+export function useUpdateOwnPinMark() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (pinMark: string | null) => rosterApi.updateMyPinMark(pinMark),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['roster'] })
+      queryClient.invalidateQueries({ queryKey: ['map-strategy'] })
+    },
+  })
+}
+
 /** Saves the caller's own in-game nickname and mirrors it into the session store. */
 export function useUpdateOwnNickname() {
   const queryClient = useQueryClient()

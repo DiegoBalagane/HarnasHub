@@ -14,6 +14,8 @@ export interface MapPosition {
   teamRole: TeamRole | null
   /** Self-chosen colour (Main roster only); falls back to an automatic per-user colour when unset. */
   pinColor: PinColor | null
+  /** Self-chosen single character shown on the pin; falls back to auto-generated initials when unset. */
+  pinMark: string | null
   label: string | null
   /** Radar-relative fraction in [0,1], measured from the left edge. */
   x: number

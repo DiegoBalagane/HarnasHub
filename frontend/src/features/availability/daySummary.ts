@@ -1,28 +1,38 @@
 import type { MemberWeek } from '../../services/availabilityApi'
 import { entryFor } from './weekDates'
 
-export interface DaySummary {
-  /** Members declared Available or PartiallyAvailable that day, out of the whole roster shown in the grid. */
+export interface RosterGroupSummary {
   availableCount: number
   totalCount: number
+}
+
+export interface DaySummary {
+  /** Main-roster members declared Available or PartiallyAvailable that day, out of the main roster shown in the grid. */
+  main: RosterGroupSummary
+  /** Everyone else in the grid (bench + unassigned) — StandIn members never appear here at all. */
+  rest: RosterGroupSummary
   /** Narrowest HH:mm window every PartiallyAvailable member has in common, or null when nobody restricted their hours or the windows don't overlap. */
   commonWindow: { from: string; to: string } | null
 }
 
-/** Summarizes one day across the whole roster: how many could show up, and the hour range they'd all overlap in. */
+/** Summarizes one day across the whole roster, split into Main vs the rest of the team, plus the hour range they'd all overlap in. */
 export function computeDaySummary(members: MemberWeek[], date: string): DaySummary {
-  let availableCount = 0
+  const main: RosterGroupSummary = { availableCount: 0, totalCount: 0 }
+  const rest: RosterGroupSummary = { availableCount: 0, totalCount: 0 }
   let commonFrom: string | null = null
   let commonTo: string | null = null
 
   for (const member of members) {
+    const group = member.rosterSlot === 'Main' ? main : rest
+    group.totalCount += 1
+
     const entry = entryFor(member, date)
 
     if (!entry || (entry.status !== 'Available' && entry.status !== 'PartiallyAvailable')) {
       continue
     }
 
-    availableCount += 1
+    group.availableCount += 1
 
     if (entry.status === 'PartiallyAvailable' && entry.from && entry.to) {
       if (commonFrom === null || entry.from > commonFrom) {
@@ -39,5 +49,5 @@ export function computeDaySummary(members: MemberWeek[], date: string): DaySumma
       ? { from: commonFrom.slice(0, 5), to: commonTo.slice(0, 5) }
       : null
 
-  return { availableCount, totalCount: members.length, commonWindow }
+  return { main, rest, commonWindow }
 }

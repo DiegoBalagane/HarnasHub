@@ -19,6 +19,7 @@ export const API_ENDPOINTS = {
     secondaryTeamRoles: (userId: string) => `/api/roster/${userId}/secondary-team-roles`,
     myNickname: '/api/roster/me/nickname',
     myPinColor: '/api/roster/me/pin-color',
+    myPinMark: '/api/roster/me/pin-mark',
   },
   dashboard: '/api/dashboard',
   calendar: {

@@ -16,6 +16,7 @@ public static class TeamMemberMapper
 		user.TeamRole?.ToString(),
 		user.RosterSlot?.ToString(),
 		user.PinColor?.ToString(),
+		user.PinMark,
 		user.InGameNickname,
 		secondaryTeamRoles?.ToList() ?? []);
 

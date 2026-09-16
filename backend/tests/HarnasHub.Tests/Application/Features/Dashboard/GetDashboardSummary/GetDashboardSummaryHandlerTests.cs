@@ -103,6 +103,19 @@ public class GetDashboardSummaryHandlerTests
 	}
 
 	[Fact]
+	public async Task Should_prefer_the_in_game_nickname_over_the_discord_display_name()
+	{
+		await using var dbContext = TestApplicationDbContext.Create();
+		var userId = Guid.NewGuid();
+		AddUser(dbContext, userId, "Zenek", "sh4dro");
+		await dbContext.SaveChangesAsync(CancellationToken.None);
+
+		var result = await HandleAsync(dbContext, userId);
+
+		Assert.Equal("sh4dro", result.Value.Today.Members.Single().InGameNickname);
+	}
+
+	[Fact]
 	public async Task Should_attach_the_earliest_event_of_each_day_and_ignore_other_days()
 	{
 		await using var dbContext = TestApplicationDbContext.Create();
@@ -131,12 +144,13 @@ public class GetDashboardSummaryHandlerTests
 		return handler.Handle(new GetDashboardSummaryQuery(), CancellationToken.None);
 	}
 
-	private static void AddUser(TestApplicationDbContext dbContext, Guid userId, string displayName) =>
+	private static void AddUser(TestApplicationDbContext dbContext, Guid userId, string displayName, string? inGameNickname = null) =>
 		dbContext.Users.Add(new User
 		{
 			Id = userId,
 			DiscordId = userId.ToString(),
 			DisplayName = displayName,
+			InGameNickname = inGameNickname,
 			Role = UserRole.Player,
 			CreatedAtUtc = DateTime.UtcNow
 		});
