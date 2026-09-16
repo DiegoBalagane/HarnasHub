@@ -6,5 +6,5 @@ public record DiscordProfile(string DiscordId, string Username, string? AvatarUr
 /// <summary>Exchanges an OAuth2 authorization code for the caller's Discord profile.</summary>
 public interface IDiscordOAuthClient
 {
-    Task<DiscordProfile?> ExchangeCodeAsync(string code, CancellationToken cancellationToken = default);
+	Task<DiscordProfile?> ExchangeCodeAsync(string code, CancellationToken cancellationToken = default);
 }
