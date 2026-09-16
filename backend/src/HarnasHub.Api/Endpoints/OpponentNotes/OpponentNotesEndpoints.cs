@@ -8,27 +8,27 @@ namespace HarnasHub.Api.Endpoints.OpponentNotes;
 /// <summary>Opponent scouting note endpoints under /api/opponents.</summary>
 public class OpponentNotesEndpoints : IEndpoint
 {
-    #region Public Methods
+	#region Public Methods
 
-    public static void MapEndpoints(IEndpointRouteBuilder app)
-    {
-        var group = app.MapGroup("/api/opponents").WithTags("OpponentNotes").RequireAuthorization();
+	public static void MapEndpoints(IEndpointRouteBuilder app)
+	{
+		var group = app.MapGroup("/api/opponents").WithTags("OpponentNotes").RequireAuthorization(AuthorizationPolicies.TeamMember);
 
-        group.MapGet("/", async (string? opponentName, ISender sender, CancellationToken cancellationToken) =>
-        {
-            var result = await sender.Send(new GetOpponentNotesQuery(opponentName), cancellationToken);
-            return result.Match(success => Results.Ok(success), errors => errors.ToProblemResult());
-        });
+		group.MapGet("/", async (string? opponentName, ISender sender, CancellationToken cancellationToken) =>
+		{
+			var result = await sender.Send(new GetOpponentNotesQuery(opponentName), cancellationToken);
+			return result.Match(success => Results.Ok(success), errors => errors.ToProblemResult());
+		});
 
-        group.MapPost("/", async (AddOpponentNoteRequest request, ISender sender, CancellationToken cancellationToken) =>
-        {
-            var command = new AddOpponentNoteCommand(request.OpponentName, request.Content, request.MaterialUrl);
-            var result = await sender.Send(command, cancellationToken);
-            return result.Match(success => Results.Ok(success), errors => errors.ToProblemResult());
-        }).RequireAuthorization(policy => policy.RequireRole("Coach", "Manager"));
-    }
+		group.MapPost("/", async (AddOpponentNoteRequest request, ISender sender, CancellationToken cancellationToken) =>
+		{
+			var command = new AddOpponentNoteCommand(request.OpponentName, request.Content, request.MaterialUrl);
+			var result = await sender.Send(command, cancellationToken);
+			return result.Match(success => Results.Ok(success), errors => errors.ToProblemResult());
+		}).RequireAuthorization(policy => policy.RequireRole("Coach", "Manager"));
+	}
 
-    #endregion
+	#endregion
 }
 
 /// <summary>Request body for POST /api/opponents.</summary>

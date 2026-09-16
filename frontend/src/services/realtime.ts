@@ -18,12 +18,15 @@ function invalidateForTopic(queryClient: QueryClient, topic: string) {
 
   const topLevelKeys: Record<string, string[]> = {
     calendar: ['calendar'],
+    // No third key element on purpose: this refreshes every cached week, not just the visible one.
+    'availability-week': ['availability', 'week'],
     tasks: ['tasks'],
     dashboard: ['dashboard'],
     results: ['results'],
     stats: ['stats'],
     roster: ['roster'],
     nades: ['nades'],
+    'map-strategy': ['map-strategy'],
     materials: ['materials'],
     opponents: ['opponent-notes'],
   }
