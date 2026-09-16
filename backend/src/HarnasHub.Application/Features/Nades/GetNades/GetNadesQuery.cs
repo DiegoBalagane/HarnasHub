@@ -6,4 +6,4 @@ using MediatR;
 namespace HarnasHub.Application.Features.Nades.GetNades;
 
 /// <summary>Returns nade entries, optionally filtered by map and/or grenade type.</summary>
-public record GetNadesQuery(string? MapName, GrenadeType? Type) : IRequest<ErrorOr<List<NadeEntryDto>>>;
+public record GetNadesQuery(MapName? MapName, GrenadeType? Type) : IRequest<ErrorOr<List<NadeEntryDto>>>;

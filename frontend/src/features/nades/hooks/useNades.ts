@@ -1,8 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { nadesApi, type AddNadePayload, type GrenadeType } from '../../../services/nadesApi'
+import { nadesApi, type AddNadePayload, type GrenadeType, type MapName } from '../../../services/nadesApi'
 
 /** Fetches nade entries, optionally filtered by map and/or grenade type. */
-export function useNades(filters: { mapName?: string; type?: GrenadeType }) {
+export function useNades(filters: { mapName?: MapName; type?: GrenadeType }) {
   return useQuery({
     queryKey: ['nades', filters],
     queryFn: () => nadesApi.getNades(filters),
