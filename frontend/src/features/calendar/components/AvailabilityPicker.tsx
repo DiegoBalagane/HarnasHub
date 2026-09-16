@@ -30,7 +30,7 @@ export function AvailabilityPicker({ eventId }: { eventId: string }) {
         <ul className="flex flex-col gap-1 text-xs">
           {members?.map((member) => (
             <li key={member.userId} className="flex justify-between">
-              <span className="text-neutral-300">{member.displayName}</span>
+              <span className="text-neutral-300">{member.inGameNickname ?? member.displayName}</span>
               <span className={availabilityColors[member.status]}>{availabilityLabels[member.status]}</span>
             </li>
           ))}

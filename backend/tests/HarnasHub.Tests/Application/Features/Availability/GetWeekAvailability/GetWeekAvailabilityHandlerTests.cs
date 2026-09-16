@@ -143,6 +143,54 @@ public class GetWeekAvailabilityHandlerTests
 		Assert.All(zenek.Days, day => Assert.True(day.IsVacation));
 	}
 
+	[Fact]
+	public async Task Should_exclude_stand_ins_and_sort_main_before_bench_before_unassigned()
+	{
+		await using var dbContext = TestApplicationDbContext.Create();
+		var mainUser = CreateUserWithSlot("ZZZMain", RosterSlot.Main);
+		var benchUser = CreateUserWithSlot("AAABench", RosterSlot.Bench);
+		var unassignedUser = CreateUserWithSlot("MMMUnassigned", null);
+		var standInUser = CreateUserWithSlot("StandIn", RosterSlot.StandIn);
+		dbContext.Users.AddRange(mainUser, benchUser, unassignedUser, standInUser);
+		await dbContext.SaveChangesAsync(CancellationToken.None);
+
+		var handler = new GetWeekAvailabilityHandler(dbContext);
+
+		var result = await handler.Handle(new GetWeekAvailabilityQuery(WeekStart), CancellationToken.None);
+
+		Assert.Equal(
+			["ZZZMain", "AAABench", "MMMUnassigned"],
+			result.Value.Members.Select(member => member.DisplayName));
+		Assert.Equal(nameof(RosterSlot.Main), result.Value.Members[0].RosterSlot);
+		Assert.Equal(nameof(RosterSlot.Bench), result.Value.Members[1].RosterSlot);
+		Assert.Null(result.Value.Members[2].RosterSlot);
+	}
+
+	[Fact]
+	public async Task Should_expose_the_members_own_nickname_alongside_their_discord_name()
+	{
+		await using var dbContext = TestApplicationDbContext.Create();
+		var userId = Guid.NewGuid();
+		dbContext.Users.Add(new User
+		{
+			Id = userId,
+			DiscordId = userId.ToString(),
+			DisplayName = "DiscordowaNazwa",
+			InGameNickname = "Zenus",
+			Role = UserRole.Player,
+			CreatedAtUtc = DateTime.UtcNow
+		});
+		await dbContext.SaveChangesAsync(CancellationToken.None);
+
+		var handler = new GetWeekAvailabilityHandler(dbContext);
+
+		var result = await handler.Handle(new GetWeekAvailabilityQuery(WeekStart), CancellationToken.None);
+
+		var member = result.Value.Members.Single();
+		Assert.Equal("DiscordowaNazwa", member.DisplayName);
+		Assert.Equal("Zenus", member.InGameNickname);
+	}
+
 	#endregion
 
 	#region Private Methods
@@ -156,6 +204,20 @@ public class GetWeekAvailabilityHandlerTests
 			Role = UserRole.Player,
 			CreatedAtUtc = DateTime.UtcNow
 		});
+
+	private static User CreateUserWithSlot(string displayName, RosterSlot? rosterSlot)
+	{
+		var id = Guid.NewGuid();
+		return new User
+		{
+			Id = id,
+			DiscordId = id.ToString(),
+			DisplayName = displayName,
+			Role = UserRole.Player,
+			RosterSlot = rosterSlot,
+			CreatedAtUtc = DateTime.UtcNow
+		};
+	}
 
 	#endregion
 }

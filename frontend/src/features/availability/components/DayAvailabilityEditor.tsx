@@ -17,10 +17,12 @@ interface DayAvailabilityEditorProps {
   onClose: () => void
 }
 
-/** Inline form for declaring the current user's availability on a single day. */
+/** Inline form for declaring the current user's availability on a single day: every status/time change saves immediately, only the note keeps an explicit Save/Delete. */
 export function DayAvailabilityEditor({ date, entry, onClose }: DayAvailabilityEditorProps) {
-  const [status, setStatus] = useState<DayAvailabilityStatus>(
-    entry && entry.status !== 'NotSet' ? entry.status : 'Available',
+  // No status is pre-selected for a day that has nothing declared yet — a highlighted button there
+  // would look like something was already saved when nothing was.
+  const [status, setStatus] = useState<DayAvailabilityStatus | null>(
+    entry && entry.status !== 'NotSet' ? entry.status : null,
   )
   const [from, setFrom] = useState(toShortTime(entry?.from ?? null) ?? '18:00')
   const [to, setTo] = useState(toShortTime(entry?.to ?? null) ?? '22:00')
@@ -30,32 +32,46 @@ export function DayAvailabilityEditor({ date, entry, onClose }: DayAvailabilityE
 
   const isPartial = status === 'PartiallyAvailable'
 
-  function handleSubmit(event: React.FormEvent) {
-    event.preventDefault()
+  function saveStatus(newStatus: DayAvailabilityStatus, times?: { from: string; to: string }) {
+    const effectiveFrom = newStatus === 'PartiallyAvailable' ? (times?.from ?? from) : null
+    const effectiveTo = newStatus === 'PartiallyAvailable' ? (times?.to ?? to) : null
 
-    if (isPartial && from >= to) {
+    if (effectiveFrom !== null && effectiveTo !== null && effectiveFrom >= effectiveTo) {
       setValidationError('Godzina od musi być wcześniejsza niż godzina do.')
       return
     }
 
     setValidationError(null)
-    setDayAvailability.mutate(
-      {
-        date,
-        status,
-        availableFromLocal: isPartial ? from : null,
-        availableToLocal: isPartial ? to : null,
-        note: note.trim() === '' ? null : note.trim(),
-      },
-      { onSuccess: onClose },
-    )
+    setStatus(newStatus)
+    setDayAvailability.mutate({
+      date,
+      status: newStatus,
+      availableFromLocal: effectiveFrom,
+      availableToLocal: effectiveTo,
+      note: note.trim() === '' ? null : note.trim(),
+    })
+  }
+
+  function handleTimeBlur() {
+    if (status === 'PartiallyAvailable') {
+      saveStatus('PartiallyAvailable', { from, to })
+    }
+  }
+
+  function saveNote(nextNote: string | null) {
+    if (!status) return
+
+    setDayAvailability.mutate({
+      date,
+      status,
+      availableFromLocal: isPartial ? from : null,
+      availableToLocal: isPartial ? to : null,
+      note: nextNote,
+    })
   }
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      className="flex w-full max-w-md flex-col gap-3 rounded-md border border-neutral-700 bg-neutral-950 p-4"
-    >
+    <div className="flex w-full max-w-md flex-col gap-3 rounded-md border border-neutral-700 bg-neutral-950 p-4">
       <div className="flex items-center justify-between">
         <h3 className="text-sm font-medium">{dateFormatter.format(parseIsoDate(date))}</h3>
         <button type="button" onClick={onClose} className="text-xs text-neutral-500 hover:text-neutral-300">
@@ -68,7 +84,7 @@ export function DayAvailabilityEditor({ date, entry, onClose }: DayAvailabilityE
           <button
             key={option}
             type="button"
-            onClick={() => setStatus(option)}
+            onClick={() => saveStatus(option)}
             className={`rounded-md border px-3 py-1 text-xs transition ${
               status === option
                 ? 'border-neutral-400 bg-neutral-800 text-neutral-100'
@@ -87,6 +103,7 @@ export function DayAvailabilityEditor({ date, entry, onClose }: DayAvailabilityE
             type="time"
             value={from}
             onChange={(event) => setFrom(event.target.value)}
+            onBlur={handleTimeBlur}
             className={`flex-1 ${inputClass}`}
           />
           <span className="text-xs text-neutral-500">–</span>
@@ -95,31 +112,51 @@ export function DayAvailabilityEditor({ date, entry, onClose }: DayAvailabilityE
             type="time"
             value={to}
             onChange={(event) => setTo(event.target.value)}
+            onBlur={handleTimeBlur}
             className={`flex-1 ${inputClass}`}
           />
         </div>
       )}
 
-      <input
-        maxLength={300}
-        placeholder="Notatka (opcjonalnie)"
-        value={note}
-        onChange={(event) => setNote(event.target.value)}
-        className={inputClass}
-      />
+      <div className="flex flex-col gap-2">
+        <input
+          maxLength={300}
+          placeholder={status ? 'Notatka (opcjonalnie)' : 'Wybierz najpierw status'}
+          value={note}
+          disabled={!status}
+          onChange={(event) => setNote(event.target.value)}
+          className={`${inputClass} disabled:opacity-50`}
+        />
+
+        <div className="flex gap-2">
+          <button
+            type="button"
+            disabled={!status || setDayAvailability.isPending}
+            onClick={() => saveNote(note.trim() === '' ? null : note.trim())}
+            className="rounded-md bg-red-600 px-3 py-1.5 text-xs font-medium text-white transition hover:bg-red-500 disabled:opacity-50"
+          >
+            Zapisz notatkę
+          </button>
+          {entry?.note && (
+            <button
+              type="button"
+              disabled={setDayAvailability.isPending}
+              onClick={() => {
+                setNote('')
+                saveNote(null)
+              }}
+              className="rounded-md border border-neutral-700 px-3 py-1.5 text-xs text-neutral-300 transition hover:border-neutral-500 disabled:opacity-50"
+            >
+              Usuń notatkę
+            </button>
+          )}
+        </div>
+      </div>
 
       {validationError !== null && <p className="text-sm text-red-400">{validationError}</p>}
       {setDayAvailability.isError && (
         <p className="text-sm text-red-400">Nie udało się zapisać dostępności.</p>
       )}
-
-      <button
-        type="submit"
-        disabled={setDayAvailability.isPending}
-        className="self-start rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-red-500 disabled:opacity-50"
-      >
-        {setDayAvailability.isPending ? 'Zapisywanie…' : 'Zapisz'}
-      </button>
-    </form>
+    </div>
   )
 }

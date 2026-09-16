@@ -56,6 +56,27 @@ public class UpdateOwnNicknameHandlerTests
 	}
 
 	[Fact]
+	public async Task Should_clear_the_nickname_back_to_the_discord_name_when_given_a_blank_value()
+	{
+		await using var dbContext = TestApplicationDbContext.Create();
+		var user = CreateUser(_userId, "Harnas");
+		user.InGameNickname = "StaryNick";
+		dbContext.Users.Add(user);
+		await dbContext.SaveChangesAsync(CancellationToken.None);
+
+		var handler = new UpdateOwnNicknameHandler(
+			dbContext,
+			new TestCurrentUserService(_userId),
+			new TestRealtimeNotifier());
+
+		var result = await handler.Handle(new UpdateOwnNicknameCommand("   "), CancellationToken.None);
+
+		Assert.False(result.IsError);
+		Assert.Null(result.Value.InGameNickname);
+		Assert.Null((await dbContext.Users.SingleAsync()).InGameNickname);
+	}
+
+	[Fact]
 	public async Task Should_return_not_found_when_the_caller_has_no_account()
 	{
 		await using var dbContext = TestApplicationDbContext.Create();

@@ -24,7 +24,10 @@ export interface DayEntry extends DayStatusView {
 export interface MemberWeek {
   userId: string
   displayName: string
+  inGameNickname: string | null
   teamRole: string | null
+  /** 'Main' | 'Bench' | null (unassigned) — StandIn members never appear here at all. */
+  rosterSlot: string | null
   /** Exactly 7 entries, ordered from the requested week start. */
   days: DayEntry[]
 }
@@ -65,6 +68,8 @@ export const availabilityApi = {
   getVacations: () => apiClient.get<Vacation[]>(API_ENDPOINTS.availability.vacations),
   createVacation: (payload: CreateVacationPayload) =>
     apiClient.post<Vacation>(API_ENDPOINTS.availability.vacations, payload),
+  updateVacation: (vacationId: string, payload: CreateVacationPayload) =>
+    apiClient.put<Vacation>(API_ENDPOINTS.availability.vacationById(vacationId), payload),
   deleteVacation: (vacationId: string) =>
     apiClient.delete<void>(API_ENDPOINTS.availability.vacationById(vacationId)),
 }

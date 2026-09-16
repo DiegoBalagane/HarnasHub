@@ -1,6 +1,9 @@
 using HarnasHub.Api.Common;
 using HarnasHub.Application.Features.Roster.GetRoster;
 using HarnasHub.Application.Features.Roster.UpdateOwnNickname;
+using HarnasHub.Application.Features.Roster.UpdateOwnPinColor;
+using HarnasHub.Application.Features.Roster.SetSecondaryTeamRoles;
+using HarnasHub.Application.Features.Roster.UpdateRosterSlot;
 using HarnasHub.Application.Features.Roster.UpdateTeamRole;
 using HarnasHub.Application.Features.Roster.UpdateUserRole;
 using HarnasHub.Core.Enums;
@@ -40,6 +43,18 @@ public class RosterEndpoints : IEndpoint
 				errors => errors.ToProblemResult());
 		});
 
+		group.MapPatch("/me/pin-color", async (
+			UpdateOwnPinColorRequest request,
+			ISender sender,
+			CancellationToken cancellationToken) =>
+		{
+			var result = await sender.Send(new UpdateOwnPinColorCommand(request.PinColor), cancellationToken);
+
+			return result.Match(
+				success => Results.Ok(success),
+				errors => errors.ToProblemResult());
+		});
+
 		group.MapPatch("/{userId:guid}/team-role", async (
 			Guid userId,
 			UpdateTeamRoleRequest request,
@@ -47,6 +62,32 @@ public class RosterEndpoints : IEndpoint
 			CancellationToken cancellationToken) =>
 		{
 			var result = await sender.Send(new UpdateTeamRoleCommand(userId, request.TeamRole), cancellationToken);
+
+			return result.Match(
+				success => Results.Ok(success),
+				errors => errors.ToProblemResult());
+		}).RequireAuthorization(policy => policy.RequireRole("Coach", "Manager"));
+
+		group.MapPatch("/{userId:guid}/secondary-team-roles", async (
+			Guid userId,
+			SetSecondaryTeamRolesRequest request,
+			ISender sender,
+			CancellationToken cancellationToken) =>
+		{
+			var result = await sender.Send(new SetSecondaryTeamRolesCommand(userId, request.TeamRoles), cancellationToken);
+
+			return result.Match(
+				success => Results.Ok(success),
+				errors => errors.ToProblemResult());
+		}).RequireAuthorization(policy => policy.RequireRole("Coach", "Manager"));
+
+		group.MapPatch("/{userId:guid}/roster-slot", async (
+			Guid userId,
+			UpdateRosterSlotRequest request,
+			ISender sender,
+			CancellationToken cancellationToken) =>
+		{
+			var result = await sender.Send(new UpdateRosterSlotCommand(userId, request.RosterSlot), cancellationToken);
 
 			return result.Match(
 				success => Results.Ok(success),
@@ -76,5 +117,14 @@ public record UpdateUserRoleRequest(UserRole Role);
 /// <summary>Request body for PATCH /api/roster/{userId}/team-role; a null role clears the assignment.</summary>
 public record UpdateTeamRoleRequest(TeamRole? TeamRole);
 
-/// <summary>Request body for PATCH /api/roster/me/nickname.</summary>
-public record UpdateOwnNicknameRequest(string Nickname);
+/// <summary>Request body for PATCH /api/roster/{userId}/roster-slot; a null value clears the assignment.</summary>
+public record UpdateRosterSlotRequest(RosterSlot? RosterSlot);
+
+/// <summary>Request body for PATCH /api/roster/me/nickname; a null/blank nickname clears it back to the Discord name.</summary>
+public record UpdateOwnNicknameRequest(string? Nickname);
+
+/// <summary>Request body for PATCH /api/roster/me/pin-color; a null value clears it.</summary>
+public record UpdateOwnPinColorRequest(PinColor? PinColor);
+
+/// <summary>Request body for PATCH /api/roster/{userId}/secondary-team-roles; replaces the full set.</summary>
+public record SetSecondaryTeamRolesRequest(List<TeamRole> TeamRoles);

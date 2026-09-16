@@ -7,14 +7,17 @@ public static class TeamMemberMapper
 {
 	#region Public Methods
 
-	/// <summary>Projects an already-materialised user entity to <see cref="TeamMemberDto"/>.</summary>
-	public static TeamMemberDto ToTeamMemberDto(this User user) => new(
+	/// <summary>Projects an already-materialised user entity to <see cref="TeamMemberDto"/>. Callers that haven't loaded secondary roles get an empty list back.</summary>
+	public static TeamMemberDto ToTeamMemberDto(this User user, IReadOnlyList<string>? secondaryTeamRoles = null) => new(
 		user.Id,
 		user.DisplayName,
 		user.Role.ToString(),
 		user.AvatarUrl,
 		user.TeamRole?.ToString(),
-		user.InGameNickname);
+		user.RosterSlot?.ToString(),
+		user.PinColor?.ToString(),
+		user.InGameNickname,
+		secondaryTeamRoles?.ToList() ?? []);
 
 	#endregion
 }
