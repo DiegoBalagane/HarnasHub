@@ -7,33 +7,33 @@ namespace HarnasHub.Tests.Application.Features.Calendar.SetAvailability;
 
 public class SetAvailabilityCommandValidatorTests
 {
-    #region Private Fields
+	#region Private Fields
 
-    private readonly SetAvailabilityCommandValidator _validator = new();
+	private readonly SetAvailabilityCommandValidator _validator = new();
 
-    #endregion
+	#endregion
 
-    #region Public Methods
+	#region Public Methods
 
-    [Fact]
-    public void Should_have_error_when_event_id_is_empty()
-    {
-        var command = new SetAvailabilityCommand(Guid.Empty, AvailabilityStatus.Available);
+	[Fact]
+	public void Should_have_error_when_event_id_is_empty()
+	{
+		var command = new SetAvailabilityCommand(Guid.Empty, AvailabilityStatus.Available);
 
-        var result = _validator.TestValidate(command);
+		var result = _validator.TestValidate(command);
 
-        result.ShouldHaveValidationErrorFor(x => x.EventId);
-    }
+		result.ShouldHaveValidationErrorFor(x => x.EventId);
+	}
 
-    [Fact]
-    public void Should_not_have_errors_for_a_valid_command()
-    {
-        var command = new SetAvailabilityCommand(Guid.NewGuid(), AvailabilityStatus.Maybe);
+	[Fact]
+	public void Should_not_have_errors_for_a_valid_command()
+	{
+		var command = new SetAvailabilityCommand(Guid.NewGuid(), AvailabilityStatus.Maybe);
 
-        var result = _validator.TestValidate(command);
+		var result = _validator.TestValidate(command);
 
-        result.ShouldNotHaveAnyValidationErrors();
-    }
+		result.ShouldNotHaveAnyValidationErrors();
+	}
 
-    #endregion
+	#endregion
 }

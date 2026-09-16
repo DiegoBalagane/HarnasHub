@@ -8,12 +8,12 @@ public record GetMyStatsHistoryQuery : IRequest<ErrorOr<List<PlayerStatHistoryEn
 
 /// <summary>One match's worth of the current user's stats, with the match date for charting.</summary>
 public record PlayerStatHistoryEntryDto(
-    Guid MatchResultId,
-    DateTime PlayedAtUtc,
-    string Opponent,
-    int Kills,
-    int Deaths,
-    int Assists,
-    double Adr,
-    double HeadshotPercentage,
-    double Rating);
+	Guid MatchResultId,
+	DateTime PlayedAtUtc,
+	string Opponent,
+	int Kills,
+	int Deaths,
+	int Assists,
+	double Adr,
+	double HeadshotPercentage,
+	double Rating);
