@@ -6,43 +6,43 @@ namespace HarnasHub.Tests.Application.Features.OpponentNotes.AddOpponentNote;
 
 public class AddOpponentNoteCommandValidatorTests
 {
-    #region Private Fields
+	#region Private Fields
 
-    private readonly AddOpponentNoteCommandValidator _validator = new();
+	private readonly AddOpponentNoteCommandValidator _validator = new();
 
-    #endregion
+	#endregion
 
-    #region Public Methods
+	#region Public Methods
 
-    [Fact]
-    public void Should_have_error_when_content_is_empty()
-    {
-        var command = new AddOpponentNoteCommand("Team X", string.Empty, null);
+	[Fact]
+	public void Should_have_error_when_content_is_empty()
+	{
+		var command = new AddOpponentNoteCommand("Team X", string.Empty, null);
 
-        var result = _validator.TestValidate(command);
+		var result = _validator.TestValidate(command);
 
-        result.ShouldHaveValidationErrorFor(x => x.Content);
-    }
+		result.ShouldHaveValidationErrorFor(x => x.Content);
+	}
 
-    [Fact]
-    public void Should_have_error_when_material_url_is_malformed()
-    {
-        var command = new AddOpponentNoteCommand("Team X", "Grają agresywnie na T", "not-a-url");
+	[Fact]
+	public void Should_have_error_when_material_url_is_malformed()
+	{
+		var command = new AddOpponentNoteCommand("Team X", "Grają agresywnie na T", "not-a-url");
 
-        var result = _validator.TestValidate(command);
+		var result = _validator.TestValidate(command);
 
-        result.ShouldHaveValidationErrorFor(x => x.MaterialUrl);
-    }
+		result.ShouldHaveValidationErrorFor(x => x.MaterialUrl);
+	}
 
-    [Fact]
-    public void Should_not_have_errors_for_a_valid_command()
-    {
-        var command = new AddOpponentNoteCommand("Team X", "Grają agresywnie na T", "https://example.com/demo.dem");
+	[Fact]
+	public void Should_not_have_errors_for_a_valid_command()
+	{
+		var command = new AddOpponentNoteCommand("Team X", "Grają agresywnie na T", "https://example.com/demo.dem");
 
-        var result = _validator.TestValidate(command);
+		var result = _validator.TestValidate(command);
 
-        result.ShouldNotHaveAnyValidationErrors();
-    }
+		result.ShouldNotHaveAnyValidationErrors();
+	}
 
-    #endregion
+	#endregion
 }

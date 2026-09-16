@@ -3,9 +3,12 @@ import { apiClient } from './apiClient'
 
 export type GrenadeType = 'Smoke' | 'Flash' | 'Molotov' | 'Frag'
 
+/** Maps of the current competitive pool, mirrors the backend MapName enum. */
+export type MapName = 'Dust2' | 'Mirage' | 'Inferno' | 'Nuke' | 'Ancient' | 'Anubis'
+
 export interface NadeEntry {
   id: string
-  mapName: string
+  mapName: MapName
   type: GrenadeType
   title: string
   description: string | null
@@ -14,7 +17,7 @@ export interface NadeEntry {
 }
 
 export interface AddNadePayload {
-  mapName: string
+  mapName: MapName
   type: GrenadeType
   title: string
   description?: string
@@ -22,7 +25,7 @@ export interface AddNadePayload {
 }
 
 export const nadesApi = {
-  getNades: (filters: { mapName?: string; type?: GrenadeType }) => {
+  getNades: (filters: { mapName?: MapName; type?: GrenadeType }) => {
     const params = new URLSearchParams()
     if (filters.mapName) params.set('mapName', filters.mapName)
     if (filters.type) params.set('type', filters.type)

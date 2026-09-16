@@ -1,4 +1,4 @@
-import type { GrenadeType } from '../../services/nadesApi'
+import type { GrenadeType, MapName } from '../../services/nadesApi'
 
 export const grenadeTypeLabels: Record<GrenadeType, string> = {
   Smoke: 'Dymna',
@@ -7,4 +7,5 @@ export const grenadeTypeLabels: Record<GrenadeType, string> = {
   Frag: 'Granat odłamkowy',
 }
 
-export const commonMaps = ['Mirage', 'Inferno', 'Nuke', 'Ancient', 'Anubis', 'Dust2', 'Train', 'Vertigo']
+/** Active 2026 map pool, kept in sync with the backend MapName enum. */
+export const mapNames: MapName[] = ['Ancient', 'Anubis', 'Dust2', 'Inferno', 'Mirage', 'Nuke']
