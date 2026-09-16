@@ -7,5 +7,5 @@ namespace HarnasHub.Application.Abstractions;
 /// </summary>
 public interface IRealtimeNotifier
 {
-    Task NotifyAsync(string topic, CancellationToken cancellationToken = default);
+	Task NotifyAsync(string topic, CancellationToken cancellationToken = default);
 }
