@@ -32,6 +32,7 @@ public class GetEventAvailabilityHandler(IApplicationDbContext dbContext)
 			select new MemberAvailabilityDto(
 				user.Id,
 				user.DisplayName,
+				user.InGameNickname,
 				availability == null ? "NotSet" : availability.Status.ToString()))
 			.ToListAsync(cancellationToken);
 

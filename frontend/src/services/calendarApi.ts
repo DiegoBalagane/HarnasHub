@@ -16,6 +16,7 @@ export interface CalendarEvent {
 export interface MemberAvailability {
   userId: string
   displayName: string
+  inGameNickname: string | null
   status: AvailabilityStatus | 'NotSet'
 }
 

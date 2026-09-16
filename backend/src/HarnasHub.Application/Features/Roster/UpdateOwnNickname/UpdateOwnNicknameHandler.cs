@@ -27,7 +27,7 @@ public class UpdateOwnNicknameHandler(
 			return RosterErrors.UserNotFound;
 		}
 
-		user.InGameNickname = request.Nickname.Trim();
+		user.InGameNickname = string.IsNullOrWhiteSpace(request.Nickname) ? null : request.Nickname.Trim();
 		await dbContext.SaveChangesAsync(cancellationToken);
 		await realtimeNotifier.NotifyAsync("roster", cancellationToken);
 

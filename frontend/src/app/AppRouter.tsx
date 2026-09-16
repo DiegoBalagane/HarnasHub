@@ -11,6 +11,7 @@ import { NadesPage } from './routes/NadesPage'
 import { OpponentsPage } from './routes/OpponentsPage'
 import { ResultsPage } from './routes/ResultsPage'
 import { RosterPage } from './routes/RosterPage'
+import { SettingsPage } from './routes/SettingsPage'
 import { StatsPage } from './routes/StatsPage'
 import { TasksPage } from './routes/TasksPage'
 
@@ -98,6 +99,14 @@ export function AppRouter() {
           element={
             <ProtectedRoute>
               <RosterPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/settings"
+          element={
+            <ProtectedRoute>
+              <SettingsPage />
             </ProtectedRoute>
           }
         />

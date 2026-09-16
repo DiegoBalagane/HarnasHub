@@ -3,8 +3,8 @@ namespace HarnasHub.Application.Features.Availability.Shared;
 /// <summary>Weekly availability grid — one row per team member.</summary>
 public record WeekAvailabilityDto(List<MemberWeekDto> Members);
 
-/// <summary>One team member's row in the weekly grid; <paramref name="TeamRole"/> is the member's in-game role, null when unassigned.</summary>
-public record MemberWeekDto(Guid UserId, string DisplayName, string? TeamRole, List<DayEntryDto> Days);
+/// <summary>One team member's row in the weekly grid; <paramref name="TeamRole"/> is the member's in-game role, null when unassigned; <paramref name="InGameNickname"/> is their chosen display nickname, null when they haven't set one (fall back to <paramref name="DisplayName"/>, the Discord name); <paramref name="RosterSlot"/> is Main/Bench (StandIn members never appear here at all) or null when unassigned.</summary>
+public record MemberWeekDto(Guid UserId, string DisplayName, string? InGameNickname, string? TeamRole, string? RosterSlot, List<DayEntryDto> Days);
 
 /// <summary>Effective availability for one member on one day ("NotSet" when nothing was declared).</summary>
 public record DayEntryDto(DateOnly Date, string Status, TimeOnly? From, TimeOnly? To, bool IsVacation, string? Note);

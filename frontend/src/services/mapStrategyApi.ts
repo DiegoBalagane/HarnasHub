@@ -1,7 +1,7 @@
 import { API_ENDPOINTS } from '../constants'
 import { apiClient } from './apiClient'
 import type { MapName } from './nadesApi'
-import type { TeamRole } from './rosterApi'
+import type { PinColor, TeamRole } from './rosterApi'
 
 /** Side of the map a starting-position setup applies to, mirrors the backend MapSide enum. */
 export type MapSide = 'CT' | 'T'
@@ -12,6 +12,8 @@ export interface MapPosition {
   displayName: string
   inGameNickname: string | null
   teamRole: TeamRole | null
+  /** Self-chosen colour (Main roster only); falls back to an automatic per-user colour when unset. */
+  pinColor: PinColor | null
   label: string | null
   /** Radar-relative fraction in [0,1], measured from the left edge. */
   x: number

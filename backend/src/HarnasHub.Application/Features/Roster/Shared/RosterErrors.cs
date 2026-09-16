@@ -12,4 +12,16 @@ public static class RosterErrors
 	public static Error CannotChangeOwnRole => Error.Validation(
 		"Roster.CannotChangeOwnRole",
 		"Nie możesz zmienić własnej roli — poproś innego managera.");
+
+	public static Error MainRosterFull => Error.Validation(
+		"Roster.MainRosterFull",
+		"Główny skład jest już pełny (5 zawodników) — najpierw przenieś kogoś na ławkę.");
+
+	public static Error PinColorRequiresMainRoster => Error.Validation(
+		"Roster.PinColorRequiresMainRoster",
+		"Kolor pinezki mogą wybrać tylko zawodnicy głównego składu.");
+
+	public static Error SecondaryRoleMatchesPrimary => Error.Validation(
+		"Roster.SecondaryRoleMatchesPrimary",
+		"Rola dodatkowa nie może być taka sama jak rola główna zawodnika.");
 }

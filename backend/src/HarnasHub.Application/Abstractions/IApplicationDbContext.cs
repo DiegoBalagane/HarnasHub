@@ -18,6 +18,7 @@ public interface IApplicationDbContext
 	DbSet<PlayerAvailabilityDay> PlayerAvailabilityDays { get; }
 	DbSet<Vacation> Vacations { get; }
 	DbSet<MapPositionAssignment> MapPositionAssignments { get; }
+	DbSet<UserSecondaryTeamRole> UserSecondaryTeamRoles { get; }
 
 	Task<int> SaveChangesAsync(CancellationToken cancellationToken);
 }

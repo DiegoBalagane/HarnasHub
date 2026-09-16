@@ -13,6 +13,8 @@ public class User
 	public string? AvatarUrl { get; set; }
 	public UserRole Role { get; set; }
 	public TeamRole? TeamRole { get; set; }
+	public RosterSlot? RosterSlot { get; set; }
+	public PinColor? PinColor { get; set; }
 	public string? InGameNickname { get; set; }
 	public DateTime CreatedAtUtc { get; set; }
 

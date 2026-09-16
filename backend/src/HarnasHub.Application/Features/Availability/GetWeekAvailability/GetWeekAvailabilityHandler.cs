@@ -2,6 +2,7 @@ using ErrorOr;
 using HarnasHub.Application.Abstractions;
 using HarnasHub.Application.Features.Availability.Shared;
 using HarnasHub.Core.Entities;
+using HarnasHub.Core.Enums;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
@@ -26,9 +27,13 @@ public class GetWeekAvailabilityHandler(IApplicationDbContext dbContext)
 		var weekStart = request.WeekStart;
 		var weekEnd = weekStart.AddDays(DaysInWeek - 1);
 
+		// Stand-ins fill a temporary gap and never show up in the availability calendar; everyone else does,
+		// with the main five sorted above the bench (and anyone with no slot assigned yet last).
 		var members = await dbContext.Users
-			.OrderBy(user => user.DisplayName)
-			.Select(user => new { user.Id, user.DisplayName, user.TeamRole })
+			.Where(user => user.RosterSlot != RosterSlot.StandIn)
+			.OrderBy(user => user.RosterSlot == RosterSlot.Main ? 0 : user.RosterSlot == RosterSlot.Bench ? 1 : 2)
+			.ThenBy(user => user.DisplayName)
+			.Select(user => new { user.Id, user.DisplayName, user.InGameNickname, user.TeamRole, user.RosterSlot })
 			.ToListAsync(cancellationToken);
 
 		var declaredDays = await dbContext.PlayerAvailabilityDays
@@ -46,7 +51,9 @@ public class GetWeekAvailabilityHandler(IApplicationDbContext dbContext)
 			.Select(member => new MemberWeekDto(
 				member.Id,
 				member.DisplayName,
+				member.InGameNickname,
 				member.TeamRole?.ToString(),
+				member.RosterSlot?.ToString(),
 				BuildDays(weekStart, member.Id, declaredByUserAndDate, vacationsByUser)))
 			.ToList();
 
