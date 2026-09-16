@@ -55,6 +55,7 @@ public class SetPlayerPositionHandler(IApplicationDbContext dbContext, IRealtime
 			user.DisplayName,
 			user.InGameNickname,
 			user.TeamRole?.ToString(),
+			user.PinColor?.ToString(),
 			position.Label,
 			position.X,
 			position.Y,

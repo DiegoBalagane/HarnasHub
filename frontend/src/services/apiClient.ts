@@ -51,5 +51,7 @@ export const apiClient = {
     request<TResponse>(path, { method: 'POST', body: JSON.stringify(body) }),
   patch: <TResponse>(path: string, body: unknown) =>
     request<TResponse>(path, { method: 'PATCH', body: JSON.stringify(body) }),
+  put: <TResponse>(path: string, body: unknown) =>
+    request<TResponse>(path, { method: 'PUT', body: JSON.stringify(body) }),
   delete: <TResponse>(path: string) => request<TResponse>(path, { method: 'DELETE' }),
 }

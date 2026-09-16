@@ -38,6 +38,13 @@ Uwaga: każdy z serwera Discord drużyny może się zalogować, ale dostaje kont
 - [x] Pojedynczy deploy (backend serwuje zbudowany frontend) + `Dockerfile`, zweryfikowany lokalnie end-to-end (build obrazu, kontener, rejestracja→JWT→chroniony endpoint, SPA fallback, manifest PWA)
 - [x] Plan wdrożenia i testowania na produkcji — `docs/DEPLOYMENT.md`
 
+## Faza 5 — Zgłoszenia zawodników (doszlifowanie)
+- [x] Sesja odświeża się automatycznie (start apki + focus okna) — awans z Gościa działa bez ponownego logowania na innym urządzeniu; `Jwt:Secret` puste = backend nie startuje
+- [x] Kalendarz: autosave statusu dnia (bez domyślnie zaznaczonej opcji), blokada edycji dni z przeszłości + zakładka „Historia", podświetlony własny wiersz, licznik dostępnych i wspólne okno godzinowe pod każdym dniem
+- [x] Urlop można edytować w miejscu, nie tylko usunąć i dodać od nowa
+- [x] Sekcja `/settings` (koło zębate): ustawienie/zmiana/**usunięcie** własnego nicku; nick własny wszędzie zamiast nazwy z Discorda (też w kalendarzu, RSVP eventu, pinach na mapie)
+- [x] Skład: `RosterSlot` (Main/Bench/StandIn, main ograniczony do 5, StandIn poza kalendarzem, main sortowany nad ławką), przeciąganie kart między kolumnami, role dodatkowe w grze (multi-select obok roli głównej), własny kolor pinezki na radarze dla main składu, notatki „co robić" przy pozycjach na mapie
+
 ## Rozważane później
 - Automatyczne parsowanie demek CS2 (statystyki bez ręcznego wpisywania)
 - Integracja z FACEIT/Steam API

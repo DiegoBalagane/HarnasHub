@@ -1,4 +1,6 @@
+using HarnasHub.Api.Common;
 using HarnasHub.Application.Features.Auth.DiscordLogin;
+using HarnasHub.Application.Features.Auth.RefreshSession;
 using HarnasHub.Core.Options;
 using MediatR;
 using Microsoft.AspNetCore.WebUtilities;
@@ -6,13 +8,24 @@ using Microsoft.Extensions.Options;
 
 namespace HarnasHub.Api.Endpoints.Auth;
 
-/// <summary>"Sign in with Discord" endpoints under /api/auth/discord.</summary>
+/// <summary>"Sign in with Discord" and session endpoints under /api/auth.</summary>
 public class AuthEndpoints : IEndpoint
 {
 	#region Public Methods
 
 	public static void MapEndpoints(IEndpointRouteBuilder app)
 	{
+		// No role requirement — deliberately open to every authenticated user, Guest included, so a
+		// freshly-promoted account can pick up its new role without a full Discord relogin (see RefreshSessionHandler).
+		app.MapPost("/api/auth/refresh", async (ISender sender, CancellationToken cancellationToken) =>
+		{
+			var result = await sender.Send(new RefreshSessionCommand(), cancellationToken);
+
+			return result.Match(
+				success => Results.Ok(success),
+				errors => errors.ToProblemResult());
+		}).WithTags("Auth").RequireAuthorization();
+
 		var group = app.MapGroup("/api/auth/discord").WithTags("Auth");
 
 		group.MapGet("/login", (IOptions<DiscordOAuthSettings> settings) =>

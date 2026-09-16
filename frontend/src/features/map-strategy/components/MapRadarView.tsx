@@ -1,10 +1,11 @@
 import { useState } from 'react'
-import type { MapSide } from '../../../services/mapStrategyApi'
+import type { MapPosition, MapSide } from '../../../services/mapStrategyApi'
 import type { MapName } from '../../../services/nadesApi'
 import { useAuthStore } from '../../auth/stores/useAuthStore'
 import { mapNames } from '../../nades/labels'
 import { useMapPositions } from '../hooks/useMapStrategy'
 import { mapSideLabels, mapSides } from '../labels'
+import { teamRoleLabels } from '../../roster/labels'
 import { AddPositionControl } from './AddPositionControl'
 import { MapRadar } from './MapRadar'
 
@@ -68,11 +69,38 @@ export function MapRadarView() {
             {positions.length === 0
               ? 'Nikt nie ma jeszcze przypisanej pozycji na tej mapie i stronie.'
               : canEdit
-                ? 'Przeciągnij pinezkę, aby zmienić pozycję — zapis następuje po puszczeniu.'
+                ? 'Przeciągnij pinezkę, aby zmienić pozycję, kliknij, aby edytować notatkę.'
                 : 'Najedź na pinezkę, aby zobaczyć zawodnika i jego rolę.'}
           </p>
+
+          <PositionNotesList positions={positions} />
         </>
       )}
     </section>
+  )
+}
+
+/** Readable list of every position's instruction note — the tiny dot on the pin is easy to miss, especially on a phone. */
+function PositionNotesList({ positions }: { positions: MapPosition[] }) {
+  const withNotes = positions.filter((position) => position.note)
+
+  if (withNotes.length === 0) {
+    return null
+  }
+
+  return (
+    <ul className="flex flex-col gap-2">
+      {withNotes.map((position) => (
+        <li key={position.id} className="rounded-md border border-neutral-800 px-3 py-2 text-sm">
+          <span className="font-medium text-neutral-200">
+            {position.inGameNickname ?? position.displayName}
+          </span>
+          {position.teamRole && (
+            <span className="ml-2 text-xs text-neutral-500">({teamRoleLabels[position.teamRole]})</span>
+          )}
+          <p className="mt-0.5 text-neutral-400">{position.note}</p>
+        </li>
+      ))}
+    </ul>
   )
 }

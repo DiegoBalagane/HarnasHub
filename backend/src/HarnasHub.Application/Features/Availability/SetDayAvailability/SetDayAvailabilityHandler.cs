@@ -1,5 +1,6 @@
 using ErrorOr;
 using HarnasHub.Application.Abstractions;
+using HarnasHub.Application.Features.Availability.Shared;
 using HarnasHub.Core.Entities;
 using HarnasHub.Core.Enums;
 using MediatR;
@@ -17,6 +18,13 @@ public class SetDayAvailabilityHandler(
 
 	public async Task<ErrorOr<Success>> Handle(SetDayAvailabilityCommand request, CancellationToken cancellationToken)
 	{
+		var isCoachOrManager = currentUser.Role is "Coach" or "Manager";
+
+		if (!isCoachOrManager && request.Date < DateOnly.FromDateTime(DateTime.UtcNow))
+		{
+			return AvailabilityErrors.PastDateNotEditable;
+		}
+
 		var userId = currentUser.UserId;
 		var isPartial = request.Status == DayAvailabilityStatus.PartiallyAvailable;
 
