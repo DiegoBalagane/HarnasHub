@@ -9,12 +9,16 @@ export const API_SETTINGS = {
 export const API_ENDPOINTS = {
   auth: {
     discordLogin: '/api/auth/discord/login',
+    refresh: '/api/auth/refresh',
   },
   roster: {
     list: '/api/roster',
     role: (userId: string) => `/api/roster/${userId}/role`,
     teamRole: (userId: string) => `/api/roster/${userId}/team-role`,
+    rosterSlot: (userId: string) => `/api/roster/${userId}/roster-slot`,
+    secondaryTeamRoles: (userId: string) => `/api/roster/${userId}/secondary-team-roles`,
     myNickname: '/api/roster/me/nickname',
+    myPinColor: '/api/roster/me/pin-color',
   },
   dashboard: '/api/dashboard',
   calendar: {

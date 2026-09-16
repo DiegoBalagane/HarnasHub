@@ -16,12 +16,16 @@ public class UpdateOwnNicknameCommandValidator : AbstractValidator<UpdateOwnNick
 
 	public UpdateOwnNicknameCommandValidator()
 	{
-		RuleFor(x => x.Nickname)
-			.NotEmpty().WithMessage("Podaj nick.")
-			.Must(nickname => (nickname ?? string.Empty).Trim().Length >= MinNicknameLength)
-				.WithMessage($"Nick musi mieć co najmniej {MinNicknameLength} znaki.")
-			.Must(nickname => (nickname ?? string.Empty).Trim().Length <= MaxNicknameLength)
-				.WithMessage($"Nick może mieć maksymalnie {MaxNicknameLength} znaki.");
+		// A null/blank nickname is a deliberate "clear back to Discord name" request, not a validation
+		// failure — only a non-blank value has to meet the length bounds.
+		When(x => !string.IsNullOrWhiteSpace(x.Nickname), () =>
+		{
+			RuleFor(x => x.Nickname)
+				.Must(nickname => nickname!.Trim().Length >= MinNicknameLength)
+					.WithMessage($"Nick musi mieć co najmniej {MinNicknameLength} znaki.")
+				.Must(nickname => nickname!.Trim().Length <= MaxNicknameLength)
+					.WithMessage($"Nick może mieć maksymalnie {MaxNicknameLength} znaki.");
+		});
 	}
 
 	#endregion

@@ -26,6 +26,15 @@ builder.Services.AddSingleton<IRealtimeNotifier, SignalRRealtimeNotifier>();
 var jwtSettings = builder.Configuration.GetSection(JwtSettings.SectionName).Get<JwtSettings>()
 	?? throw new InvalidOperationException("Sekcja konfiguracji 'Jwt' jest wymagana.");
 
+// A missing/empty secret would silently sign every token with an empty key — every restart
+// would then invalidate all sessions, and anyone could forge a token. Fail loudly instead.
+if (string.IsNullOrWhiteSpace(jwtSettings.Secret))
+{
+	throw new InvalidOperationException(
+		"Konfiguracja 'Jwt:Secret' jest pusta. Ustaw stałą wartość zmiennej środowiskowej Jwt__Secret " +
+		"(ta sama wartość na każdym środowisku/restarcie, inaczej wszystkie sesje wygasają przy każdym deployu).");
+}
+
 builder.Services
 	.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 	.AddJwtBearer(options =>

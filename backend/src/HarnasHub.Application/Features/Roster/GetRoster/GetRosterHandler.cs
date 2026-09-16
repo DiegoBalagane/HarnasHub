@@ -14,16 +14,18 @@ public class GetRosterHandler(IApplicationDbContext dbContext)
 
 	public async Task<ErrorOr<List<TeamMemberDto>>> Handle(GetRosterQuery request, CancellationToken cancellationToken)
 	{
-		return await dbContext.Users
+		var users = await dbContext.Users
 			.OrderBy(u => u.DisplayName)
-			.Select(u => new TeamMemberDto(
-				u.Id,
-				u.DisplayName,
-				u.Role.ToString(),
-				u.AvatarUrl,
-				u.TeamRole.HasValue ? u.TeamRole.Value.ToString() : null,
-				u.InGameNickname))
 			.ToListAsync(cancellationToken);
+
+		var secondaryRoles = await dbContext.UserSecondaryTeamRoles.ToListAsync(cancellationToken);
+		var secondaryRolesByUser = secondaryRoles
+			.GroupBy(r => r.UserId)
+			.ToDictionary(group => group.Key, group => group.Select(r => r.TeamRole.ToString()).ToList());
+
+		return users
+			.Select(u => u.ToTeamMemberDto(secondaryRolesByUser.GetValueOrDefault(u.Id)))
+			.ToList();
 	}
 
 	#endregion

@@ -4,6 +4,7 @@ using HarnasHub.Application.Features.Availability.GetVacations;
 using HarnasHub.Application.Features.Availability.GetWeekAvailability;
 using HarnasHub.Application.Features.Availability.SetDayAvailability;
 using HarnasHub.Application.Features.Availability.SetVacation;
+using HarnasHub.Application.Features.Availability.UpdateVacation;
 using HarnasHub.Core.Enums;
 using MediatR;
 
@@ -45,6 +46,17 @@ public class AvailabilityEndpoints : IEndpoint
 		group.MapPost("/vacations", async (SetVacationRequest request, ISender sender, CancellationToken cancellationToken) =>
 		{
 			var command = new SetVacationCommand(request.StartDate, request.EndDate, request.Reason);
+			var result = await sender.Send(command, cancellationToken);
+			return result.Match(success => Results.Ok(success), errors => errors.ToProblemResult());
+		});
+
+		group.MapPut("/vacations/{vacationId:guid}", async (
+			Guid vacationId,
+			SetVacationRequest request,
+			ISender sender,
+			CancellationToken cancellationToken) =>
+		{
+			var command = new UpdateVacationCommand(vacationId, request.StartDate, request.EndDate, request.Reason);
 			var result = await sender.Send(command, cancellationToken);
 			return result.Match(success => Results.Ok(success), errors => errors.ToProblemResult());
 		});
