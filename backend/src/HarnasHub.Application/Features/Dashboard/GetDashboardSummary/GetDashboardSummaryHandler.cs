@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore;
 namespace HarnasHub.Application.Features.Dashboard.GetDashboardSummary;
 
 /// <summary>Identity of one team member while the daily status lists are being built.</summary>
-internal readonly record struct DashboardMember(Guid Id, string DisplayName, string? TeamRole);
+internal readonly record struct DashboardMember(Guid Id, string DisplayName, string? InGameNickname, string? TeamRole);
 
 /// <summary>Handles <see cref="GetDashboardSummaryQuery"/>.</summary>
 public class GetDashboardSummaryHandler(IApplicationDbContext dbContext, ICurrentUserService currentUser)
@@ -41,9 +41,9 @@ public class GetDashboardSummaryHandler(IApplicationDbContext dbContext, ICurren
 
 		var members = (await dbContext.Users
 				.OrderBy(user => user.DisplayName)
-				.Select(user => new { user.Id, user.DisplayName, user.TeamRole })
+				.Select(user => new { user.Id, user.DisplayName, user.InGameNickname, user.TeamRole })
 				.ToListAsync(cancellationToken))
-			.Select(user => new DashboardMember(user.Id, user.DisplayName, user.TeamRole?.ToString()))
+			.Select(user => new DashboardMember(user.Id, user.DisplayName, user.InGameNickname, user.TeamRole?.ToString()))
 			.ToList();
 
 		var declaredDays = await dbContext.PlayerAvailabilityDays
@@ -101,6 +101,7 @@ public class GetDashboardSummaryHandler(IApplicationDbContext dbContext, ICurren
 				return new MemberDayStatusDto(
 					member.Id,
 					member.DisplayName,
+					member.InGameNickname,
 					member.TeamRole,
 					effective.Status,
 					effective.From,

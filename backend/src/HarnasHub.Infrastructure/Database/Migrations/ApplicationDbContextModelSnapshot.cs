@@ -437,6 +437,10 @@ namespace HarnasHub.Infrastructure.Database.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("character varying(20)");
 
+                    b.Property<string>("PinMark")
+                        .HasMaxLength(4)
+                        .HasColumnType("character varying(4)");
+
                     b.Property<string>("Role")
                         .IsRequired()
                         .HasMaxLength(20)

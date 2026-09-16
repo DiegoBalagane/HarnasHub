@@ -44,7 +44,7 @@ export const PlayerPin = memo(function PlayerPin({
           canEdit ? 'cursor-grab touch-none active:cursor-grabbing' : 'cursor-default'
         } ${isDragging ? 'ring-2 ring-white' : ''}`}
       >
-        {toInitials(name)}
+        {position.pinMark ?? toInitials(name)}
       </div>
 
       {position.note && (

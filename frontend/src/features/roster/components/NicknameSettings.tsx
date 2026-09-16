@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useAuthStore } from '../../auth/stores/useAuthStore'
 import { useUpdateOwnNickname } from '../hooks/useRoster'
 
@@ -11,6 +11,12 @@ export function NicknameSettings() {
   const inGameNickname = useAuthStore((state) => state.inGameNickname)
   const updateNickname = useUpdateOwnNickname()
   const [draft, setDraft] = useState(inGameNickname ?? '')
+
+  // The store only learns the nickname from the roster fetch, which resolves after this
+  // component's first render — without this, the field stays stuck on the empty initial state.
+  useEffect(() => {
+    setDraft(inGameNickname ?? '')
+  }, [inGameNickname])
 
   function handleSubmit(event: React.FormEvent) {
     event.preventDefault()

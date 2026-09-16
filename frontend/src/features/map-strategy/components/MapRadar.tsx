@@ -153,6 +153,7 @@ export function MapRadar({ mapName, side, positions, canEdit }: MapRadarProps) {
 
       {editingPosition && (
         <PositionNoteEditor
+          key={editingPosition.id}
           position={editingPosition}
           onSave={(note) => saveNote(editingPosition, note)}
           onClose={() => setEditingNoteId(null)}

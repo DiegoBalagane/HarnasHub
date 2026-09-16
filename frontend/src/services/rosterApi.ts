@@ -21,6 +21,8 @@ export interface TeamMember {
   teamRole: TeamRole | null
   rosterSlot: RosterSlot | null
   pinColor: PinColor | null
+  /** Self-chosen single character shown on the member's map-radar pin, settable by anyone; falls back to their initials when unset. */
+  pinMark: string | null
   inGameNickname: string | null
   /** Backup in-game roles alongside the primary one, e.g. "second AWPer". */
   secondaryTeamRoles: TeamRole[]
@@ -43,4 +45,7 @@ export const rosterApi = {
   /** Rejected server-side unless the caller is on the Main roster; a null value clears it. */
   updateMyPinColor: (pinColor: PinColor | null) =>
     apiClient.patch<TeamMember>(API_ENDPOINTS.roster.myPinColor, { pinColor }),
+  /** Open to every roster member; a null/blank value clears it back to auto-generated initials. */
+  updateMyPinMark: (pinMark: string | null) =>
+    apiClient.patch<TeamMember>(API_ENDPOINTS.roster.myPinMark, { pinMark }),
 }

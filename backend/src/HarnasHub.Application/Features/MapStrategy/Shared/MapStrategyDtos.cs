@@ -1,6 +1,6 @@
 namespace HarnasHub.Application.Features.MapStrategy.Shared;
 
-/// <summary>One player's starting spot on a map side, already joined with the roster data the radar view renders; <paramref name="PinColor"/> is the player's self-chosen colour (Main roster only), null when unset.</summary>
+/// <summary>One player's starting spot on a map side, already joined with the roster data the radar view renders; <paramref name="PinColor"/> is the player's self-chosen colour (Main roster only), null when unset; <paramref name="PinMark"/> is a self-chosen single character shown on the pin instead of initials, null when unset.</summary>
 public record MapPositionDto(
 	Guid Id,
 	string UserId,
@@ -8,6 +8,7 @@ public record MapPositionDto(
 	string? InGameNickname,
 	string? TeamRole,
 	string? PinColor,
+	string? PinMark,
 	string? Label,
 	float X,
 	float Y,

@@ -23,6 +23,7 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
 		builder.Property(u => u.TeamRole).HasConversion<string>().HasMaxLength(20);
 		builder.Property(u => u.RosterSlot).HasConversion<string>().HasMaxLength(20);
 		builder.Property(u => u.PinColor).HasConversion<string>().HasMaxLength(20);
+		builder.Property(u => u.PinMark).HasMaxLength(4);
 		builder.Property(u => u.InGameNickname).HasMaxLength(50);
 	}
 
