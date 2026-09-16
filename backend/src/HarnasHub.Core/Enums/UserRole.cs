@@ -1,9 +1,10 @@
 namespace HarnasHub.Core.Enums;
 
-/// <summary>Role of a team member within HarnasHub.</summary>
+/// <summary>Access level of an account within HarnasHub; new sign-ups start as <see cref="Guest"/> until a Manager promotes them.</summary>
 public enum UserRole
 {
-    Player = 0,
-    Coach = 1,
-    Manager = 2
+	Guest = 0,
+	Player = 1,
+	Coach = 2,
+	Manager = 3
 }

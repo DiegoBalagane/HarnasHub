@@ -7,8 +7,8 @@ namespace HarnasHub.Application.Features.Nades.AddNade;
 
 /// <summary>Adds a nade lineup entry to the team's library. Any authenticated player can contribute.</summary>
 public record AddNadeCommand(
-    string MapName,
-    GrenadeType Type,
-    string Title,
-    string? Description,
-    string? YoutubeUrl) : IRequest<ErrorOr<NadeEntryDto>>;
+	MapName MapName,
+	GrenadeType Type,
+	string Title,
+	string? Description,
+	string? YoutubeUrl) : IRequest<ErrorOr<NadeEntryDto>>;

@@ -5,6 +5,7 @@ import { AuthCallbackPage } from './routes/AuthCallbackPage'
 import { CalendarPage } from './routes/CalendarPage'
 import { DashboardPage } from './routes/DashboardPage'
 import { LoginPage } from './routes/LoginPage'
+import { MapStrategyPage } from './routes/MapStrategyPage'
 import { MaterialsPage } from './routes/MaterialsPage'
 import { NadesPage } from './routes/NadesPage'
 import { OpponentsPage } from './routes/OpponentsPage'
@@ -57,6 +58,14 @@ export function AppRouter() {
           element={
             <ProtectedRoute>
               <NadesPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/map-strategy"
+          element={
+            <ProtectedRoute>
+              <MapStrategyPage />
             </ProtectedRoute>
           }
         />
