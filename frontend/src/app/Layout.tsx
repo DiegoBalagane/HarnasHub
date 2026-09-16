@@ -2,13 +2,12 @@ import type { PropsWithChildren } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useIsGuest } from '../features/auth/hooks/useIsGuest'
 import { useAuthStore } from '../features/auth/stores/useAuthStore'
-import { NicknameEditor } from '../features/roster/components/NicknameEditor'
 import { useSyncOwnNickname } from '../features/roster/hooks/useSyncOwnNickname'
 import { MainNav } from './MainNav'
 
 /** Shared page chrome: top bar with branding and session controls. */
 export function Layout({ children }: PropsWithChildren) {
-  const { isAuthenticated, avatarUrl, clearSession } = useAuthStore()
+  const { isAuthenticated, displayName, inGameNickname, avatarUrl, clearSession } = useAuthStore()
   const isGuest = useIsGuest()
   const navigate = useNavigate()
 
@@ -39,7 +38,17 @@ export function Layout({ children }: PropsWithChildren) {
         {isAuthenticated && (
           <div className="flex items-center gap-3 text-sm">
             {avatarUrl && <img src={avatarUrl} alt="" className="h-7 w-7 rounded-full" />}
-            {!isGuest && <NicknameEditor />}
+            <span className="text-neutral-300">{inGameNickname ?? displayName}</span>
+            {!isGuest && (
+              <Link
+                to="/settings"
+                title="Ustawienia"
+                aria-label="Ustawienia"
+                className="text-neutral-400 hover:text-white"
+              >
+                ⚙️
+              </Link>
+            )}
             <button onClick={handleLogout} className="text-neutral-400 hover:text-white">
               Wyloguj
             </button>

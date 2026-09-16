@@ -47,6 +47,20 @@ export function useSetVacation() {
   })
 }
 
+/** Edits an existing time-off range in place and refreshes availability and dashboard data. */
+export function useUpdateVacation() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ vacationId, payload }: { vacationId: string; payload: CreateVacationPayload }) =>
+      availabilityApi.updateVacation(vacationId, payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['availability'] })
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] })
+    },
+  })
+}
+
 /** Removes one of the current user's time-off ranges and refreshes availability and dashboard data. */
 export function useDeleteVacation() {
   const queryClient = useQueryClient()

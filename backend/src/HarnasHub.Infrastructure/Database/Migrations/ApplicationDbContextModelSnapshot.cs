@@ -433,8 +433,16 @@ namespace HarnasHub.Infrastructure.Database.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)");
 
+                    b.Property<string>("PinColor")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
                     b.Property<string>("Role")
                         .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<string>("RosterSlot")
                         .HasMaxLength(20)
                         .HasColumnType("character varying(20)");
 
@@ -448,6 +456,28 @@ namespace HarnasHub.Infrastructure.Database.Migrations
                         .IsUnique();
 
                     b.ToTable("Users", (string)null);
+                });
+
+            modelBuilder.Entity("HarnasHub.Core.Entities.UserSecondaryTeamRole", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("TeamRole")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId", "TeamRole")
+                        .IsUnique();
+
+                    b.ToTable("UserSecondaryTeamRoles", (string)null);
                 });
 
             modelBuilder.Entity("HarnasHub.Core.Entities.Vacation", b =>

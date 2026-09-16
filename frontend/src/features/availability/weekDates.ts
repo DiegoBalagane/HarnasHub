@@ -1,4 +1,18 @@
+import type { DayEntry, MemberWeek } from '../../services/availabilityApi'
+
 const daysInWeek = 7
+
+/** Returns the member's entry for one day, or undefined when the server row is incomplete. */
+export function entryFor(member: MemberWeek, date: string): DayEntry | undefined {
+  return member.days.find((day) => day.date === date)
+}
+
+/** Sort weight for a roster slot: Main first, then Bench, then anyone unassigned. */
+export function rosterSlotRank(rosterSlot: string | null): number {
+  if (rosterSlot === 'Main') return 0
+  if (rosterSlot === 'Bench') return 1
+  return 2
+}
 
 /** Formats a Date as a local yyyy-MM-dd string (unlike toISOString, which shifts to UTC). */
 export function toIsoDate(date: Date): string {

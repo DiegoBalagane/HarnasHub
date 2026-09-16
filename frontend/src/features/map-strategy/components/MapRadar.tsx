@@ -3,6 +3,7 @@ import type { MapPosition, MapSide } from '../../../services/mapStrategyApi'
 import type { MapName } from '../../../services/nadesApi'
 import { useRemovePlayerPosition, useSetPlayerPosition } from '../hooks/useMapStrategy'
 import { PlayerPin } from './PlayerPin'
+import { PositionNoteEditor } from './PositionNoteEditor'
 
 interface MapRadarProps {
   mapName: MapName
@@ -28,8 +29,22 @@ function clampFraction(value: number): number {
 export function MapRadar({ mapName, side, positions, canEdit }: MapRadarProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const [draft, setDraft] = useState<DragDraft | null>(null)
+  const [editingNoteId, setEditingNoteId] = useState<string | null>(null)
   const setPlayerPosition = useSetPlayerPosition()
   const removePlayerPosition = useRemovePlayerPosition()
+  const editingPosition = positions.find((position) => position.id === editingNoteId) ?? null
+
+  function saveNote(position: MapPosition, note: string | null) {
+    setPlayerPosition.mutate({
+      mapName,
+      side,
+      userId: position.userId,
+      label: position.label,
+      x: position.x,
+      y: position.y,
+      note,
+    })
+  }
 
   const handleDragStart = useCallback(
     (event: PointerEvent<HTMLDivElement>, positionId: string) => {
@@ -73,7 +88,16 @@ export function MapRadar({ mapName, side, positions, canEdit }: MapRadarProps) {
 
     const position = positions.find((candidate) => candidate.id === draft.positionId)
 
-    if (!draft.moved || !position) {
+    if (!position) {
+      setDraft(null)
+      return
+    }
+
+    if (!draft.moved) {
+      // A plain tap/click, not a drag — open (or close) the note editor for this pin instead of moving it.
+      if (canEdit) {
+        setEditingNoteId((current) => (current === position.id ? null : position.id))
+      }
       setDraft(null)
       return
     }
@@ -91,39 +115,50 @@ export function MapRadar({ mapName, side, positions, canEdit }: MapRadarProps) {
       // Held until the server answers so the pin stays where it was dropped instead of snapping back.
       { onSettled: () => setDraft(null) },
     )
-  }, [draft, mapName, positions, setPlayerPosition, side])
+  }, [canEdit, draft, mapName, positions, setPlayerPosition, side])
 
   return (
-    <div
-      ref={containerRef}
-      onPointerMove={handlePointerMove}
-      onPointerUp={handlePointerUp}
-      onPointerCancel={() => setDraft(null)}
-      className="relative w-full select-none overflow-hidden rounded-md border border-neutral-800 bg-neutral-950"
-    >
-      <img
-        src={`/maps/${mapName.toLowerCase()}.webp`}
-        alt={`Radar mapy ${mapName}`}
-        draggable={false}
-        className="block h-auto w-full"
-      />
+    <div className="flex flex-col gap-2">
+      <div
+        ref={containerRef}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+        onPointerCancel={() => setDraft(null)}
+        className="relative w-full select-none overflow-hidden rounded-md border border-neutral-800 bg-neutral-950"
+      >
+        <img
+          src={`/maps/${mapName.toLowerCase()}.webp`}
+          alt={`Radar mapy ${mapName}`}
+          draggable={false}
+          className="block h-auto w-full"
+        />
 
-      {positions.map((position) => {
-        const isDragging = draft?.positionId === position.id
+        {positions.map((position) => {
+          const isDragging = draft?.positionId === position.id
 
-        return (
-          <PlayerPin
-            key={position.id}
-            position={position}
-            x={isDragging ? draft.x : position.x}
-            y={isDragging ? draft.y : position.y}
-            canEdit={canEdit}
-            isDragging={isDragging}
-            onDragStart={handleDragStart}
-            onRemove={removePlayerPosition.mutate}
-          />
-        )
-      })}
+          return (
+            <PlayerPin
+              key={position.id}
+              position={position}
+              x={isDragging ? draft.x : position.x}
+              y={isDragging ? draft.y : position.y}
+              canEdit={canEdit}
+              isDragging={isDragging}
+              onDragStart={handleDragStart}
+              onRemove={removePlayerPosition.mutate}
+            />
+          )
+        })}
+      </div>
+
+      {editingPosition && (
+        <PositionNoteEditor
+          position={editingPosition}
+          onSave={(note) => saveNote(editingPosition, note)}
+          onClose={() => setEditingNoteId(null)}
+          isSaving={setPlayerPosition.isPending}
+        />
+      )}
     </div>
   )
 }

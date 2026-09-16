@@ -11,7 +11,9 @@ public class SetDayAvailabilityHandlerTests
 {
 	#region Private Fields
 
-	private static readonly DateOnly Day = new(2026, 9, 14);
+	// Always "today" rather than a fixed literal, so these cases keep passing the handler's
+	// not-in-the-past check regardless of when the suite runs.
+	private static readonly DateOnly Day = DateOnly.FromDateTime(DateTime.UtcNow);
 	private readonly Guid _userId = Guid.NewGuid();
 
 	#endregion
@@ -108,6 +110,42 @@ public class SetDayAvailabilityHandlerTests
 		var rows = await dbContext.PlayerAvailabilityDays.ToListAsync();
 		Assert.Equal(2, rows.Count);
 		Assert.Equal(DayAvailabilityStatus.Available, rows.Single(row => row.UserId == otherUserId).Status);
+	}
+
+	[Fact]
+	public async Task Should_reject_a_past_date_for_a_regular_player()
+	{
+		await using var dbContext = TestApplicationDbContext.Create();
+		var handler = new SetDayAvailabilityHandler(
+			dbContext,
+			new TestCurrentUserService(_userId, "Player"),
+			new TestRealtimeNotifier());
+
+		var pastDay = Day.AddDays(-1);
+		var result = await handler.Handle(
+			new SetDayAvailabilityCommand(pastDay, DayAvailabilityStatus.Off, null, null, null),
+			CancellationToken.None);
+
+		Assert.True(result.IsError);
+		Assert.Empty(dbContext.PlayerAvailabilityDays);
+	}
+
+	[Fact]
+	public async Task Should_allow_a_coach_to_edit_a_past_date()
+	{
+		await using var dbContext = TestApplicationDbContext.Create();
+		var handler = new SetDayAvailabilityHandler(
+			dbContext,
+			new TestCurrentUserService(_userId, "Coach"),
+			new TestRealtimeNotifier());
+
+		var pastDay = Day.AddDays(-1);
+		var result = await handler.Handle(
+			new SetDayAvailabilityCommand(pastDay, DayAvailabilityStatus.Off, null, null, null),
+			CancellationToken.None);
+
+		Assert.False(result.IsError);
+		Assert.Equal(pastDay, (await dbContext.PlayerAvailabilityDays.SingleAsync()).Date);
 	}
 
 	#endregion

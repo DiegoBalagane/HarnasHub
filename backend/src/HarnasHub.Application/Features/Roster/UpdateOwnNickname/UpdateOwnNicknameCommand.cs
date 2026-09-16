@@ -4,5 +4,5 @@ using MediatR;
 
 namespace HarnasHub.Application.Features.Roster.UpdateOwnNickname;
 
-/// <summary>Sets the in-game nickname of the caller; the target is always the current user, never a route parameter.</summary>
-public record UpdateOwnNicknameCommand(string Nickname) : IRequest<ErrorOr<TeamMemberDto>>;
+/// <summary>Sets (or, with a null/blank value, clears back to the Discord name) the in-game nickname of the caller; the target is always the current user, never a route parameter.</summary>
+public record UpdateOwnNicknameCommand(string? Nickname) : IRequest<ErrorOr<TeamMemberDto>>;
