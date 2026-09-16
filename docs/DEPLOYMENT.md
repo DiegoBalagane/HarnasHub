@@ -53,7 +53,7 @@ Aplikację Discord (Client ID/Secret) już masz założoną z testów lokalnych 
    https://<twoja-domena-railway>/api/auth/discord/callback
    ```
 2. **Znajdź ID swojego serwera Discord** (potrzebne do `DiscordOAuth__RequiredGuildId`): w aplikacji Discord włącz Tryb Dewelopera (Ustawienia użytkownika → Zaawansowane → Tryb dewelopera), potem kliknij prawym na nazwę serwera drużyny na liście serwerów → **Kopiuj identyfikator serwera**.
-3. Bez `RequiredGuildId` appka **działa, ale wpuszcza dowolne konto Discord** jako Playera — dla appki wewnętrznej drużyny to ustaw od razu.
+3. Bez `RequiredGuildId` appka **działa, ale pozwala zalogować się dowolnemu kontu Discord** (jako Gość, bez dostępu do danych) — dla appki wewnętrznej drużyny to ustaw od razu.
 
 ## Jak Ty (i gracze) to przetestujecie po wdrożeniu
 
@@ -63,7 +63,7 @@ Aplikację Discord (Client ID/Secret) już masz założoną z testów lokalnych 
    - Android/Chrome: powinno pojawić się „Dodaj do ekranu głównego" (albo ikonka instalacji w pasku adresu) — zaakceptuj, ikonka HarnasHub wyląduje na ekranie głównym.
    - iOS/Safari: Udostępnij → „Dodaj do ekranu początkowego".
 4. Otwórz appkę z ikonki — powinna wystartować na pełnym ekranie, bez paska adresu przeglądarki.
-5. Ty jako pierwszy zalogowany użytkownik musisz **ręcznie zmienić sobie rolę na Manager w bazie danych** (Railway → Postgres → Query, albo `psql`), bo pierwsze konto zawsze startuje jako Player, a rolę może zmieniać tylko Manager (i nie może zmienić własnej):
+5. Ty jako pierwszy zalogowany użytkownik musisz **ręcznie zmienić sobie rolę na Manager w bazie danych** (Railway → Postgres → Query, albo `psql`), bo każde nowe konto startuje jako Gość (widzi tylko ekran „Poczekaj na przydzielenie roli"), a rolę może zmieniać tylko Manager (i nie może zmienić własnej):
    ```sql
    UPDATE "Users" SET "Role" = 'Manager' WHERE "DiscordId" = 'twoje_discord_id';
    ```

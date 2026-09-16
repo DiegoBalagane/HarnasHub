@@ -10,12 +10,22 @@ export const API_ENDPOINTS = {
   auth: {
     discordLogin: '/api/auth/discord/login',
   },
-  roster: '/api/roster',
-  rosterRole: (userId: string) => `/api/roster/${userId}/role`,
+  roster: {
+    list: '/api/roster',
+    role: (userId: string) => `/api/roster/${userId}/role`,
+    teamRole: (userId: string) => `/api/roster/${userId}/team-role`,
+    myNickname: '/api/roster/me/nickname',
+  },
   dashboard: '/api/dashboard',
   calendar: {
     events: '/api/calendar/events',
     availability: (eventId: string) => `/api/calendar/events/${eventId}/availability`,
+  },
+  availability: {
+    week: '/api/availability/week',
+    day: '/api/availability/day',
+    vacations: '/api/availability/vacations',
+    vacationById: (vacationId: string) => `/api/availability/vacations/${vacationId}`,
   },
   tasks: {
     mine: '/api/tasks/mine',
@@ -25,6 +35,11 @@ export const API_ENDPOINTS = {
   results: '/api/results',
   nades: '/api/nades',
   nadeById: (nadeId: string) => `/api/nades/${nadeId}`,
+  mapStrategy: {
+    positions: (mapName: string, side: string) => `/api/map-strategy/${mapName}/${side}`,
+    set: '/api/map-strategy',
+    remove: (positionId: string) => `/api/map-strategy/${positionId}`,
+  },
   trainingMaterials: '/api/training-materials',
   matchStats: (matchResultId: string) => `/api/matches/${matchResultId}/stats`,
   statsMine: '/api/stats/mine',
