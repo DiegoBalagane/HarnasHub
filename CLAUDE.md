@@ -116,6 +116,14 @@ git config commit.gpgsign false
 
 **Before ending any session that touched this repo**, run `git log -3 --format='%an <%ae>%n%B'` on whatever was committed and confirm: (a) no line anywhere mentions Claude/AI, (b) the author is the human identity above. If either check fails, fix it before finishing — don't leave it for next time.
 
+**Mechanism 3 — stale branches keeping tainted history reachable.** Rewriting `main`'s history (Mechanism 1/2 fixes applied retroactively) does *not* remove the old, tainted commits from any feature branch that was never rewritten — and GitHub's repo-wide Contributors graph scans **all branches**, not just the default one. A branch merged into `main` before a fix landed can sit on GitHub with the original `Claude <noreply@anthropic.com>`-authored or `Co-Authored-By: Claude`-trailered commits, keeping "claude" listed as a contributor even though `main` itself is clean (this happened with `feature/roster-calendar-fixes` and `feature/weekly-availability-roles-and-maps`, both fully superseded in `main` under rewritten hashes). Whenever commit history is rewritten to strip Claude authorship, also check every other local and remote branch for the old commit hashes and delete any that are fully merged into `main`:
+```
+git branch --all --contains <old-tainted-commit-hash>
+git branch -D <local-branch>
+git push origin --delete <remote-branch>
+```
+Confirm with the user before deleting a remote branch (per this file's execution-behavior rules on destructive operations).
+
 - Conventional Commits prefixes: `feat:`, `fix:`, `docs:`, `refactor:`, `style:`, `chore:`, `test:`.
 - Never push directly to `main`, and never force-push/rewrite history on `main` without the user explicitly asking for that specific action in that message — it rewrites shared history and is one of the few things worth stopping to confirm even when the rest of a request is urgent.
 
