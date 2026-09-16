@@ -8,5 +8,6 @@ public enum TeamRole
 	Support = 2,
 	AWPer = 3,
 	Lurker = 4,
-	Rifler = 5
+	Rifler = 5,
+	Bambik = 6
 }

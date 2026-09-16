@@ -8,4 +8,4 @@ export const grenadeTypeLabels: Record<GrenadeType, string> = {
 }
 
 /** Active 2026 map pool, kept in sync with the backend MapName enum. */
-export const mapNames: MapName[] = ['Ancient', 'Anubis', 'Dust2', 'Inferno', 'Mirage', 'Nuke']
+export const mapNames: MapName[] = ['Ancient', 'Anubis', 'Cache', 'Dust2', 'Inferno', 'Mirage', 'Nuke']

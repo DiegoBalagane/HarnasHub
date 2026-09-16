@@ -4,7 +4,7 @@ import { apiClient } from './apiClient'
 export type GrenadeType = 'Smoke' | 'Flash' | 'Molotov' | 'Frag'
 
 /** Maps of the current competitive pool, mirrors the backend MapName enum. */
-export type MapName = 'Dust2' | 'Mirage' | 'Inferno' | 'Nuke' | 'Ancient' | 'Anubis'
+export type MapName = 'Dust2' | 'Mirage' | 'Inferno' | 'Nuke' | 'Ancient' | 'Anubis' | 'Cache'
 
 export interface NadeEntry {
   id: string

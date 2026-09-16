@@ -16,10 +16,11 @@ export const teamRoleLabels: Record<TeamRole, string> = {
   AWPer: 'AWPer',
   Lurker: 'Lurker',
   Rifler: 'Rifler',
+  Bambik: 'Bambik',
 }
 
 /** Selectable access levels, in the order they appear in the roster dropdown. */
 export const userRoles: UserRole[] = ['Guest', 'Player', 'Coach', 'Manager']
 
 /** Selectable in-game roles, in the order they appear in the roster dropdown. */
-export const teamRoles: TeamRole[] = ['IGL', 'EntryFragger', 'Support', 'AWPer', 'Lurker', 'Rifler']
+export const teamRoles: TeamRole[] = ['IGL', 'EntryFragger', 'Support', 'AWPer', 'Lurker', 'Rifler', 'Bambik']

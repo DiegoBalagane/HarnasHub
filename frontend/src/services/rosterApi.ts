@@ -5,7 +5,7 @@ import { apiClient } from './apiClient'
 export type UserRole = 'Guest' | 'Player' | 'Coach' | 'Manager'
 
 /** In-game role a player fills in the team's setup, unrelated to the access level. */
-export type TeamRole = 'IGL' | 'EntryFragger' | 'Support' | 'AWPer' | 'Lurker' | 'Rifler'
+export type TeamRole = 'IGL' | 'EntryFragger' | 'Support' | 'AWPer' | 'Lurker' | 'Rifler' | 'Bambik'
 
 export interface TeamMember {
   id: string
