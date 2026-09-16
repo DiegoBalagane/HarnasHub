@@ -8,5 +8,6 @@ public enum MapName
 	Inferno = 2,
 	Nuke = 3,
 	Ancient = 4,
-	Anubis = 5
+	Anubis = 5,
+	Cache = 6
 }
