@@ -1,6 +1,6 @@
 import { useAuthStore } from '../../auth/stores/useAuthStore'
 import { useRoster, useUpdateOwnPinColor } from '../hooks/useRoster'
-import { pinColorLabels, pinColorSwatch, pinColors } from '../labels'
+import { PinColorPicker } from './PinColorPicker'
 
 /** Lets a Main-roster player pick their map-radar pin colour; renders nothing for anyone else. */
 export function PinColorSettings() {
@@ -22,34 +22,13 @@ export function PinColorSettings() {
         </p>
       </div>
 
-      <div className="flex gap-2">
-        {pinColors.map((color) => (
-          <button
-            key={color}
-            type="button"
-            title={pinColorLabels[color]}
-            aria-label={pinColorLabels[color]}
-            disabled={updatePinColor.isPending}
-            onClick={() => updatePinColor.mutate(color)}
-            className={`h-8 w-8 rounded-full ${pinColorSwatch[color]} transition disabled:opacity-50 ${
-              me.pinColor === color ? 'ring-2 ring-white ring-offset-2 ring-offset-neutral-950' : ''
-            }`}
-          />
-        ))}
-      </div>
+      <PinColorPicker
+        value={me.pinColor}
+        onChange={(color) => updatePinColor.mutate(color)}
+        disabled={updatePinColor.isPending}
+      />
 
       {updatePinColor.isError && <p className="text-sm text-red-400">{updatePinColor.error.message}</p>}
-
-      {me.pinColor && (
-        <button
-          type="button"
-          disabled={updatePinColor.isPending}
-          onClick={() => updatePinColor.mutate(null)}
-          className="self-start rounded-md border border-neutral-700 px-3 py-1.5 text-xs text-neutral-300 transition hover:border-neutral-500 disabled:opacity-50"
-        >
-          Usuń kolor
-        </button>
-      )}
     </div>
   )
 }

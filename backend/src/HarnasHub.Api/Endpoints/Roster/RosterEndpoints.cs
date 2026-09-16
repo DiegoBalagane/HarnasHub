@@ -3,6 +3,7 @@ using HarnasHub.Application.Features.Roster.GetRoster;
 using HarnasHub.Application.Features.Roster.UpdateOwnNickname;
 using HarnasHub.Application.Features.Roster.UpdateOwnPinColor;
 using HarnasHub.Application.Features.Roster.UpdateOwnPinMark;
+using HarnasHub.Application.Features.Roster.SetPinColor;
 using HarnasHub.Application.Features.Roster.SetSecondaryTeamRoles;
 using HarnasHub.Application.Features.Roster.UpdateRosterSlot;
 using HarnasHub.Application.Features.Roster.UpdateTeamRole;
@@ -107,6 +108,19 @@ public class RosterEndpoints : IEndpoint
 				errors => errors.ToProblemResult());
 		}).RequireAuthorization(policy => policy.RequireRole("Coach", "Manager"));
 
+		group.MapPatch("/{userId:guid}/pin-color", async (
+			Guid userId,
+			SetPinColorRequest request,
+			ISender sender,
+			CancellationToken cancellationToken) =>
+		{
+			var result = await sender.Send(new SetPinColorCommand(userId, request.PinColor), cancellationToken);
+
+			return result.Match(
+				success => Results.Ok(success),
+				errors => errors.ToProblemResult());
+		}).RequireAuthorization(policy => policy.RequireRole("Manager"));
+
 		group.MapPatch("/{userId:guid}/role", async (
 			Guid userId,
 			UpdateUserRoleRequest request,
@@ -141,6 +155,9 @@ public record UpdateOwnPinColorRequest(PinColor? PinColor);
 
 /// <summary>Request body for PATCH /api/roster/me/pin-mark; a null/blank value clears it.</summary>
 public record UpdateOwnPinMarkRequest(string? PinMark);
+
+/// <summary>Request body for PATCH /api/roster/{userId}/pin-color; a null value clears it.</summary>
+public record SetPinColorRequest(PinColor? PinColor);
 
 /// <summary>Request body for PATCH /api/roster/{userId}/secondary-team-roles; replaces the full set.</summary>
 public record SetSecondaryTeamRolesRequest(List<TeamRole> TeamRoles);

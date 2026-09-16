@@ -1,16 +1,24 @@
 import { useAuthStore } from '../../auth/stores/useAuthStore'
 import type { RosterSlot, TeamMember, TeamRole, UserRole } from '../../../services/rosterApi'
 import { roleLabels, rosterSlotLabels, rosterSlots, teamRoleLabels, teamRoles, userRoles } from '../labels'
-import { useRoster, useUpdateRole, useUpdateRosterSlot, useUpdateTeamRole } from '../hooks/useRoster'
+import {
+  useRoster,
+  useUpdatePinColor,
+  useUpdateRole,
+  useUpdateRosterSlot,
+  useUpdateTeamRole,
+} from '../hooks/useRoster'
+import { PinColorPicker } from './PinColorPicker'
 import { SecondaryTeamRoleBadges, SecondaryTeamRolesEditor } from './SecondaryTeamRolesEditor'
 
-/** Displays every team member with their roles; a Manager changes access levels, a Coach/Manager the in-game roles and roster slot. */
+/** Displays every team member with their roles; a Manager changes access levels, pin colours and roster slot, a Coach/Manager the in-game roles. */
 export function RosterList() {
   const { data: roster, isLoading, isError } = useRoster()
   const { userId, role } = useAuthStore()
   const updateRole = useUpdateRole()
   const updateTeamRole = useUpdateTeamRole()
   const updateRosterSlot = useUpdateRosterSlot()
+  const updatePinColor = useUpdatePinColor()
   const canManageRoles = role === 'Manager'
   const canManageTeamRoles = role === 'Manager' || role === 'Coach'
 
@@ -25,6 +33,7 @@ export function RosterList() {
   return (
     <div className="flex w-full max-w-xl flex-col gap-2">
       {updateRosterSlot.isError && <p className="text-sm text-red-400">{updateRosterSlot.error.message}</p>}
+      {updatePinColor.isError && <p className="text-sm text-red-400">{updatePinColor.error.message}</p>}
       <ul className="flex flex-col divide-y divide-neutral-800 rounded-md border border-neutral-800">
         {roster?.map((member) => (
           <li key={member.id} className="flex items-center justify-between gap-3 px-4 py-3">
@@ -91,6 +100,15 @@ export function RosterList() {
                     {rosterSlotLabels[member.rosterSlot]}
                   </span>
                 )
+              )}
+
+              {canManageRoles && member.rosterSlot === 'Main' && (
+                <PinColorPicker
+                  value={member.pinColor}
+                  onChange={(pinColor) => updatePinColor.mutate({ userId: member.id, pinColor })}
+                  disabled={updatePinColor.isPending}
+                  size="sm"
+                />
               )}
 
               {canManageRoles && member.id !== userId ? (
