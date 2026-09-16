@@ -20,6 +20,7 @@ HarnasHub is a full-stack web app built for a competitive Counter-Strike 2 team 
 - **Coach-assigned tasks** — coach/manager assigns action items to players, with status tracking.
 - **Match results & demos** — scrim/match/tournament results with post-match notes and a demo link.
 - **Per-map nade library** — organized smoke/flash/molotov lineups with embedded YouTube clips and position notes.
+- **Map starting positions** — a per-map radar board where the coach drags each player's pin onto their CT/T spot, and the team reads the setup at a glance.
 - **Training materials** — a categorized library of learning resources.
 - **Opponent scouting** — notes and materials prepared ahead of a specific match.
 - **Player & team stats** — individual performance (K/D, ADR, HS%, rating) and a win-rate trend chart over time.

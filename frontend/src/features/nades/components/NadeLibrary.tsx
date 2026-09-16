@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import { useAuthStore } from '../../auth/stores/useAuthStore'
-import type { GrenadeType } from '../../../services/nadesApi'
+import type { GrenadeType, MapName } from '../../../services/nadesApi'
 import { useDeleteNade, useNades } from '../hooks/useNades'
-import { commonMaps, grenadeTypeLabels } from '../labels'
+import { grenadeTypeLabels, mapNames } from '../labels'
 import { getYoutubeEmbedUrl } from '../youtube'
 
 const grenadeTypes: GrenadeType[] = ['Smoke', 'Flash', 'Molotov', 'Frag']
@@ -10,7 +10,7 @@ const coachRoles = new Set(['Coach', 'Manager'])
 
 /** Filterable per-map nade library with inline YouTube previews. */
 export function NadeLibrary() {
-  const [mapName, setMapName] = useState('')
+  const [mapName, setMapName] = useState<MapName | ''>('')
   const [type, setType] = useState<GrenadeType | ''>('')
   const {
     data: nades,
@@ -26,11 +26,11 @@ export function NadeLibrary() {
       <div className="flex gap-3">
         <select
           value={mapName}
-          onChange={(event) => setMapName(event.target.value)}
+          onChange={(event) => setMapName(event.target.value as MapName | '')}
           className="rounded-md border border-neutral-800 bg-neutral-900 px-3 py-2 text-sm outline-none focus:border-neutral-500"
         >
           <option value="">Wszystkie mapy</option>
-          {commonMaps.map((map) => (
+          {mapNames.map((map) => (
             <option key={map} value={map}>
               {map}
             </option>

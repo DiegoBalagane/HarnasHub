@@ -1,13 +1,13 @@
 import { useState } from 'react'
-import type { GrenadeType } from '../../../services/nadesApi'
+import type { GrenadeType, MapName } from '../../../services/nadesApi'
 import { useAddNade } from '../hooks/useNades'
-import { commonMaps, grenadeTypeLabels } from '../labels'
+import { grenadeTypeLabels, mapNames } from '../labels'
 
 const grenadeTypes: GrenadeType[] = ['Smoke', 'Flash', 'Molotov', 'Frag']
 
 /** Form for any team member to add a nade lineup entry. */
 export function AddNadeForm() {
-  const [mapName, setMapName] = useState(commonMaps[0])
+  const [mapName, setMapName] = useState<MapName>(mapNames[0])
   const [type, setType] = useState<GrenadeType>('Smoke')
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
@@ -38,10 +38,10 @@ export function AddNadeForm() {
       <div className="flex gap-3">
         <select
           value={mapName}
-          onChange={(event) => setMapName(event.target.value)}
+          onChange={(event) => setMapName(event.target.value as MapName)}
           className="rounded-md border border-neutral-800 bg-neutral-900 px-3 py-2 text-sm outline-none focus:border-neutral-500"
         >
-          {commonMaps.map((map) => (
+          {mapNames.map((map) => (
             <option key={map} value={map}>
               {map}
             </option>

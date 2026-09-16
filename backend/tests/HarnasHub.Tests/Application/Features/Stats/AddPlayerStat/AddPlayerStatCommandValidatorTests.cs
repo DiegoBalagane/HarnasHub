@@ -6,43 +6,43 @@ namespace HarnasHub.Tests.Application.Features.Stats.AddPlayerStat;
 
 public class AddPlayerStatCommandValidatorTests
 {
-    #region Private Fields
+	#region Private Fields
 
-    private readonly AddPlayerStatCommandValidator _validator = new();
+	private readonly AddPlayerStatCommandValidator _validator = new();
 
-    #endregion
+	#endregion
 
-    #region Public Methods
+	#region Public Methods
 
-    [Fact]
-    public void Should_have_error_when_headshot_percentage_is_out_of_range()
-    {
-        var command = new AddPlayerStatCommand(Guid.NewGuid(), Guid.NewGuid(), 20, 15, 5, 75.5, 150, 1.2);
+	[Fact]
+	public void Should_have_error_when_headshot_percentage_is_out_of_range()
+	{
+		var command = new AddPlayerStatCommand(Guid.NewGuid(), Guid.NewGuid(), 20, 15, 5, 75.5, 150, 1.2);
 
-        var result = _validator.TestValidate(command);
+		var result = _validator.TestValidate(command);
 
-        result.ShouldHaveValidationErrorFor(x => x.HeadshotPercentage);
-    }
+		result.ShouldHaveValidationErrorFor(x => x.HeadshotPercentage);
+	}
 
-    [Fact]
-    public void Should_have_error_when_kills_is_negative()
-    {
-        var command = new AddPlayerStatCommand(Guid.NewGuid(), Guid.NewGuid(), -1, 15, 5, 75.5, 50, 1.2);
+	[Fact]
+	public void Should_have_error_when_kills_is_negative()
+	{
+		var command = new AddPlayerStatCommand(Guid.NewGuid(), Guid.NewGuid(), -1, 15, 5, 75.5, 50, 1.2);
 
-        var result = _validator.TestValidate(command);
+		var result = _validator.TestValidate(command);
 
-        result.ShouldHaveValidationErrorFor(x => x.Kills);
-    }
+		result.ShouldHaveValidationErrorFor(x => x.Kills);
+	}
 
-    [Fact]
-    public void Should_not_have_errors_for_a_valid_command()
-    {
-        var command = new AddPlayerStatCommand(Guid.NewGuid(), Guid.NewGuid(), 20, 15, 5, 75.5, 50, 1.2);
+	[Fact]
+	public void Should_not_have_errors_for_a_valid_command()
+	{
+		var command = new AddPlayerStatCommand(Guid.NewGuid(), Guid.NewGuid(), 20, 15, 5, 75.5, 50, 1.2);
 
-        var result = _validator.TestValidate(command);
+		var result = _validator.TestValidate(command);
 
-        result.ShouldNotHaveAnyValidationErrors();
-    }
+		result.ShouldNotHaveAnyValidationErrors();
+	}
 
-    #endregion
+	#endregion
 }
