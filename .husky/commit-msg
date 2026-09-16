@@ -1,0 +1,1 @@
+sed -i '/[Cc]laude/d' "$1"
