@@ -45,6 +45,9 @@ export const rosterApi = {
   /** Rejected server-side unless the caller is on the Main roster; a null value clears it. */
   updateMyPinColor: (pinColor: PinColor | null) =>
     apiClient.patch<TeamMember>(API_ENDPOINTS.roster.myPinColor, { pinColor }),
+  /** Manager only; rejected server-side unless the target member is on the Main roster; a null value clears it. */
+  updatePinColor: (userId: string, pinColor: PinColor | null) =>
+    apiClient.patch<TeamMember>(API_ENDPOINTS.roster.pinColor(userId), { pinColor }),
   /** Open to every roster member; a null/blank value clears it back to auto-generated initials. */
   updateMyPinMark: (pinMark: string | null) =>
     apiClient.patch<TeamMember>(API_ENDPOINTS.roster.myPinMark, { pinMark }),

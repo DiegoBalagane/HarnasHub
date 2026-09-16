@@ -17,6 +17,7 @@ export const API_ENDPOINTS = {
     teamRole: (userId: string) => `/api/roster/${userId}/team-role`,
     rosterSlot: (userId: string) => `/api/roster/${userId}/roster-slot`,
     secondaryTeamRoles: (userId: string) => `/api/roster/${userId}/secondary-team-roles`,
+    pinColor: (userId: string) => `/api/roster/${userId}/pin-color`,
     myNickname: '/api/roster/me/nickname',
     myPinColor: '/api/roster/me/pin-color',
     myPinMark: '/api/roster/me/pin-mark',
