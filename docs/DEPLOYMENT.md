@@ -28,7 +28,7 @@ Render jest równoważną alternatywą (też wspiera deploy z Dockerfile + manag
    | `Jwt__Secret` | **nowy, losowy sekret min. 32 znaki** — nigdy nie ten z `appsettings.Development.json` |
    | `Jwt__Issuer` | `HarnasHub` |
    | `Jwt__Audience` | `HarnasHub.Client` |
-   | `Jwt__ExpiryMinutes` | `60` |
+   | `Jwt__ExpiryMinutes` | `43200` (30 dni — tyle samo co lokalnie; krótsza wartość wymusza ponowne logowanie po każdym wygaśnięciu tokenu, co bez odświeżania sesji łatwo pomylić z problemem przy deployu) |
    | `Discord__WebhookUrl` | URL webhooka z Discorda (Ustawienia kanału → Integracje → Webhooks → New Webhook → Copy URL) — powiadomienia o nowych wydarzeniach/zadaniach |
    | `DiscordOAuth__ClientId` | Client ID aplikacji Discord (Developer Portal → OAuth2) |
    | `DiscordOAuth__ClientSecret` | Client Secret tej samej aplikacji — **traktuj jak hasło** |
