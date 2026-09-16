@@ -82,6 +82,20 @@ export function useUpdateOwnPinColor() {
   })
 }
 
+/** Manager-only: saves (or clears) any Main-roster member's map-radar pin colour, and refreshes the roster. */
+export function useUpdatePinColor() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ userId, pinColor }: { userId: string; pinColor: PinColor | null }) =>
+      rosterApi.updatePinColor(userId, pinColor),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['roster'] })
+      queryClient.invalidateQueries({ queryKey: ['map-strategy'] })
+    },
+  })
+}
+
 /** Saves (or clears) the caller's own map-radar pin mark — open to every roster member. */
 export function useUpdateOwnPinMark() {
   const queryClient = useQueryClient()
