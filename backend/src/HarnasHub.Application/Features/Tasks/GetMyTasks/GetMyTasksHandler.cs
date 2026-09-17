@@ -19,9 +19,20 @@ public class GetMyTasksHandler(IApplicationDbContext dbContext, ICurrentUserServ
 
 		return await dbContext.Tasks
 			.Where(t => t.AssignedToUserId == userId)
-			.OrderBy(t => t.Status == TaskItemStatus.Done)
-			.ThenBy(t => t.DueAtUtc)
-			.Select(t => new TaskItemDto(t.Id, t.Title, t.Description, t.Status.ToString(), t.DueAtUtc, t.CreatedAtUtc))
+			.GroupJoin(dbContext.TrainingMaterials, t => t.TrainingMaterialId, m => m.Id, (t, materials) => new { t, materials })
+			.SelectMany(x => x.materials.DefaultIfEmpty(), (x, material) => new { x.t, material })
+			.OrderBy(x => x.t.Status == TaskItemStatus.Done)
+			.ThenBy(x => x.t.DueAtUtc)
+			.Select(x => new TaskItemDto(
+				x.t.Id,
+				x.t.Title,
+				x.t.Description,
+				x.t.Status.ToString(),
+				x.t.DueAtUtc,
+				x.t.CreatedAtUtc,
+				x.t.TrainingMaterialId,
+				x.material == null ? null : x.material.Title,
+				x.material == null ? null : x.material.Url))
 			.ToListAsync(cancellationToken);
 	}
 

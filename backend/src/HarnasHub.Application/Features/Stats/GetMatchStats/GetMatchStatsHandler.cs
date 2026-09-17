@@ -16,11 +16,22 @@ public class GetMatchStatsHandler(IApplicationDbContext dbContext)
 	{
 		return await (
 			from stat in dbContext.PlayerMatchStats
-			join user in dbContext.Users on stat.UserId equals user.Id
 			where stat.MatchResultId == request.MatchResultId
+			// Left join: a departed player's stat line stays even after their account is deleted (see
+			// DeleteTeamMemberHandler), so this must not silently drop rows whose user no longer exists.
+			join user in dbContext.Users on stat.UserId equals user.Id into userGroup
+			from user in userGroup.DefaultIfEmpty()
 			orderby stat.Rating descending
 			select new PlayerMatchStatDto(
-				stat.Id, user.Id, user.DisplayName, stat.Kills, stat.Deaths, stat.Assists, stat.Adr, stat.HeadshotPercentage, stat.Rating))
+				stat.Id,
+				stat.UserId,
+				user != null ? user.DisplayName : "Usunięty zawodnik",
+				stat.Kills,
+				stat.Deaths,
+				stat.Assists,
+				stat.Adr,
+				stat.HeadshotPercentage,
+				stat.Rating))
 			.ToListAsync(cancellationToken);
 	}
 

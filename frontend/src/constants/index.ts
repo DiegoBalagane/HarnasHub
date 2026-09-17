@@ -13,6 +13,7 @@ export const API_ENDPOINTS = {
   },
   roster: {
     list: '/api/roster',
+    byId: (userId: string) => `/api/roster/${userId}`,
     role: (userId: string) => `/api/roster/${userId}/role`,
     isCoach: (userId: string) => `/api/roster/${userId}/is-coach`,
     teamRole: (userId: string) => `/api/roster/${userId}/team-role`,
@@ -47,6 +48,10 @@ export const API_ENDPOINTS = {
     positions: (mapName: string, side: string) => `/api/map-strategy/${mapName}/${side}`,
     set: '/api/map-strategy',
     remove: (positionId: string) => `/api/map-strategy/${positionId}`,
+  },
+  tactics: {
+    list: '/api/tactics',
+    byId: (tacticId: string) => `/api/tactics/${tacticId}`,
   },
   trainingMaterials: '/api/training-materials',
   matchStats: (matchResultId: string) => `/api/matches/${matchResultId}/stats`,

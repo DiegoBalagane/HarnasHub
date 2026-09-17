@@ -1,4 +1,5 @@
 using HarnasHub.Api.Common;
+using HarnasHub.Application.Features.Roster.DeleteTeamMember;
 using HarnasHub.Application.Features.Roster.GetRoster;
 using HarnasHub.Application.Features.Roster.UpdateOwnNickname;
 using HarnasHub.Application.Features.Roster.UpdateOwnPinColor;
@@ -132,6 +133,15 @@ public class RosterEndpoints : IEndpoint
 
 			return result.Match(
 				success => Results.Ok(success),
+				errors => errors.ToProblemResult());
+		}).RequireAuthorization(policy => policy.RequireRole("Manager"));
+
+		group.MapDelete("/{userId:guid}", async (Guid userId, ISender sender, CancellationToken cancellationToken) =>
+		{
+			var result = await sender.Send(new DeleteTeamMemberCommand(userId), cancellationToken);
+
+			return result.Match(
+				success => Results.NoContent(),
 				errors => errors.ToProblemResult());
 		}).RequireAuthorization(policy => policy.RequireRole("Manager"));
 

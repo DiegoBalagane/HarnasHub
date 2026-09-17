@@ -1,6 +1,7 @@
 using ErrorOr;
 using HarnasHub.Application.Abstractions;
 using HarnasHub.Application.Features.Tasks.Shared;
+using HarnasHub.Core.Entities;
 using HarnasHub.Core.Enums;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -26,6 +27,19 @@ public class AssignTaskHandler(
 			return TaskErrors.AssigneeNotFound;
 		}
 
+		TrainingMaterial? material = null;
+
+		if (request.TrainingMaterialId is not null)
+		{
+			material = await dbContext.TrainingMaterials
+				.FirstOrDefaultAsync(m => m.Id == request.TrainingMaterialId, cancellationToken);
+
+			if (material is null)
+			{
+				return TaskErrors.MaterialNotFound;
+			}
+		}
+
 		var task = new TaskItem
 		{
 			Id = Guid.NewGuid(),
@@ -35,7 +49,8 @@ public class AssignTaskHandler(
 			AssignedByUserId = currentUser.UserId,
 			Status = TaskItemStatus.Todo,
 			DueAtUtc = request.DueAtUtc,
-			CreatedAtUtc = DateTime.UtcNow
+			CreatedAtUtc = DateTime.UtcNow,
+			TrainingMaterialId = material?.Id
 		};
 
 		dbContext.Tasks.Add(task);
@@ -45,7 +60,9 @@ public class AssignTaskHandler(
 		await realtimeNotifier.NotifyAsync("tasks", cancellationToken);
 		await realtimeNotifier.NotifyAsync("dashboard", cancellationToken);
 
-		return new TaskItemDto(task.Id, task.Title, task.Description, task.Status.ToString(), task.DueAtUtc, task.CreatedAtUtc);
+		return new TaskItemDto(
+			task.Id, task.Title, task.Description, task.Status.ToString(), task.DueAtUtc, task.CreatedAtUtc,
+			material?.Id, material?.Title, material?.Url);
 	}
 
 	#endregion

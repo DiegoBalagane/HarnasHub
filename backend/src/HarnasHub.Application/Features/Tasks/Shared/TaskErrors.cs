@@ -13,6 +13,10 @@ public static class TaskErrors
 		"Tasks.AssigneeNotFound",
 		"Wybrany zawodnik nie istnieje.");
 
+	public static Error MaterialNotFound => Error.Validation(
+		"Tasks.MaterialNotFound",
+		"Wybrany materiał nie istnieje.");
+
 	public static Error NotYourTask => Error.Forbidden(
 		"Tasks.NotYourTask",
 		"To zadanie nie jest przypisane do Ciebie.");
