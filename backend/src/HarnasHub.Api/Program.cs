@@ -123,9 +123,33 @@ app.MapHub<TeamHub>("/hubs/team");
 
 // Serves the built React app (see docs/DEPLOYMENT.md) so the whole product is a single deployable unit.
 // A local `dotnet run` with no wwwroot/ built yet just serves nothing here — API/hub routes are unaffected.
+//
+// The shell files (index.html, the service worker, its manifest) must never sit in a browser/CDN cache:
+// the service worker only discovers a new deploy by re-fetching sw.js and byte-comparing it, and a plain
+// F5 only picks up a new build if index.html itself is revalidated — a cached copy of either one is
+// exactly how someone can sit on a stale build for hours and see it "fixed" only by Ctrl+Shift+R. Content-
+// hashed files under /assets/ are the opposite case: their filename changes whenever their content does,
+// so they're safe to cache forever. Everything else (icons, map radars) isn't hashed but rarely changes,
+// so a short cache still avoids most repeat requests without risking a long-lived stale copy.
+var staticFileOptions = new StaticFileOptions
+{
+	OnPrepareResponse = context =>
+	{
+		var path = context.File.Name;
+		var isShellFile = path is "index.html" or "sw.js" or "registerSW.js" or "manifest.webmanifest";
+		var isHashedAsset = context.Context.Request.Path.StartsWithSegments("/assets");
+
+		context.Context.Response.Headers.CacheControl = isShellFile
+			? "no-cache"
+			: isHashedAsset
+				? "public,max-age=31536000,immutable"
+				: "public,max-age=3600";
+	},
+};
+
 app.UseDefaultFiles();
-app.UseStaticFiles();
-app.MapFallbackToFile("index.html");
+app.UseStaticFiles(staticFileOptions);
+app.MapFallbackToFile("index.html", staticFileOptions);
 
 app.Run();
 

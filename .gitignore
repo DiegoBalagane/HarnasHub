@@ -4,6 +4,8 @@ obj/
 *.user
 .vs/
 *.suo
+# Built frontend copied here for a local single-container run (Dockerfile does this at build time)
+backend/src/HarnasHub.Api/wwwroot/
 
 # Node / React
 node_modules/
