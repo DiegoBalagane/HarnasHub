@@ -11,7 +11,13 @@ using Microsoft.EntityFrameworkCore;
 namespace HarnasHub.Application.Features.Dashboard.GetDashboardSummary;
 
 /// <summary>Identity of one team member while the daily status lists are being built.</summary>
-internal readonly record struct DashboardMember(Guid Id, string DisplayName, string? InGameNickname, string? TeamRole);
+internal readonly record struct DashboardMember(
+	Guid Id,
+	string DisplayName,
+	string? InGameNickname,
+	string? TeamRole,
+	string? RosterSlot,
+	bool IsCoach);
 
 /// <summary>Handles <see cref="GetDashboardSummaryQuery"/>.</summary>
 public class GetDashboardSummaryHandler(IApplicationDbContext dbContext, ICurrentUserService currentUser)
@@ -28,7 +34,7 @@ public class GetDashboardSummaryHandler(IApplicationDbContext dbContext, ICurren
 		var nextEvent = await dbContext.Events
 			.Where(e => e.StartsAtUtc >= now)
 			.OrderBy(e => e.StartsAtUtc)
-			.Select(e => new EventDto(e.Id, e.Title, e.Type.ToString(), e.StartsAtUtc, e.Location, e.Notes))
+			.Select(e => new EventDto(e.Id, e.Title, e.Type.ToString(), e.StartsAtUtc, e.Location, e.Url, e.Notes))
 			.FirstOrDefaultAsync(cancellationToken);
 
 		var userId = currentUser.UserId;
@@ -39,11 +45,21 @@ public class GetDashboardSummaryHandler(IApplicationDbContext dbContext, ICurren
 		var today = DateOnly.FromDateTime(now);
 		var tomorrow = today.AddDays(1);
 
+		// Same membership rule as the availability calendar: no Guests, no StandIns, and nobody with
+		// neither a roster slot nor the Coach tag — "Pozostali" never shows up here either.
 		var members = (await dbContext.Users
+				.Where(user => user.AccessLevel != AccessLevel.Guest && user.RosterSlot != RosterSlot.StandIn)
+				.Where(user => user.RosterSlot != null || user.IsCoach)
 				.OrderBy(user => user.DisplayName)
-				.Select(user => new { user.Id, user.DisplayName, user.InGameNickname, user.TeamRole })
+				.Select(user => new { user.Id, user.DisplayName, user.InGameNickname, user.TeamRole, user.RosterSlot, user.IsCoach })
 				.ToListAsync(cancellationToken))
-			.Select(user => new DashboardMember(user.Id, user.DisplayName, user.InGameNickname, user.TeamRole?.ToString()))
+			.Select(user => new DashboardMember(
+				user.Id,
+				user.DisplayName,
+				user.InGameNickname,
+				user.TeamRole?.ToString(),
+				user.RosterSlot?.ToString(),
+				user.IsCoach))
 			.ToList();
 
 		var declaredDays = await dbContext.PlayerAvailabilityDays
@@ -78,7 +94,7 @@ public class GetDashboardSummaryHandler(IApplicationDbContext dbContext, ICurren
 		return await dbContext.Events
 			.Where(e => e.StartsAtUtc >= rangeStart && e.StartsAtUtc < rangeEnd)
 			.OrderBy(e => e.StartsAtUtc)
-			.Select(e => new EventDto(e.Id, e.Title, e.Type.ToString(), e.StartsAtUtc, e.Location, e.Notes))
+			.Select(e => new EventDto(e.Id, e.Title, e.Type.ToString(), e.StartsAtUtc, e.Location, e.Url, e.Notes))
 			.ToListAsync(cancellationToken);
 	}
 
@@ -103,6 +119,8 @@ public class GetDashboardSummaryHandler(IApplicationDbContext dbContext, ICurren
 					member.DisplayName,
 					member.InGameNickname,
 					member.TeamRole,
+					member.RosterSlot,
+					member.IsCoach,
 					effective.Status,
 					effective.From,
 					effective.To,

@@ -37,10 +37,10 @@ export function RosterList() {
       {setIsCoach.isError && <p className="text-sm text-red-400">{setIsCoach.error.message}</p>}
       <ul className="flex flex-col divide-y divide-neutral-800 rounded-md border border-neutral-800">
         {roster?.map((member) => (
-          <li key={member.id} className="flex items-center justify-between gap-3 px-4 py-3">
+          <li key={member.id} className="flex flex-wrap items-center justify-between gap-3 px-4 py-3">
             <MemberName member={member} />
 
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center justify-end gap-2">
               {canManageTeamRoles ? (
                 <TeamRolesEditor member={member} />
               ) : (
@@ -137,10 +137,12 @@ function MemberName({ member }: { member: TeamMember }) {
   const showsDiscordName = member.inGameNickname !== null && member.inGameNickname !== member.displayName
 
   return (
-    <span className="flex min-w-0 items-center gap-2">
+    <span className="flex shrink-0 items-center gap-2">
       {member.avatarUrl && <img src={member.avatarUrl} alt="" className="h-6 w-6 shrink-0 rounded-full" />}
-      <span className="flex min-w-0 flex-col">
-        <span className="truncate font-medium">{primaryName}</span>
+      <span className="flex max-w-[160px] flex-col">
+        <span className="truncate font-medium" title={primaryName}>
+          {primaryName}
+        </span>
         {showsDiscordName && (
           <span className="truncate text-xs text-neutral-500" title="Nazwa z Discorda">
             {member.displayName}

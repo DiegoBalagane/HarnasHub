@@ -4,12 +4,14 @@ import type { MapPosition } from '../../../services/mapStrategyApi'
 interface PositionNoteEditorProps {
   position: MapPosition
   onSave: (note: string | null) => void
+  /** Clears the note and offers a way to undo it — handled by the parent so the undo option survives this editor closing. */
+  onDelete: () => void
   onClose: () => void
   isSaving: boolean
 }
 
-/** Small inline form for the instruction note on one pin — what to do/play at that spot. */
-export function PositionNoteEditor({ position, onSave, onClose, isSaving }: PositionNoteEditorProps) {
+/** Small inline form for the instruction note on one pin — what to do/play at that spot. Saving closes the editor right away. */
+export function PositionNoteEditor({ position, onSave, onDelete, onClose, isSaving }: PositionNoteEditorProps) {
   const [note, setNote] = useState(position.note ?? '')
   const name = position.inGameNickname ?? position.displayName
 
@@ -35,7 +37,10 @@ export function PositionNoteEditor({ position, onSave, onClose, isSaving }: Posi
         <button
           type="button"
           disabled={isSaving}
-          onClick={() => onSave(note.trim() === '' ? null : note.trim())}
+          onClick={() => {
+            onSave(note.trim() === '' ? null : note.trim())
+            onClose()
+          }}
           className="self-start rounded-md bg-red-600 px-3 py-1.5 text-xs font-medium text-white transition hover:bg-red-500 disabled:opacity-50"
         >
           Zapisz notatkę
@@ -44,10 +49,7 @@ export function PositionNoteEditor({ position, onSave, onClose, isSaving }: Posi
           <button
             type="button"
             disabled={isSaving}
-            onClick={() => {
-              setNote('')
-              onSave(null)
-            }}
+            onClick={onDelete}
             className="rounded-md border border-neutral-700 px-3 py-1.5 text-xs text-neutral-300 transition hover:border-neutral-500 disabled:opacity-50"
           >
             Usuń notatkę

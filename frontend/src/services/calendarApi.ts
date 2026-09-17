@@ -10,6 +10,8 @@ export interface CalendarEvent {
   type: EventType
   startsAtUtc: string
   location: string | null
+  /** Optional link to the match/stream/lobby, shown as a clickable link instead of jammed into location. */
+  url: string | null
   notes: string | null
 }
 
@@ -25,6 +27,7 @@ export interface CreateEventPayload {
   type: EventType
   startsAtUtc: string
   location?: string
+  url?: string
   notes?: string
 }
 
