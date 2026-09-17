@@ -23,6 +23,8 @@ public class TestApplicationDbContext(DbContextOptions<TestApplicationDbContext>
 	public DbSet<Vacation> Vacations => Set<Vacation>();
 	public DbSet<MapPositionAssignment> MapPositionAssignments => Set<MapPositionAssignment>();
 	public DbSet<UserSecondaryTeamRole> UserSecondaryTeamRoles => Set<UserSecondaryTeamRole>();
+	public DbSet<Tactic> Tactics => Set<Tactic>();
+	public DbSet<TacticPoint> TacticPoints => Set<TacticPoint>();
 
 	#endregion
 

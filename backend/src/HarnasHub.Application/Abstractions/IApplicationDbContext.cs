@@ -19,6 +19,8 @@ public interface IApplicationDbContext
 	DbSet<Vacation> Vacations { get; }
 	DbSet<MapPositionAssignment> MapPositionAssignments { get; }
 	DbSet<UserSecondaryTeamRole> UserSecondaryTeamRoles { get; }
+	DbSet<Tactic> Tactics { get; }
+	DbSet<TacticPoint> TacticPoints { get; }
 
 	Task<int> SaveChangesAsync(CancellationToken cancellationToken);
 }

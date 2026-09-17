@@ -56,4 +56,6 @@ export const rosterApi = {
   /** Open to every roster member; a null/blank value clears it back to auto-generated initials. */
   updateMyPinMark: (pinMark: string | null) =>
     apiClient.patch<TeamMember>(API_ENDPOINTS.roster.myPinMark, { pinMark }),
+  /** Manager only; permanently deletes the account and its personal data. Team artifacts they created are kept. */
+  deleteMember: (userId: string) => apiClient.delete<void>(API_ENDPOINTS.roster.byId(userId)),
 }

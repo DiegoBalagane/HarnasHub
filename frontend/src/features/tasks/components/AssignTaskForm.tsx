@@ -1,23 +1,32 @@
 import { useState } from 'react'
+import { useMaterials } from '../../materials/hooks/useMaterials'
 import { useRoster } from '../../roster/hooks/useRoster'
 import { useAssignTask } from '../hooks/useTasks'
 
-/** Coach/Manager-only form for assigning a task to a player. */
+/** Coach/Manager-only form for assigning a task to a player, optionally attaching a material to review. */
 export function AssignTaskForm() {
   const { data: roster } = useRoster()
+  const { data: materials } = useMaterials()
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
   const [assignedToUserId, setAssignedToUserId] = useState('')
+  const [trainingMaterialId, setTrainingMaterialId] = useState('')
   const assignTask = useAssignTask()
 
   function handleSubmit(event: React.FormEvent) {
     event.preventDefault()
     assignTask.mutate(
-      { title, description: description || undefined, assignedToUserId },
+      {
+        title,
+        description: description || undefined,
+        assignedToUserId,
+        trainingMaterialId: trainingMaterialId || undefined,
+      },
       {
         onSuccess: () => {
           setTitle('')
           setDescription('')
+          setTrainingMaterialId('')
         },
       },
     )
@@ -61,6 +70,19 @@ export function AssignTaskForm() {
         onChange={(event) => setDescription(event.target.value)}
         className="rounded-md border border-neutral-800 bg-neutral-900 px-3 py-2 text-sm outline-none focus:border-neutral-500"
       />
+
+      <select
+        value={trainingMaterialId}
+        onChange={(event) => setTrainingMaterialId(event.target.value)}
+        className="rounded-md border border-neutral-800 bg-neutral-900 px-3 py-2 text-sm outline-none focus:border-neutral-500"
+      >
+        <option value="">Bez materiału do obejrzenia</option>
+        {materials?.map((material) => (
+          <option key={material.id} value={material.id}>
+            {material.title}
+          </option>
+        ))}
+      </select>
 
       {assignTask.isError && <p className="text-sm text-red-400">Nie udało się przydzielić zadania.</p>}
 

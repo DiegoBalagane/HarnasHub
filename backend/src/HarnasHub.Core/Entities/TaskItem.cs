@@ -16,5 +16,8 @@ public class TaskItem
 	public DateTime? DueAtUtc { get; set; }
 	public DateTime CreatedAtUtc { get; set; }
 
+	/// <summary>Optional review material attached to this task — a loose reference without a DB-level FK, same pattern as <c>TacticPoint.NadeEntryId</c>.</summary>
+	public Guid? TrainingMaterialId { get; set; }
+
 	#endregion
 }
