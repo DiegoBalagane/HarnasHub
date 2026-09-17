@@ -25,6 +25,7 @@ public class CreateEventHandler(
 			Type = request.Type,
 			StartsAtUtc = request.StartsAtUtc,
 			Location = request.Location,
+			Url = request.Url,
 			Notes = request.Notes,
 			CreatedByUserId = currentUser.UserId,
 			CreatedAtUtc = DateTime.UtcNow
@@ -55,6 +56,7 @@ public class CreateEventHandler(
 			calendarEvent.Type.ToString(),
 			calendarEvent.StartsAtUtc,
 			calendarEvent.Location,
+			calendarEvent.Url,
 			calendarEvent.Notes);
 	}
 

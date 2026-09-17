@@ -71,25 +71,25 @@ export function TeamRolesEditor({ member }: { member: TeamMember }) {
     }
   }
 
-  const summary =
-    member.teamRole === null && member.secondaryTeamRoles.length === 0 ? (
-      '+ role'
-    ) : (
-      <>
-        {member.teamRole && teamRoleLabels[member.teamRole]}
-        {member.secondaryTeamRoles.length > 0 &&
-          `${member.teamRole ? ', ' : ''}${member.secondaryTeamRoles.map((role) => teamRoleLabels[role]).join(', ')}`}
-      </>
-    )
+  const summaryText =
+    member.teamRole === null && member.secondaryTeamRoles.length === 0
+      ? '+ role'
+      : [
+          member.teamRole ? teamRoleLabels[member.teamRole] : null,
+          ...member.secondaryTeamRoles.map((role) => teamRoleLabels[role]),
+        ]
+          .filter(Boolean)
+          .join(', ')
 
   return (
     <div className="relative">
       <button
         type="button"
+        title={summaryText}
         onClick={() => setIsOpen((open) => !open)}
-        className="rounded-md border border-neutral-800 bg-neutral-900 px-2 py-1 text-xs text-neutral-300 hover:border-neutral-500"
+        className="max-w-[160px] truncate rounded-md border border-neutral-800 bg-neutral-900 px-2 py-1 text-xs text-neutral-300 hover:border-neutral-500"
       >
-        {summary}
+        {summaryText}
       </button>
 
       {isOpen && (

@@ -18,7 +18,7 @@ export function AddPositionControl({ mapName, side, placedUserIds }: AddPosition
   const setPlayerPosition = useSetPlayerPosition()
 
   const selectable = (roster ?? []).filter(
-    (member) => member.role !== 'Guest' && !placedUserIds.includes(member.id),
+    (member) => member.rosterSlot === 'Main' && !placedUserIds.includes(member.id),
   )
 
   function handleAdd() {

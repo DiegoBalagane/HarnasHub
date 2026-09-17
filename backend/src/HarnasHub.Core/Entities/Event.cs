@@ -12,6 +12,7 @@ public class Event
 	public EventType Type { get; set; }
 	public DateTime StartsAtUtc { get; set; }
 	public string? Location { get; set; }
+	public string? Url { get; set; }
 	public string? Notes { get; set; }
 	public Guid CreatedByUserId { get; set; }
 	public DateTime CreatedAtUtc { get; set; }

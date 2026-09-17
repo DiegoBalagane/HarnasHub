@@ -16,6 +16,10 @@ public class CreateEventCommandValidator : AbstractValidator<CreateEventCommand>
 		RuleFor(x => x.Type).IsInEnum().WithMessage("Nieprawidłowy typ wydarzenia.");
 
 		RuleFor(x => x.Location).MaximumLength(200).WithMessage("Lokalizacja może mieć maksymalnie 200 znaków.");
+
+		RuleFor(x => x.Url)
+			.Must(url => string.IsNullOrWhiteSpace(url) || Uri.IsWellFormedUriString(url, UriKind.Absolute))
+			.WithMessage("Link musi być poprawnym adresem URL.");
 	}
 
 	#endregion

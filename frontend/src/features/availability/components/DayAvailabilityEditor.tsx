@@ -64,6 +64,13 @@ export function DayAvailabilityEditor({ date, entry, onClose }: DayAvailabilityE
     }
   }
 
+  function handleOffClick() {
+    // Off has no notion of hours — resetting "Cały dzień" here means a later "Dostępny" click
+    // starts from the whole-day default again, instead of reopening the hour range from before.
+    setFullDay(true)
+    saveStatus('Off')
+  }
+
   function handleTimeBlur() {
     if (status === 'PartiallyAvailable') {
       saveStatus('PartiallyAvailable', { from, to })
@@ -104,17 +111,21 @@ export function DayAvailabilityEditor({ date, entry, onClose }: DayAvailabilityE
           Dostępny
         </button>
 
-        <label className="flex items-center gap-1.5 text-xs text-neutral-300">
+        <label
+          title={status === 'Off' ? 'Niedostępne, gdy nie grasz tego dnia' : undefined}
+          className="flex items-center gap-1.5 text-xs text-neutral-300 has-[:disabled]:opacity-50"
+        >
           <input
             type="checkbox"
             checked={fullDay}
+            disabled={status === 'Off'}
             onChange={(event) => handleFullDayToggle(event.target.checked)}
           />
           Cały dzień
         </label>
       </div>
 
-      {!fullDay && (
+      {!fullDay && status !== 'Off' && (
         <div className="flex items-center gap-2">
           <input
             required
@@ -138,7 +149,7 @@ export function DayAvailabilityEditor({ date, entry, onClose }: DayAvailabilityE
 
       <button
         type="button"
-        onClick={() => saveStatus('Off')}
+        onClick={handleOffClick}
         className={`self-start rounded-md border px-3 py-1 text-xs transition ${
           status === 'Off'
             ? 'border-neutral-400 bg-neutral-800 text-neutral-100'

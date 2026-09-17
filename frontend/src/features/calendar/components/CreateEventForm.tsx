@@ -11,6 +11,7 @@ export function CreateEventForm() {
   const [type, setType] = useState<EventType>('Training')
   const [startsAt, setStartsAt] = useState('')
   const [location, setLocation] = useState('')
+  const [url, setUrl] = useState('')
   const createEvent = useCreateEvent()
 
   function handleSubmit(event: React.FormEvent) {
@@ -21,11 +22,13 @@ export function CreateEventForm() {
         type,
         startsAtUtc: new Date(startsAt).toISOString(),
         location: location || undefined,
+        url: url || undefined,
       },
       {
         onSuccess: () => {
           setTitle('')
           setLocation('')
+          setUrl('')
           setStartsAt('')
         },
       },
@@ -75,6 +78,14 @@ export function CreateEventForm() {
           className="flex-1 rounded-md border border-neutral-800 bg-neutral-900 px-3 py-2 text-sm outline-none focus:border-neutral-500"
         />
       </div>
+
+      <input
+        type="url"
+        placeholder="Link do meczu/streamu (opcjonalnie)"
+        value={url}
+        onChange={(event) => setUrl(event.target.value)}
+        className="rounded-md border border-neutral-800 bg-neutral-900 px-3 py-2 text-sm outline-none focus:border-neutral-500"
+      />
 
       {createEvent.isError && <p className="text-sm text-red-400">Nie udało się dodać wydarzenia.</p>}
 
