@@ -40,6 +40,18 @@ export function EventList() {
             <span className="text-neutral-500">{expandedEventId === event.id ? '▲' : '▼'}</span>
           </button>
 
+          {event.url && (
+            <a
+              href={event.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={(clickEvent) => clickEvent.stopPropagation()}
+              className="mt-1 block truncate text-sm text-blue-400 hover:underline"
+            >
+              🔗 {event.url}
+            </a>
+          )}
+
           {expandedEventId === event.id && (
             <div className="mt-3">
               <AvailabilityPicker eventId={event.id} />

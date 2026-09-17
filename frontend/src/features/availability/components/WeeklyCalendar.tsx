@@ -1,11 +1,11 @@
 import { Fragment, useMemo, useState } from 'react'
 import type { CalendarEvent } from '../../../services/calendarApi'
-import type { MemberWeek } from '../../../services/availabilityApi'
 import { useAuthStore } from '../../auth/stores/useAuthStore'
 import { useUpcomingEvents } from '../../calendar/hooks/useCalendar'
 import { computeDaySummary } from '../daySummary'
 import { useWeekAvailability } from '../hooks/useAvailability'
 import { weekdayLabels } from '../labels'
+import { sectionOf, compareSections } from '../rosterSections'
 import {
   addDaysIso,
   buildWeekDates,
@@ -22,17 +22,6 @@ import { NoteHint } from './NoteHint'
 const dayNumberFormatter = new Intl.DateTimeFormat('pl-PL', { day: '2-digit', month: '2-digit' })
 const navButtonClass =
   'rounded-md border border-neutral-700 px-3 py-1 text-xs text-neutral-300 transition hover:border-neutral-500'
-
-type CalendarSection = 'Main' | 'Bench' | 'Other' | 'Coach'
-const sectionRank: Record<CalendarSection, number> = { Main: 0, Bench: 1, Other: 2, Coach: 3 }
-
-/** The Coach always sits in its own section at the very bottom, regardless of roster slot. */
-function sectionOf(member: MemberWeek): CalendarSection {
-  if (member.isCoach) return 'Coach'
-  if (member.rosterSlot === 'Main') return 'Main'
-  if (member.rosterSlot === 'Bench') return 'Bench'
-  return 'Other'
-}
 
 /** Weekly availability grid: one row per team member, one column per day, own cells are editable. */
 export function WeeklyCalendar() {
@@ -63,7 +52,7 @@ export function WeeklyCalendar() {
     () =>
       [...(data?.members ?? [])].sort((left, right) => {
         // Main squad above the bench, Coach always last in its own section, matching the backend's own ordering.
-        const sectionDiff = sectionRank[sectionOf(left)] - sectionRank[sectionOf(right)]
+        const sectionDiff = compareSections(left, right)
 
         if (sectionDiff !== 0) {
           return sectionDiff

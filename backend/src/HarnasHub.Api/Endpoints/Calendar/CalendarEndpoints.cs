@@ -25,7 +25,7 @@ public class CalendarEndpoints : IEndpoint
 
 		group.MapPost("/events", async (CreateEventRequest request, ISender sender, CancellationToken cancellationToken) =>
 		{
-			var command = new CreateEventCommand(request.Title, request.Type, request.StartsAtUtc, request.Location, request.Notes);
+			var command = new CreateEventCommand(request.Title, request.Type, request.StartsAtUtc, request.Location, request.Url, request.Notes);
 			var result = await sender.Send(command, cancellationToken);
 			return result.Match(success => Results.Ok(success), errors => errors.ToProblemResult());
 		}).RequireAuthorization(policy => policy.RequireRole("Coach", "Manager"));
@@ -55,7 +55,7 @@ public class CalendarEndpoints : IEndpoint
 }
 
 /// <summary>Request body for POST /api/calendar/events.</summary>
-public record CreateEventRequest(string Title, EventType Type, DateTime StartsAtUtc, string? Location, string? Notes);
+public record CreateEventRequest(string Title, EventType Type, DateTime StartsAtUtc, string? Location, string? Url, string? Notes);
 
 /// <summary>Request body for POST /api/calendar/events/{eventId}/availability.</summary>
 public record SetAvailabilityRequest(AvailabilityStatus Status);

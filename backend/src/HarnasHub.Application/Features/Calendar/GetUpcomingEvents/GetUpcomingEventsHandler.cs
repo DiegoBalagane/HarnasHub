@@ -19,7 +19,7 @@ public class GetUpcomingEventsHandler(IApplicationDbContext dbContext)
 		return await dbContext.Events
 			.Where(e => e.StartsAtUtc >= now)
 			.OrderBy(e => e.StartsAtUtc)
-			.Select(e => new EventDto(e.Id, e.Title, e.Type.ToString(), e.StartsAtUtc, e.Location, e.Notes))
+			.Select(e => new EventDto(e.Id, e.Title, e.Type.ToString(), e.StartsAtUtc, e.Location, e.Url, e.Notes))
 			.ToListAsync(cancellationToken);
 	}
 
