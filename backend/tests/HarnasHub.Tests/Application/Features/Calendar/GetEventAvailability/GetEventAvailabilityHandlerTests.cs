@@ -42,7 +42,7 @@ public class GetEventAvailabilityHandlerTests
 			DiscordId = userId.ToString(),
 			DisplayName = "DiscordowaNazwa",
 			InGameNickname = "Zenus",
-			Role = UserRole.Player,
+			AccessLevel = AccessLevel.Player,
 			CreatedAtUtc = DateTime.UtcNow
 		});
 		dbContext.Availabilities.Add(new HarnasHub.Core.Entities.Availability

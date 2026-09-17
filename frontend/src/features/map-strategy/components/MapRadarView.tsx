@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import type { MapPosition, MapSide } from '../../../services/mapStrategyApi'
 import type { MapName } from '../../../services/nadesApi'
-import { useAuthStore } from '../../auth/stores/useAuthStore'
+import { useIsCoachOrManager } from '../../auth/hooks/useIsCoachOrManager'
 import { mapNames } from '../../nades/labels'
 import { useMapPositions } from '../hooks/useMapStrategy'
 import { mapSideLabels, mapSides } from '../labels'
@@ -9,15 +9,12 @@ import { teamRoleLabels } from '../../roster/labels'
 import { AddPositionControl } from './AddPositionControl'
 import { MapRadar } from './MapRadar'
 
-const editorRoles = new Set(['Coach', 'Manager'])
-
 /** Per-map starting-position board: pick a map and side, then read (or, as Coach/Manager, arrange) the team's setup. */
 export function MapRadarView() {
   const [mapName, setMapName] = useState<MapName>('Mirage')
   const [side, setSide] = useState<MapSide>('CT')
   const { data: positions, isLoading, isError } = useMapPositions(mapName, side)
-  const role = useAuthStore((state) => state.role)
-  const canEdit = role !== null && editorRoles.has(role)
+  const canEdit = useIsCoachOrManager()
 
   return (
     <section className="flex w-full max-w-3xl flex-col gap-4">

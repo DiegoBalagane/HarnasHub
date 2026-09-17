@@ -5,7 +5,10 @@ import { decodeSessionFromToken } from '../../../services/jwt'
 interface AuthState {
   userId: string | null
   displayName: string | null
+  /** Access level only (Guest/Player/Manager) — see `isCoach` for the independent team-function flag. */
   role: string | null
+  /** Whether this account is tagged as the team's Coach, independent of its access level. */
+  isCoach: boolean
   avatarUrl: string | null
   /** Not part of the JWT — loaded from the roster after sign-in, see useSyncOwnNickname. */
   inGameNickname: string | null
@@ -23,6 +26,7 @@ export const useAuthStore = create<AuthState>((set) => ({
   userId: restoredSession?.userId ?? null,
   displayName: restoredSession?.displayName ?? null,
   role: restoredSession?.role ?? null,
+  isCoach: restoredSession?.isCoach ?? false,
   avatarUrl: restoredSession?.avatarUrl ?? null,
   inGameNickname: null,
   isAuthenticated: restoredSession !== null,
@@ -38,6 +42,7 @@ export const useAuthStore = create<AuthState>((set) => ({
       userId: session.userId,
       displayName: session.displayName,
       role: session.role,
+      isCoach: session.isCoach,
       avatarUrl: session.avatarUrl,
       inGameNickname: null,
       isAuthenticated: true,
@@ -51,6 +56,7 @@ export const useAuthStore = create<AuthState>((set) => ({
       userId: null,
       displayName: null,
       role: null,
+      isCoach: false,
       avatarUrl: null,
       inGameNickname: null,
       isAuthenticated: false,

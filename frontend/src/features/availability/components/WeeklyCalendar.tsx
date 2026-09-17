@@ -1,5 +1,6 @@
 import { Fragment, useMemo, useState } from 'react'
 import type { CalendarEvent } from '../../../services/calendarApi'
+import type { MemberWeek } from '../../../services/availabilityApi'
 import { useAuthStore } from '../../auth/stores/useAuthStore'
 import { useUpcomingEvents } from '../../calendar/hooks/useCalendar'
 import { computeDaySummary } from '../daySummary'
@@ -11,7 +12,6 @@ import {
   entryFor,
   getWeekStartIso,
   parseIsoDate,
-  rosterSlotRank,
   toInitials,
   toIsoDate,
 } from '../weekDates'
@@ -22,6 +22,17 @@ import { NoteHint } from './NoteHint'
 const dayNumberFormatter = new Intl.DateTimeFormat('pl-PL', { day: '2-digit', month: '2-digit' })
 const navButtonClass =
   'rounded-md border border-neutral-700 px-3 py-1 text-xs text-neutral-300 transition hover:border-neutral-500'
+
+type CalendarSection = 'Main' | 'Bench' | 'Other' | 'Coach'
+const sectionRank: Record<CalendarSection, number> = { Main: 0, Bench: 1, Other: 2, Coach: 3 }
+
+/** The Coach always sits in its own section at the very bottom, regardless of roster slot. */
+function sectionOf(member: MemberWeek): CalendarSection {
+  if (member.isCoach) return 'Coach'
+  if (member.rosterSlot === 'Main') return 'Main'
+  if (member.rosterSlot === 'Bench') return 'Bench'
+  return 'Other'
+}
 
 /** Weekly availability grid: one row per team member, one column per day, own cells are editable. */
 export function WeeklyCalendar() {
@@ -51,11 +62,11 @@ export function WeeklyCalendar() {
   const members = useMemo(
     () =>
       [...(data?.members ?? [])].sort((left, right) => {
-        // Main squad above the bench above anyone unassigned, matching the backend's own ordering.
-        const slotRank = rosterSlotRank(left.rosterSlot) - rosterSlotRank(right.rosterSlot)
+        // Main squad above the bench, Coach always last in its own section, matching the backend's own ordering.
+        const sectionDiff = sectionRank[sectionOf(left)] - sectionRank[sectionOf(right)]
 
-        if (slotRank !== 0) {
-          return slotRank
+        if (sectionDiff !== 0) {
+          return sectionDiff
         }
 
         return (left.inGameNickname ?? left.displayName).localeCompare(
@@ -197,29 +208,39 @@ export function WeeklyCalendar() {
               )
             })}
 
-            {members.map((member) => {
+            {members.map((member, memberIndex) => {
               const isMyRow = member.userId === currentUserId
+              const section = sectionOf(member)
+              const previousSection = memberIndex > 0 ? sectionOf(members[memberIndex - 1]) : null
+              const isNewSection = section !== previousSection
+              const sectionDivider = memberIndex > 0 && isNewSection ? 'border-t border-neutral-700' : ''
+              const rowHighlight = isMyRow
+                ? 'bg-neutral-900 ring-1 ring-inset ring-red-800/60'
+                : ''
 
               return (
                 <Fragment key={member.userId}>
+                  {section === 'Coach' && isNewSection && (
+                    <div className="col-span-8 mt-1 px-2 pt-2 text-[11px] font-medium text-neutral-500">
+                      Trener
+                    </div>
+                  )}
+
                   <div
-                    className={`flex items-center gap-2 truncate rounded-l-md px-2 py-1 text-sm ${
-                      isMyRow ? 'bg-neutral-900' : ''
-                    }`}
+                    className={`flex items-center gap-2 truncate rounded-l-md px-2 py-1 text-sm ${rowHighlight} ${sectionDivider}`}
                   >
-                    <span className="truncate text-neutral-200">
+                    <span className={`truncate ${isMyRow ? 'font-semibold text-white' : 'text-neutral-200'}`}>
                       {member.inGameNickname ?? member.displayName}
                     </span>
-                    {isMyRow && <span className="text-[10px] text-neutral-500">(Ty)</span>}
+                    {isMyRow && <span className="text-[10px] text-red-400">(Ty)</span>}
                   </div>
                   {weekDates.map((date, index) => {
                     const entry = entryFor(member, date)
                     const isLastColumn = index === weekDates.length - 1
-                    const rowBackground = isMyRow ? 'bg-neutral-900' : ''
                     const roundedEnd = isLastColumn ? 'rounded-r-md' : ''
 
                     if (!entry) {
-                      return <div key={date} className={`${rowBackground} ${roundedEnd}`} />
+                      return <div key={date} className={`${rowHighlight} ${roundedEnd} ${sectionDivider}`} />
                     }
 
                     const isEditable = isMyRow && !isHistory && date >= todayIso
@@ -230,14 +251,14 @@ export function WeeklyCalendar() {
                         type="button"
                         title="Kliknij, aby ustawić swoją dostępność"
                         onClick={() => setEditingDate(editingDate === date ? null : date)}
-                        className={`p-0.5 transition hover:opacity-80 ${rowBackground} ${roundedEnd} ${
+                        className={`p-0.5 transition hover:opacity-80 ${rowHighlight} ${roundedEnd} ${sectionDivider} ${
                           editingDate === date ? 'ring-1 ring-neutral-300' : ''
                         }`}
                       >
                         <DayStatusBadge entry={entry} />
                       </button>
                     ) : (
-                      <div key={date} className={`p-0.5 ${isMyRow ? `${rowBackground} ${roundedEnd}` : ''}`}>
+                      <div key={date} className={`p-0.5 ${rowHighlight} ${roundedEnd} ${sectionDivider}`}>
                         <DayStatusBadge entry={entry} />
                       </div>
                     )

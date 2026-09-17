@@ -5,7 +5,7 @@ Kolejność wdrażania od MVP do pełnej wersji. Każda faza powinna być używa
 ## Faza 0 — Fundament
 - [x] Scaffold solution .NET (Core / Application / Infrastructure / Api / Tests) + projekt React (Vite + TS + Tailwind)
 - [x] Docker Compose: PostgreSQL lokalnie (port hosta 5433 — 5432 bywa zajęty przez lokalną instalację Postgresa)
-- [x] Auth: logowanie przez **Discord OAuth2** (bez haseł, bez przechowywania danych logowania), role Guest/Player/Coach/Manager (nowe konta zawsze startują jako Guest, bez dostępu do danych drużyny) — z weryfikacją członkostwa w serwerze Discord drużyny (`DiscordOAuth:RequiredGuildId`), przetestowane na prawdziwym koncie
+- [x] Auth: logowanie przez **Discord OAuth2** (bez haseł, bez przechowywania danych logowania), poziomy uprawnień Guest/Player/Manager (nowe konta zawsze startują jako Guest, bez dostępu do danych drużyny; od Fazy 6 „Trener" to osobna flaga `IsCoach`, niezależna od poziomu uprawnień) — z weryfikacją członkostwa w serwerze Discord drużyny (`DiscordOAuth:RequiredGuildId`), przetestowane na prawdziwym koncie
 - [x] Roster drużyny (lista graczy, role) + zmiana roli przez Managera (własnej roli zmienić nie można)
 - [x] Rola w drużynie (IGL / Entry fragger / Support / AWPer / Lurker / Rifler) ustawiana przez Coacha/Managera + własny nick w grze, który każdy zmienia tylko sobie (wyświetlany zamiast nazwy z Discorda)
 - [x] CI: build + testy na GitHub Actions
@@ -44,6 +44,13 @@ Uwaga: każdy z serwera Discord drużyny może się zalogować, ale dostaje kont
 - [x] Urlop można edytować w miejscu, nie tylko usunąć i dodać od nowa
 - [x] Sekcja `/settings` (koło zębate): ustawienie/zmiana/**usunięcie** własnego nicku; nick własny wszędzie zamiast nazwy z Discorda (też w kalendarzu, RSVP eventu, pinach na mapie)
 - [x] Skład: `RosterSlot` (Main/Bench/StandIn, main ograniczony do 5, StandIn poza kalendarzem, main sortowany nad ławką), przeciąganie kart między kolumnami, role dodatkowe w grze (multi-select obok roli głównej), własny kolor pinezki na radarze dla main składu, notatki „co robić" przy pozycjach na mapie
+
+## Faza 6 — Porządki UX składu i kalendarza
+- [x] Rola Trenera oddzielona od poziomu uprawnień: `User.IsCoach` (bool) niezależne od `AccessLevel` (Guest/Player/Manager) — Zawodnik lub Zarządca może być Trenerem naraz; JWT niesie oba jako osobne role-claimy, istniejące `RequireRole("Coach","Manager")` działają bez zmian
+- [x] Skład: kolor pinezki wyniesiony z wiersza gracza do osobnego panelu nad tabelą (nie ściska już nicku do zera szerokości), jeden popover na rolę główną + role dodatkowe zamiast dwóch osobnych selectów, tooltipy z opisem poziomów uprawnień i roli Trenera, kolumna Main w `RosterBoard` wygasza się po osiągnięciu 5 graczy
+- [x] Kalendarz: kreska między sekcjami Main/Ławka/Trener (Trener zawsze na dole, we własnej sekcji), gracze bez slotu i bez roli Trenera znikają z siatki, mocniej podświetlony własny wiersz, klik w dzień domyślnie ustawia „Cały dzień" (checkbox, odznaczenie pokazuje zakres godzin zamiast osobnego przycisku „częściowo dostępny")
+- [x] Nowy typ wydarzenia „Sparing" (`EventType.Scrim`), osobny od „Meczu"
+- [x] Radar mapy Cache dodany do `public/maps/` (pula map kompletna: Dust2/Mirage/Inferno/Nuke/Ancient/Anubis/Cache)
 
 ## Rozważane później
 - Automatyczne parsowanie demek CS2 (statystyki bez ręcznego wpisywania)

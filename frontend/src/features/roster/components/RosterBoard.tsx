@@ -3,9 +3,10 @@ import type { RosterSlot, TeamMember } from '../../../services/rosterApi'
 import { useRoster, useUpdateRosterSlot } from '../hooks/useRoster'
 
 type ColumnId = 'Main' | 'Bench' | 'Unassigned'
+const maxMainRosterSize = 5
 
 const columns: { id: ColumnId; title: string }[] = [
-  { id: 'Main', title: 'Główny skład (max 5)' },
+  { id: 'Main', title: `Główny skład (max ${maxMainRosterSize})` },
   { id: 'Bench', title: 'Ławka' },
   { id: 'Unassigned', title: 'Pozostali' },
 ]
@@ -16,18 +17,31 @@ function columnFor(member: TeamMember): ColumnId {
   return 'Unassigned'
 }
 
-/** Column drop target that holds one card per roster slot. */
-function Column({ id, title, members }: { id: ColumnId; title: string; members: TeamMember[] }) {
-  const { setNodeRef, isOver } = useDroppable({ id })
+/** Column drop target that holds one card per roster slot; the Main column dims and stops highlighting drops once it's full. */
+function Column({
+  id,
+  title,
+  members,
+  isFull,
+}: {
+  id: ColumnId
+  title: string
+  members: TeamMember[]
+  isFull: boolean
+}) {
+  const { setNodeRef, isOver } = useDroppable({ id, disabled: isFull })
 
   return (
     <div
       ref={setNodeRef}
       className={`flex min-h-[120px] flex-1 flex-col gap-2 rounded-md border p-3 transition ${
         isOver ? 'border-red-500 bg-neutral-900' : 'border-neutral-800'
-      }`}
+      } ${isFull ? 'opacity-60' : ''}`}
     >
-      <h3 className="text-xs font-medium text-neutral-400">{title}</h3>
+      <h3 className="text-xs font-medium text-neutral-400">
+        {title}
+        {isFull && <span className="ml-1 text-neutral-600">— pełny</span>}
+      </h3>
       {members.map((member) => (
         <MemberCard key={member.id} member={member} />
       ))}
@@ -65,6 +79,7 @@ export function RosterBoard() {
   const updateRosterSlot = useUpdateRosterSlot()
 
   const members = (roster ?? []).filter((member) => member.role !== 'Guest')
+  const mainCount = members.filter((member) => member.rosterSlot === 'Main').length
 
   function handleDragEnd(event: DragEndEvent) {
     const { active, over } = event
@@ -90,6 +105,7 @@ export function RosterBoard() {
               id={column.id}
               title={column.title}
               members={members.filter((member) => columnFor(member) === column.id)}
+              isFull={column.id === 'Main' && mainCount >= maxMainRosterSize}
             />
           ))}
         </div>
