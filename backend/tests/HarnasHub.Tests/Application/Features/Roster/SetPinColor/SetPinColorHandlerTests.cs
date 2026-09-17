@@ -89,7 +89,7 @@ public class SetPinColorHandlerTests
 		Id = id,
 		DiscordId = id.ToString("N"),
 		DisplayName = "Zawodnik",
-		Role = UserRole.Player,
+		AccessLevel = AccessLevel.Player,
 		RosterSlot = rosterSlot,
 		CreatedAtUtc = DateTime.UtcNow
 	};

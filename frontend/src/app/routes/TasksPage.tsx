@@ -1,12 +1,9 @@
 import { AssignTaskForm } from '../../features/tasks/components/AssignTaskForm'
 import { TaskList } from '../../features/tasks/components/TaskList'
-import { useAuthStore } from '../../features/auth/stores/useAuthStore'
-
-const coachRoles = new Set(['Coach', 'Manager'])
+import { useIsCoachOrManager } from '../../features/auth/hooks/useIsCoachOrManager'
 
 export function TasksPage() {
-  const role = useAuthStore((state) => state.role)
-  const canManage = role !== null && coachRoles.has(role)
+  const canManage = useIsCoachOrManager()
 
   return (
     <>

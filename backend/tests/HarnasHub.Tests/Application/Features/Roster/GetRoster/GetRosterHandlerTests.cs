@@ -20,7 +20,7 @@ public class GetRosterHandlerTests
 			Id = userId,
 			DiscordId = userId.ToString(),
 			DisplayName = "Zenek",
-			Role = UserRole.Player,
+			AccessLevel = AccessLevel.Player,
 			TeamRole = TeamRole.Rifler,
 			CreatedAtUtc = DateTime.UtcNow
 		});
@@ -51,7 +51,7 @@ public class GetRosterHandlerTests
 			Id = userId,
 			DiscordId = userId.ToString(),
 			DisplayName = "Zenek",
-			Role = UserRole.Player,
+			AccessLevel = AccessLevel.Player,
 			CreatedAtUtc = DateTime.UtcNow
 		});
 		await dbContext.SaveChangesAsync(CancellationToken.None);

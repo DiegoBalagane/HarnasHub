@@ -74,7 +74,7 @@ public class UpdateTeamRoleHandlerTests
 		Id = id,
 		DiscordId = id.ToString("N"),
 		DisplayName = "Harnas",
-		Role = UserRole.Player,
+		AccessLevel = AccessLevel.Player,
 		TeamRole = teamRole,
 		CreatedAtUtc = DateTime.UtcNow
 	};

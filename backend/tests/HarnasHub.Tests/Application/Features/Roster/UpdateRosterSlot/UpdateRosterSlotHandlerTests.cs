@@ -99,7 +99,7 @@ public class UpdateRosterSlotHandlerTests
 		Id = id,
 		DiscordId = id.ToString("N"),
 		DisplayName = displayName,
-		Role = UserRole.Player,
+		AccessLevel = AccessLevel.Player,
 		CreatedAtUtc = DateTime.UtcNow
 	};
 

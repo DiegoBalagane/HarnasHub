@@ -27,13 +27,16 @@ public class GetWeekAvailabilityHandler(IApplicationDbContext dbContext)
 		var weekStart = request.WeekStart;
 		var weekEnd = weekStart.AddDays(DaysInWeek - 1);
 
-		// Stand-ins fill a temporary gap and never show up in the availability calendar; everyone else does,
-		// with the main five sorted above the bench (and anyone with no slot assigned yet last).
+		// Who appears in the calendar: stand-ins never do (they only fill a temporary gap), guests never do, and
+		// neither does anyone still waiting for a roster slot — unless they're the coach, who is always listed.
+		// Sorting puts the coach in their own section at the very bottom, then main five above the bench.
 		var members = await dbContext.Users
-			.Where(user => user.RosterSlot != RosterSlot.StandIn)
-			.OrderBy(user => user.RosterSlot == RosterSlot.Main ? 0 : user.RosterSlot == RosterSlot.Bench ? 1 : 2)
+			.Where(user => user.RosterSlot != RosterSlot.StandIn
+				&& user.AccessLevel != AccessLevel.Guest
+				&& (user.RosterSlot != null || user.IsCoach))
+			.OrderBy(user => user.IsCoach ? 2 : user.RosterSlot == RosterSlot.Main ? 0 : 1)
 			.ThenBy(user => user.DisplayName)
-			.Select(user => new { user.Id, user.DisplayName, user.InGameNickname, user.TeamRole, user.RosterSlot })
+			.Select(user => new { user.Id, user.DisplayName, user.InGameNickname, user.TeamRole, user.RosterSlot, user.IsCoach })
 			.ToListAsync(cancellationToken);
 
 		var declaredDays = await dbContext.PlayerAvailabilityDays
@@ -54,6 +57,7 @@ public class GetWeekAvailabilityHandler(IApplicationDbContext dbContext)
 				member.InGameNickname,
 				member.TeamRole?.ToString(),
 				member.RosterSlot?.ToString(),
+				member.IsCoach,
 				BuildDays(weekStart, member.Id, declaredByUserAndDate, vacationsByUser)))
 			.ToList();
 

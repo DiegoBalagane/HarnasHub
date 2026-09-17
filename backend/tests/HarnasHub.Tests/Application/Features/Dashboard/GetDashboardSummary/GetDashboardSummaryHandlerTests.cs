@@ -151,7 +151,7 @@ public class GetDashboardSummaryHandlerTests
 			DiscordId = userId.ToString(),
 			DisplayName = displayName,
 			InGameNickname = inGameNickname,
-			Role = UserRole.Player,
+			AccessLevel = AccessLevel.Player,
 			CreatedAtUtc = DateTime.UtcNow
 		});
 

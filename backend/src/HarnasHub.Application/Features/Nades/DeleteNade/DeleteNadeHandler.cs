@@ -22,7 +22,7 @@ public class DeleteNadeHandler(IApplicationDbContext dbContext, ICurrentUserServ
 		}
 
 		var isOwner = entry.CreatedByUserId == currentUser.UserId;
-		var isCoachOrManager = currentUser.Role is "Coach" or "Manager";
+		var isCoachOrManager = currentUser.Role == "Manager" || currentUser.IsCoach;
 
 		if (!isOwner && !isCoachOrManager)
 		{

@@ -1,10 +1,8 @@
 import { useState } from 'react'
 import type { DayAvailabilityStatus, DayEntry } from '../../../services/availabilityApi'
 import { useSetDayAvailability } from '../hooks/useAvailability'
-import { dayStatusLabels } from '../labels'
 import { parseIsoDate, toShortTime } from '../weekDates'
 
-const editableStatuses: DayAvailabilityStatus[] = ['Available', 'PartiallyAvailable', 'Off']
 const dateFormatter = new Intl.DateTimeFormat('pl-PL', { dateStyle: 'full' })
 const inputClass =
   'rounded-md border border-neutral-800 bg-neutral-900 px-3 py-2 text-sm outline-none focus:border-neutral-500'
@@ -17,20 +15,21 @@ interface DayAvailabilityEditorProps {
   onClose: () => void
 }
 
-/** Inline form for declaring the current user's availability on a single day: every status/time change saves immediately, only the note keeps an explicit Save/Delete. */
+/** Inline form for declaring the current user's availability on a single day: "Cały dzień" is checked by default — unchecking it swaps in an hour range instead of a separate status. Every change saves immediately, only the note keeps an explicit Save/Delete. */
 export function DayAvailabilityEditor({ date, entry, onClose }: DayAvailabilityEditorProps) {
   // No status is pre-selected for a day that has nothing declared yet — a highlighted button there
   // would look like something was already saved when nothing was.
   const [status, setStatus] = useState<DayAvailabilityStatus | null>(
     entry && entry.status !== 'NotSet' ? entry.status : null,
   )
+  const [fullDay, setFullDay] = useState(entry?.status !== 'PartiallyAvailable')
   const [from, setFrom] = useState(toShortTime(entry?.from ?? null) ?? '18:00')
   const [to, setTo] = useState(toShortTime(entry?.to ?? null) ?? '22:00')
   const [note, setNote] = useState(entry?.note ?? '')
   const [validationError, setValidationError] = useState<string | null>(null)
   const setDayAvailability = useSetDayAvailability()
 
-  const isPartial = status === 'PartiallyAvailable'
+  const isAvailable = status === 'Available' || status === 'PartiallyAvailable'
 
   function saveStatus(newStatus: DayAvailabilityStatus, times?: { from: string; to: string }) {
     const effectiveFrom = newStatus === 'PartiallyAvailable' ? (times?.from ?? from) : null
@@ -52,6 +51,19 @@ export function DayAvailabilityEditor({ date, entry, onClose }: DayAvailabilityE
     })
   }
 
+  function handleAvailableClick() {
+    saveStatus(fullDay ? 'Available' : 'PartiallyAvailable')
+  }
+
+  function handleFullDayToggle(checked: boolean) {
+    setFullDay(checked)
+
+    // Already declared available — flip the saved status to match instead of waiting for another click.
+    if (isAvailable) {
+      saveStatus(checked ? 'Available' : 'PartiallyAvailable')
+    }
+  }
+
   function handleTimeBlur() {
     if (status === 'PartiallyAvailable') {
       saveStatus('PartiallyAvailable', { from, to })
@@ -64,8 +76,8 @@ export function DayAvailabilityEditor({ date, entry, onClose }: DayAvailabilityE
     setDayAvailability.mutate({
       date,
       status,
-      availableFromLocal: isPartial ? from : null,
-      availableToLocal: isPartial ? to : null,
+      availableFromLocal: status === 'PartiallyAvailable' ? from : null,
+      availableToLocal: status === 'PartiallyAvailable' ? to : null,
       note: nextNote,
     })
   }
@@ -79,24 +91,30 @@ export function DayAvailabilityEditor({ date, entry, onClose }: DayAvailabilityE
         </button>
       </div>
 
-      <div className="flex flex-wrap gap-2">
-        {editableStatuses.map((option) => (
-          <button
-            key={option}
-            type="button"
-            onClick={() => saveStatus(option)}
-            className={`rounded-md border px-3 py-1 text-xs transition ${
-              status === option
-                ? 'border-neutral-400 bg-neutral-800 text-neutral-100'
-                : 'border-neutral-700 text-neutral-400 hover:border-neutral-500'
-            }`}
-          >
-            {dayStatusLabels[option]}
-          </button>
-        ))}
+      <div className="flex flex-wrap items-center gap-3">
+        <button
+          type="button"
+          onClick={handleAvailableClick}
+          className={`rounded-md border px-3 py-1 text-xs transition ${
+            isAvailable
+              ? 'border-green-700 bg-green-950 text-green-300'
+              : 'border-neutral-700 text-neutral-400 hover:border-neutral-500'
+          }`}
+        >
+          Dostępny
+        </button>
+
+        <label className="flex items-center gap-1.5 text-xs text-neutral-300">
+          <input
+            type="checkbox"
+            checked={fullDay}
+            onChange={(event) => handleFullDayToggle(event.target.checked)}
+          />
+          Cały dzień
+        </label>
       </div>
 
-      {isPartial && (
+      {!fullDay && (
         <div className="flex items-center gap-2">
           <input
             required
@@ -117,6 +135,18 @@ export function DayAvailabilityEditor({ date, entry, onClose }: DayAvailabilityE
           />
         </div>
       )}
+
+      <button
+        type="button"
+        onClick={() => saveStatus('Off')}
+        className={`self-start rounded-md border px-3 py-1 text-xs transition ${
+          status === 'Off'
+            ? 'border-neutral-400 bg-neutral-800 text-neutral-100'
+            : 'border-neutral-700 text-neutral-500 hover:border-neutral-500'
+        }`}
+      >
+        Nie gram tego dnia
+      </button>
 
       <div className="flex flex-col gap-2">
         <input
