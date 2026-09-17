@@ -26,6 +26,7 @@ export const API_ENDPOINTS = {
   dashboard: '/api/dashboard',
   calendar: {
     events: '/api/calendar/events',
+    event: (eventId: string) => `/api/calendar/events/${eventId}`,
     availability: (eventId: string) => `/api/calendar/events/${eventId}/availability`,
   },
   availability: {
