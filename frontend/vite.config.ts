@@ -9,7 +9,13 @@ export default defineConfig({
     react(),
     tailwindcss(),
     VitePWA({
-      registerType: 'autoUpdate',
+      // 'prompt' (not 'autoUpdate') so a new deployed build waits for the one-click "Odśwież" banner
+      // (PwaUpdatePrompt, wired through virtual:pwa-register/react) instead of only refreshing itself
+      // on the *next* full navigation — without this, an already-open tab could keep running stale JS
+      // until someone thinks to hard-refresh it.
+      registerType: 'prompt',
+      // Registration is handled by the PwaUpdatePrompt component via virtual:pwa-register/react instead.
+      injectRegister: false,
       includeAssets: ['favicon.svg', 'apple-touch-icon.png'],
       workbox: {
         // The PWA's offline navigation fallback must never intercept API/hub calls — a plain

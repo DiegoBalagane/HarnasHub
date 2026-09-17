@@ -25,11 +25,20 @@ function clampFraction(value: number): number {
   return Math.min(1, Math.max(0, value))
 }
 
+interface DeletedNote {
+  position: MapPosition
+  previousNote: string
+}
+
+const undoWindowMs = 6000
+
 /** Radar image with the team's pins on top; Coach/Manager can drag a pin and the new spot is saved on pointer-up. */
 export function MapRadar({ mapName, side, positions, canEdit }: MapRadarProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const [draft, setDraft] = useState<DragDraft | null>(null)
   const [editingNoteId, setEditingNoteId] = useState<string | null>(null)
+  const [deletedNote, setDeletedNote] = useState<DeletedNote | null>(null)
+  const undoTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const setPlayerPosition = useSetPlayerPosition()
   const removePlayerPosition = useRemovePlayerPosition()
   const editingPosition = positions.find((position) => position.id === editingNoteId) ?? null
@@ -44,6 +53,30 @@ export function MapRadar({ mapName, side, positions, canEdit }: MapRadarProps) {
       y: position.y,
       note,
     })
+  }
+
+  function deleteNote(position: MapPosition) {
+    if (!position.note) return
+
+    if (undoTimeoutRef.current) {
+      clearTimeout(undoTimeoutRef.current)
+    }
+
+    saveNote(position, null)
+    setEditingNoteId(null)
+    setDeletedNote({ position, previousNote: position.note })
+    undoTimeoutRef.current = setTimeout(() => setDeletedNote(null), undoWindowMs)
+  }
+
+  function undoDelete() {
+    if (!deletedNote) return
+
+    if (undoTimeoutRef.current) {
+      clearTimeout(undoTimeoutRef.current)
+    }
+
+    saveNote(deletedNote.position, deletedNote.previousNote)
+    setDeletedNote(null)
   }
 
   const handleDragStart = useCallback(
@@ -156,9 +189,25 @@ export function MapRadar({ mapName, side, positions, canEdit }: MapRadarProps) {
           key={editingPosition.id}
           position={editingPosition}
           onSave={(note) => saveNote(editingPosition, note)}
+          onDelete={() => deleteNote(editingPosition)}
           onClose={() => setEditingNoteId(null)}
           isSaving={setPlayerPosition.isPending}
         />
+      )}
+
+      {deletedNote && (
+        <div className="flex items-center justify-between gap-3 rounded-md border border-neutral-700 bg-neutral-950 px-3 py-2 text-xs text-neutral-300">
+          <span>
+            Usunięto notatkę dla {deletedNote.position.inGameNickname ?? deletedNote.position.displayName}.
+          </span>
+          <button
+            type="button"
+            onClick={undoDelete}
+            className="shrink-0 rounded-md border border-neutral-600 px-2 py-1 font-medium text-neutral-100 transition hover:border-neutral-400"
+          >
+            Cofnij
+          </button>
+        </div>
       )}
     </div>
   )
