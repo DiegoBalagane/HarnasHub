@@ -24,4 +24,8 @@ public static class RosterErrors
 	public static Error SecondaryRoleMatchesPrimary => Error.Validation(
 		"Roster.SecondaryRoleMatchesPrimary",
 		"Rola dodatkowa nie może być taka sama jak rola główna zawodnika.");
+
+	public static Error GuestCannotBeCoach => Error.Validation(
+		"Roster.GuestCannotBeCoach",
+		"Najpierw nadaj Gościowi poziom uprawnień (Zawodnik lub Zarządca), zanim oznaczysz go jako Trenera.");
 }

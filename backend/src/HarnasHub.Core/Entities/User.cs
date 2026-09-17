@@ -11,7 +11,8 @@ public class User
 	public string DiscordId { get; set; } = string.Empty;
 	public string DisplayName { get; set; } = string.Empty;
 	public string? AvatarUrl { get; set; }
-	public UserRole Role { get; set; }
+	public AccessLevel AccessLevel { get; set; }
+	public bool IsCoach { get; set; }
 	public TeamRole? TeamRole { get; set; }
 	public RosterSlot? RosterSlot { get; set; }
 	public PinColor? PinColor { get; set; }

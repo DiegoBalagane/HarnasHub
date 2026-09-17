@@ -25,7 +25,7 @@ public class RefreshSessionHandler(
 
 		var token = jwtTokenGenerator.GenerateToken(user);
 
-		return new AuthResultDto(token, user.Id, user.DisplayName, user.Role.ToString(), user.AvatarUrl);
+		return new AuthResultDto(token, user.Id, user.DisplayName, user.AccessLevel.ToString(), user.AvatarUrl);
 	}
 
 	#endregion

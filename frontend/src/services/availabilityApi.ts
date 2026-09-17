@@ -28,6 +28,8 @@ export interface MemberWeek {
   teamRole: string | null
   /** 'Main' | 'Bench' | null (unassigned) — StandIn members never appear here at all. */
   rosterSlot: string | null
+  /** Whether this member is the team's Coach — always sorted last, in its own section, regardless of roster slot. */
+  isCoach: boolean
   /** Exactly 7 entries, ordered from the requested week start. */
   days: DayEntry[]
 }

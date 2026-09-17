@@ -63,9 +63,9 @@ Aplikację Discord (Client ID/Secret) już masz założoną z testów lokalnych 
    - Android/Chrome: powinno pojawić się „Dodaj do ekranu głównego" (albo ikonka instalacji w pasku adresu) — zaakceptuj, ikonka HarnasHub wyląduje na ekranie głównym.
    - iOS/Safari: Udostępnij → „Dodaj do ekranu początkowego".
 4. Otwórz appkę z ikonki — powinna wystartować na pełnym ekranie, bez paska adresu przeglądarki.
-5. Ty jako pierwszy zalogowany użytkownik musisz **ręcznie zmienić sobie rolę na Manager w bazie danych** (Railway → Postgres → Query, albo `psql`), bo każde nowe konto startuje jako Gość (widzi tylko ekran „Poczekaj na przydzielenie roli"), a rolę może zmieniać tylko Manager (i nie może zmienić własnej):
+5. Ty jako pierwszy zalogowany użytkownik musisz **ręcznie zmienić sobie poziom uprawnień na Manager w bazie danych** (Railway → Postgres → Query, albo `psql`), bo każde nowe konto startuje jako Gość (widzi tylko ekran „Poczekaj na przydzielenie roli"), a uprawnienia może zmieniać tylko Manager (i nie może zmienić własnych):
    ```sql
-   UPDATE "Users" SET "Role" = 'Manager' WHERE "DiscordId" = 'twoje_discord_id';
+   UPDATE "Users" SET "AccessLevel" = 'Manager' WHERE "DiscordId" = 'twoje_discord_id';
    ```
    (Discord ID znajdziesz tak samo jak ID serwera w kroku wyżej — prawym klikiem na swój nick zamiast na serwer). Wyloguj się i zaloguj ponownie, żeby dostać token z nową rolą. Od tego momentu zarządzasz rolami reszty drużyny z poziomu UI (`/roster`).
 6. Sprawdź **live-update**: otwórz appkę na dwóch urządzeniach (albo telefon + laptop) zalogowaną jako różni gracze, zmień dostępność na jednym — drugie powinno zaktualizować się samo, bez odświeżania.

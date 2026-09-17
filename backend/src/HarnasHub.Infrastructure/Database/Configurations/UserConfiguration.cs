@@ -19,7 +19,8 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
 
 		builder.Property(u => u.DisplayName).IsRequired().HasMaxLength(50);
 		builder.Property(u => u.AvatarUrl).HasMaxLength(500);
-		builder.Property(u => u.Role).HasConversion<string>().HasMaxLength(20);
+		builder.Property(u => u.AccessLevel).HasConversion<string>().HasMaxLength(20);
+		builder.Property(u => u.IsCoach).IsRequired().HasDefaultValue(false);
 		builder.Property(u => u.TeamRole).HasConversion<string>().HasMaxLength(20);
 		builder.Property(u => u.RosterSlot).HasConversion<string>().HasMaxLength(20);
 		builder.Property(u => u.PinColor).HasConversion<string>().HasMaxLength(20);

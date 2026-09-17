@@ -1,16 +1,13 @@
 import { useState } from 'react'
-import { useAuthStore } from '../../auth/stores/useAuthStore'
+import { useIsCoachOrManager } from '../../auth/hooks/useIsCoachOrManager'
 import { useRoster } from '../../roster/hooks/useRoster'
 import { useAddPlayerStat, useMatchStats } from '../hooks/useStats'
-
-const coachRoles = new Set(['Coach', 'Manager'])
 
 /** Expandable panel showing per-player stats for a match, with a Coach/Manager form to add a line. */
 export function MatchStatsPanel({ matchResultId }: { matchResultId: string }) {
   const { data: stats, isLoading } = useMatchStats(matchResultId, true)
   const { data: roster } = useRoster()
-  const role = useAuthStore((state) => state.role)
-  const canAddStats = role !== null && coachRoles.has(role)
+  const canAddStats = useIsCoachOrManager()
   const addStat = useAddPlayerStat(matchResultId)
 
   const [userId, setUserId] = useState('')

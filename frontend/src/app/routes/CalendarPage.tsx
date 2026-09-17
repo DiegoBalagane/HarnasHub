@@ -3,13 +3,10 @@ import { VacationList } from '../../features/availability/components/VacationLis
 import { WeeklyCalendar } from '../../features/availability/components/WeeklyCalendar'
 import { CreateEventForm } from '../../features/calendar/components/CreateEventForm'
 import { EventList } from '../../features/calendar/components/EventList'
-import { useAuthStore } from '../../features/auth/stores/useAuthStore'
-
-const coachRoles = new Set(['Coach', 'Manager'])
+import { useIsCoachOrManager } from '../../features/auth/hooks/useIsCoachOrManager'
 
 export function CalendarPage() {
-  const role = useAuthStore((state) => state.role)
-  const canManage = role !== null && coachRoles.has(role)
+  const canManage = useIsCoachOrManager()
 
   return (
     <>

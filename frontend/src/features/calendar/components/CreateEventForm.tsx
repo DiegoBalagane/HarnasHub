@@ -3,7 +3,7 @@ import type { EventType } from '../../../services/calendarApi'
 import { useCreateEvent } from '../hooks/useCalendar'
 import { eventTypeLabels } from '../labels'
 
-const eventTypes: EventType[] = ['Training', 'PickupGame', 'Match', 'Tournament']
+const eventTypes: EventType[] = ['Training', 'PickupGame', 'Match', 'Tournament', 'Scrim']
 
 /** Coach/Manager-only form for scheduling a new calendar event. */
 export function CreateEventForm() {

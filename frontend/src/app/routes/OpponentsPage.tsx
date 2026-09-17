@@ -1,12 +1,9 @@
 import { AddOpponentNoteForm } from '../../features/opponents/components/AddOpponentNoteForm'
 import { OpponentNotesList } from '../../features/opponents/components/OpponentNotesList'
-import { useAuthStore } from '../../features/auth/stores/useAuthStore'
-
-const coachRoles = new Set(['Coach', 'Manager'])
+import { useIsCoachOrManager } from '../../features/auth/hooks/useIsCoachOrManager'
 
 export function OpponentsPage() {
-  const role = useAuthStore((state) => state.role)
-  const canManage = role !== null && coachRoles.has(role)
+  const canManage = useIsCoachOrManager()
 
   return (
     <>

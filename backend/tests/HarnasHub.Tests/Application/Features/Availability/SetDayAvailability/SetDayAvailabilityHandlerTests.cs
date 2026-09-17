@@ -134,9 +134,29 @@ public class SetDayAvailabilityHandlerTests
 	public async Task Should_allow_a_coach_to_edit_a_past_date()
 	{
 		await using var dbContext = TestApplicationDbContext.Create();
+
+		// A coach keeps the Player access level — the coach tag alone has to unlock past-date edits.
 		var handler = new SetDayAvailabilityHandler(
 			dbContext,
-			new TestCurrentUserService(_userId, "Coach"),
+			new TestCurrentUserService(_userId, "Player", isCoach: true),
+			new TestRealtimeNotifier());
+
+		var pastDay = Day.AddDays(-1);
+		var result = await handler.Handle(
+			new SetDayAvailabilityCommand(pastDay, DayAvailabilityStatus.Off, null, null, null),
+			CancellationToken.None);
+
+		Assert.False(result.IsError);
+		Assert.Equal(pastDay, (await dbContext.PlayerAvailabilityDays.SingleAsync()).Date);
+	}
+
+	[Fact]
+	public async Task Should_allow_a_manager_to_edit_a_past_date()
+	{
+		await using var dbContext = TestApplicationDbContext.Create();
+		var handler = new SetDayAvailabilityHandler(
+			dbContext,
+			new TestCurrentUserService(_userId, "Manager"),
 			new TestRealtimeNotifier());
 
 		var pastDay = Day.AddDays(-1);
