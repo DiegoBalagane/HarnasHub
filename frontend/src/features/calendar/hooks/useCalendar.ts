@@ -1,5 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { calendarApi, type AvailabilityStatus, type CreateEventPayload } from '../../../services/calendarApi'
+import {
+  calendarApi,
+  type AvailabilityStatus,
+  type CreateEventPayload,
+  type UpdateEventPayload,
+} from '../../../services/calendarApi'
 
 /** Fetches every upcoming event, soonest first. */
 export function useUpcomingEvents() {
@@ -15,6 +20,33 @@ export function useCreateEvent() {
 
   return useMutation({
     mutationFn: (payload: CreateEventPayload) => calendarApi.createEvent(payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['calendar', 'events'] })
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] })
+    },
+  })
+}
+
+/** Edits an existing event (e.g. to fix a wrong time) and refreshes the events list and dashboard. */
+export function useUpdateEvent() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ eventId, payload }: { eventId: string; payload: UpdateEventPayload }) =>
+      calendarApi.updateEvent(eventId, payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['calendar', 'events'] })
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] })
+    },
+  })
+}
+
+/** Deletes an event and refreshes the events list and dashboard. */
+export function useDeleteEvent() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (eventId: string) => calendarApi.deleteEvent(eventId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['calendar', 'events'] })
       queryClient.invalidateQueries({ queryKey: ['dashboard'] })

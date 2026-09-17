@@ -31,10 +31,17 @@ export interface CreateEventPayload {
   notes?: string
 }
 
+export type UpdateEventPayload = CreateEventPayload
+
 export const calendarApi = {
   getUpcomingEvents: () => apiClient.get<CalendarEvent[]>(API_ENDPOINTS.calendar.events),
   createEvent: (payload: CreateEventPayload) =>
     apiClient.post<CalendarEvent>(API_ENDPOINTS.calendar.events, payload),
+  /** Coach/Manager only — e.g. to fix a wrong date/time after the fact. */
+  updateEvent: (eventId: string, payload: UpdateEventPayload) =>
+    apiClient.put<CalendarEvent>(API_ENDPOINTS.calendar.event(eventId), payload),
+  /** Coach/Manager only; also clears everyone's declared availability for that event. */
+  deleteEvent: (eventId: string) => apiClient.delete<void>(API_ENDPOINTS.calendar.event(eventId)),
   getEventAvailability: (eventId: string) =>
     apiClient.get<MemberAvailability[]>(API_ENDPOINTS.calendar.availability(eventId)),
   setAvailability: (eventId: string, status: AvailabilityStatus) =>
