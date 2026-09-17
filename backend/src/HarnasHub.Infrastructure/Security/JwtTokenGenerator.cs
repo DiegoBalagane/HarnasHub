@@ -26,8 +26,16 @@ public class JwtTokenGenerator(IOptions<JwtSettings> jwtSettings) : IJwtTokenGen
 		{
 			new(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
 			new(ClaimTypes.Name, user.DisplayName),
-			new(ClaimTypes.Role, user.Role.ToString())
+			new(ClaimTypes.Role, user.AccessLevel.ToString())
 		};
+
+		// The coach tag rides along as a second role claim: RequireRole/IsInRole OR-match across role claims, so
+		// "Coach or Manager" policies keep working, while FindFirst(ClaimTypes.Role) still yields the access level
+		// (added first above) for callers that read a single role string.
+		if (user.IsCoach)
+		{
+			claims.Add(new Claim(ClaimTypes.Role, "Coach"));
+		}
 
 		if (!string.IsNullOrWhiteSpace(user.AvatarUrl))
 		{

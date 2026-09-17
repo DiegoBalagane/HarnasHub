@@ -1,26 +1,27 @@
 import { useAuthStore } from '../../auth/stores/useAuthStore'
-import type { RosterSlot, TeamMember, TeamRole, UserRole } from '../../../services/rosterApi'
-import { roleLabels, rosterSlotLabels, rosterSlots, teamRoleLabels, teamRoles, userRoles } from '../labels'
+import { useIsCoachOrManager } from '../../auth/hooks/useIsCoachOrManager'
+import type { AccessLevel, RosterSlot, TeamMember } from '../../../services/rosterApi'
 import {
-  useRoster,
-  useUpdatePinColor,
-  useUpdateRole,
-  useUpdateRosterSlot,
-  useUpdateTeamRole,
-} from '../hooks/useRoster'
-import { PinColorPicker } from './PinColorPicker'
-import { SecondaryTeamRoleBadges, SecondaryTeamRolesEditor } from './SecondaryTeamRolesEditor'
+  accessLevelDescriptions,
+  accessLevelLabels,
+  accessLevels,
+  isCoachDescription,
+  isCoachLabel,
+  rosterSlotLabels,
+  rosterSlots,
+} from '../labels'
+import { useRoster, useSetIsCoach, useUpdateRole, useUpdateRosterSlot } from '../hooks/useRoster'
+import { TeamRoleBadges, TeamRolesEditor } from './TeamRolesEditor'
 
-/** Displays every team member with their roles; a Manager changes access levels, pin colours and roster slot, a Coach/Manager the in-game roles. */
+/** Displays every team member with their roles; a Manager changes access levels, the Coach tag and roster slot, a Coach/Manager the in-game roles. */
 export function RosterList() {
   const { data: roster, isLoading, isError } = useRoster()
   const { userId, role } = useAuthStore()
   const updateRole = useUpdateRole()
-  const updateTeamRole = useUpdateTeamRole()
+  const setIsCoach = useSetIsCoach()
   const updateRosterSlot = useUpdateRosterSlot()
-  const updatePinColor = useUpdatePinColor()
   const canManageRoles = role === 'Manager'
-  const canManageTeamRoles = role === 'Manager' || role === 'Coach'
+  const canManageTeamRoles = useIsCoachOrManager()
 
   if (isLoading) {
     return <p className="text-neutral-400">Ładowanie składu…</p>
@@ -33,7 +34,7 @@ export function RosterList() {
   return (
     <div className="flex w-full max-w-xl flex-col gap-2">
       {updateRosterSlot.isError && <p className="text-sm text-red-400">{updateRosterSlot.error.message}</p>}
-      {updatePinColor.isError && <p className="text-sm text-red-400">{updatePinColor.error.message}</p>}
+      {setIsCoach.isError && <p className="text-sm text-red-400">{setIsCoach.error.message}</p>}
       <ul className="flex flex-col divide-y divide-neutral-800 rounded-md border border-neutral-800">
         {roster?.map((member) => (
           <li key={member.id} className="flex items-center justify-between gap-3 px-4 py-3">
@@ -41,37 +42,9 @@ export function RosterList() {
 
             <div className="flex items-center gap-2">
               {canManageTeamRoles ? (
-                <select
-                  value={member.teamRole ?? ''}
-                  disabled={updateTeamRole.isPending}
-                  aria-label="Rola w drużynie"
-                  onChange={(event) =>
-                    updateTeamRole.mutate({
-                      userId: member.id,
-                      teamRole: event.target.value === '' ? null : (event.target.value as TeamRole),
-                    })
-                  }
-                  className="rounded-md border border-neutral-800 bg-neutral-900 px-2 py-1 text-sm outline-none focus:border-neutral-500"
-                >
-                  <option value="">Brak roli</option>
-                  {teamRoles.map((teamRole) => (
-                    <option key={teamRole} value={teamRole}>
-                      {teamRoleLabels[teamRole]}
-                    </option>
-                  ))}
-                </select>
+                <TeamRolesEditor member={member} />
               ) : (
-                member.teamRole && (
-                  <span className="rounded-full border border-neutral-700 px-2 py-0.5 text-xs text-neutral-300">
-                    {teamRoleLabels[member.teamRole]}
-                  </span>
-                )
-              )}
-
-              {canManageTeamRoles ? (
-                <SecondaryTeamRolesEditor member={member} />
-              ) : (
-                <SecondaryTeamRoleBadges member={member} />
+                <TeamRoleBadges member={member} />
               )}
 
               {canManageTeamRoles ? (
@@ -102,13 +75,27 @@ export function RosterList() {
                 )
               )}
 
-              {canManageRoles && member.rosterSlot === 'Main' && (
-                <PinColorPicker
-                  value={member.pinColor}
-                  onChange={(pinColor) => updatePinColor.mutate({ userId: member.id, pinColor })}
-                  disabled={updatePinColor.isPending}
-                  size="sm"
-                />
+              {canManageRoles ? (
+                <label
+                  title={member.role === 'Guest' ? 'Najpierw nadaj poziom uprawnień' : isCoachDescription}
+                  className="flex items-center gap-1 text-xs text-neutral-300"
+                >
+                  <input
+                    type="checkbox"
+                    checked={member.isCoach}
+                    disabled={setIsCoach.isPending || member.role === 'Guest'}
+                    onChange={(event) =>
+                      setIsCoach.mutate({ userId: member.id, isCoach: event.target.checked })
+                    }
+                  />
+                  {isCoachLabel}
+                </label>
+              ) : (
+                member.isCoach && (
+                  <span className="rounded-full border border-neutral-700 px-2 py-0.5 text-xs text-neutral-300">
+                    {isCoachLabel}
+                  </span>
+                )
               )}
 
               {canManageRoles && member.id !== userId ? (
@@ -116,19 +103,25 @@ export function RosterList() {
                   value={member.role}
                   disabled={updateRole.isPending}
                   aria-label="Uprawnienia"
+                  title={accessLevelDescriptions[member.role]}
                   onChange={(event) =>
-                    updateRole.mutate({ userId: member.id, role: event.target.value as UserRole })
+                    updateRole.mutate({ userId: member.id, role: event.target.value as AccessLevel })
                   }
                   className="rounded-md border border-neutral-800 bg-neutral-900 px-2 py-1 text-sm outline-none focus:border-neutral-500"
                 >
-                  {userRoles.map((r) => (
-                    <option key={r} value={r}>
-                      {roleLabels[r]}
+                  {accessLevels.map((level) => (
+                    <option key={level} value={level}>
+                      {accessLevelLabels[level]}
                     </option>
                   ))}
                 </select>
               ) : (
-                <span className="text-sm text-neutral-400">{roleLabels[member.role] ?? member.role}</span>
+                <span
+                  title={accessLevelDescriptions[member.role]}
+                  className="text-sm text-neutral-400"
+                >
+                  {accessLevelLabels[member.role] ?? member.role}
+                </span>
               )}
             </div>
           </li>

@@ -36,7 +36,7 @@ public class DiscordLoginHandler(
 				DiscordId = profile.DiscordId,
 				DisplayName = profile.Username,
 				AvatarUrl = profile.AvatarUrl,
-				Role = UserRole.Guest,
+				AccessLevel = AccessLevel.Guest,
 				CreatedAtUtc = DateTime.UtcNow
 			};
 
@@ -53,7 +53,7 @@ public class DiscordLoginHandler(
 
 		var token = jwtTokenGenerator.GenerateToken(user);
 
-		return new AuthResultDto(token, user.Id, user.DisplayName, user.Role.ToString(), user.AvatarUrl);
+		return new AuthResultDto(token, user.Id, user.DisplayName, user.AccessLevel.ToString(), user.AvatarUrl);
 	}
 
 	#endregion

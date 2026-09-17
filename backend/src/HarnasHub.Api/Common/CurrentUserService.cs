@@ -4,7 +4,7 @@ using HarnasHub.Application.Abstractions;
 
 namespace HarnasHub.Api.Common;
 
-/// <summary>Reads the authenticated user's id and role from the JWT claims of the current request.</summary>
+/// <summary>Reads the authenticated user's id, access level, and coach tag from the JWT claims of the current request.</summary>
 public class CurrentUserService(IHttpContextAccessor httpContextAccessor) : ICurrentUserService
 {
 	#region Public Properties
@@ -28,7 +28,11 @@ public class CurrentUserService(IHttpContextAccessor httpContextAccessor) : ICur
 		}
 	}
 
+	// The access-level claim is always written first by the token generator, and FindFirst preserves claim order,
+	// so this keeps returning "Guest"/"Player"/"Manager" even when a trailing "Coach" role claim is present.
 	public string Role => httpContextAccessor.HttpContext?.User.FindFirst(ClaimTypes.Role)?.Value ?? string.Empty;
+
+	public bool IsCoach => httpContextAccessor.HttpContext?.User.HasClaim(ClaimTypes.Role, "Coach") ?? false;
 
 	#endregion
 }

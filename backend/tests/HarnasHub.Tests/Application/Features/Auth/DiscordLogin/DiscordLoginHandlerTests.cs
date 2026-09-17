@@ -21,12 +21,14 @@ public class DiscordLoginHandlerTests
 		var result = await handler.Handle(new DiscordLoginCommand("code"), CancellationToken.None);
 
 		Assert.False(result.IsError);
-		Assert.Equal(nameof(UserRole.Guest), result.Value.Role);
-		Assert.Equal(UserRole.Guest, (await dbContext.Users.SingleAsync()).Role);
+		Assert.Equal(nameof(AccessLevel.Guest), result.Value.Role);
+		var created = await dbContext.Users.SingleAsync();
+		Assert.Equal(AccessLevel.Guest, created.AccessLevel);
+		Assert.False(created.IsCoach);
 	}
 
 	[Fact]
-	public async Task Should_keep_the_existing_role_of_a_returning_member()
+	public async Task Should_keep_the_existing_access_level_and_coach_tag_of_a_returning_member()
 	{
 		await using var dbContext = TestApplicationDbContext.Create();
 		dbContext.Users.Add(new User
@@ -34,7 +36,8 @@ public class DiscordLoginHandlerTests
 			Id = Guid.NewGuid(),
 			DiscordId = "111",
 			DisplayName = "Stara nazwa",
-			Role = UserRole.Coach,
+			AccessLevel = AccessLevel.Manager,
+			IsCoach = true,
 			CreatedAtUtc = DateTime.UtcNow
 		});
 		await dbContext.SaveChangesAsync(CancellationToken.None);
@@ -44,8 +47,11 @@ public class DiscordLoginHandlerTests
 		var result = await handler.Handle(new DiscordLoginCommand("code"), CancellationToken.None);
 
 		Assert.False(result.IsError);
-		Assert.Equal(nameof(UserRole.Coach), result.Value.Role);
-		Assert.Equal("Nowa nazwa", (await dbContext.Users.SingleAsync()).DisplayName);
+		Assert.Equal(nameof(AccessLevel.Manager), result.Value.Role);
+
+		var returning = await dbContext.Users.SingleAsync();
+		Assert.Equal("Nowa nazwa", returning.DisplayName);
+		Assert.True(returning.IsCoach);
 	}
 
 	[Fact]

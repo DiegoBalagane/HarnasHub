@@ -1,12 +1,9 @@
 import { AddResultForm } from '../../features/results/components/AddResultForm'
 import { ResultList } from '../../features/results/components/ResultList'
-import { useAuthStore } from '../../features/auth/stores/useAuthStore'
-
-const coachRoles = new Set(['Coach', 'Manager'])
+import { useIsCoachOrManager } from '../../features/auth/hooks/useIsCoachOrManager'
 
 export function ResultsPage() {
-  const role = useAuthStore((state) => state.role)
-  const canManage = role !== null && coachRoles.has(role)
+  const canManage = useIsCoachOrManager()
 
   return (
     <>

@@ -3,11 +3,12 @@ using HarnasHub.Application.Features.Roster.GetRoster;
 using HarnasHub.Application.Features.Roster.UpdateOwnNickname;
 using HarnasHub.Application.Features.Roster.UpdateOwnPinColor;
 using HarnasHub.Application.Features.Roster.UpdateOwnPinMark;
+using HarnasHub.Application.Features.Roster.SetIsCoach;
 using HarnasHub.Application.Features.Roster.SetPinColor;
 using HarnasHub.Application.Features.Roster.SetSecondaryTeamRoles;
+using HarnasHub.Application.Features.Roster.UpdateAccessLevel;
 using HarnasHub.Application.Features.Roster.UpdateRosterSlot;
 using HarnasHub.Application.Features.Roster.UpdateTeamRole;
-using HarnasHub.Application.Features.Roster.UpdateUserRole;
 using HarnasHub.Core.Enums;
 using MediatR;
 
@@ -123,11 +124,24 @@ public class RosterEndpoints : IEndpoint
 
 		group.MapPatch("/{userId:guid}/role", async (
 			Guid userId,
-			UpdateUserRoleRequest request,
+			UpdateAccessLevelRequest request,
 			ISender sender,
 			CancellationToken cancellationToken) =>
 		{
-			var result = await sender.Send(new UpdateUserRoleCommand(userId, request.Role), cancellationToken);
+			var result = await sender.Send(new UpdateAccessLevelCommand(userId, request.Role), cancellationToken);
+
+			return result.Match(
+				success => Results.Ok(success),
+				errors => errors.ToProblemResult());
+		}).RequireAuthorization(policy => policy.RequireRole("Manager"));
+
+		group.MapPatch("/{userId:guid}/is-coach", async (
+			Guid userId,
+			SetIsCoachRequest request,
+			ISender sender,
+			CancellationToken cancellationToken) =>
+		{
+			var result = await sender.Send(new SetIsCoachCommand(userId, request.IsCoach), cancellationToken);
 
 			return result.Match(
 				success => Results.Ok(success),
@@ -138,8 +152,11 @@ public class RosterEndpoints : IEndpoint
 	#endregion
 }
 
-/// <summary>Request body for PATCH /api/roster/{userId}/role.</summary>
-public record UpdateUserRoleRequest(UserRole Role);
+/// <summary>Request body for PATCH /api/roster/{userId}/role; the property stays named "role" to keep the existing wire contract.</summary>
+public record UpdateAccessLevelRequest(AccessLevel Role);
+
+/// <summary>Request body for PATCH /api/roster/{userId}/is-coach; toggles the team's coach tag, independent of access level.</summary>
+public record SetIsCoachRequest(bool IsCoach);
 
 /// <summary>Request body for PATCH /api/roster/{userId}/team-role; a null role clears the assignment.</summary>
 public record UpdateTeamRoleRequest(TeamRole? TeamRole);

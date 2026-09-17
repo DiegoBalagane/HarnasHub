@@ -5,6 +5,7 @@ export const eventTypeLabels: Record<EventType, string> = {
   PickupGame: 'Gra luźna',
   Match: 'Mecz',
   Tournament: 'Turniej',
+  Scrim: 'Sparing',
 }
 
 export const availabilityLabels: Record<AvailabilityStatus | 'NotSet', string> = {
