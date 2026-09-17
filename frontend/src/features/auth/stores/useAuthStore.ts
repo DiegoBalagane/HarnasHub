@@ -38,15 +38,18 @@ export const useAuthStore = create<AuthState>((set) => ({
     }
 
     localStorage.setItem(STORAGE_KEYS.accessToken, token)
-    set({
+    set((state) => ({
       userId: session.userId,
       displayName: session.displayName,
       role: session.role,
       isCoach: session.isCoach,
       avatarUrl: session.avatarUrl,
-      inGameNickname: null,
+      // A token refresh (SessionRefresh runs this on every focus/visibility change) re-decodes the
+      // same session — resetting this would wipe it before useSyncOwnNickname gets a chance to
+      // re-populate it. Only a genuine sign-in as a different account should clear it.
+      inGameNickname: state.userId === session.userId ? state.inGameNickname : null,
       isAuthenticated: true,
-    })
+    }))
     return true
   },
   setInGameNickname: (nickname) => set({ inGameNickname: nickname }),
