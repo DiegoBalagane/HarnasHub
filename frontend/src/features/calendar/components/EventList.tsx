@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { useIsCoachOrManager } from '../../auth/hooks/useIsCoachOrManager'
 import { useDeleteEvent, useUpcomingEvents, useUpdateEvent } from '../hooks/useCalendar'
 import { eventTypeLabels } from '../labels'
@@ -10,12 +11,37 @@ const dateFormatter = new Intl.DateTimeFormat('pl-PL', { dateStyle: 'medium', ti
 /** Lists upcoming events; clicking one expands its availability picker. Coach/Manager can also edit or delete an event in place. */
 export function EventList() {
   const { data: events, isLoading, isError } = useUpcomingEvents()
-  const [expandedEventId, setExpandedEventId] = useState<string | null>(null)
+  const [searchParams, setSearchParams] = useSearchParams()
+  const linkedEventId = searchParams.get('event')
+  const [expandedEventId, setExpandedEventId] = useState<string | null>(linkedEventId)
   const [editingEventId, setEditingEventId] = useState<string | null>(null)
   const [confirmingDeleteId, setConfirmingDeleteId] = useState<string | null>(null)
   const canManage = useIsCoachOrManager()
   const updateEvent = useUpdateEvent()
   const deleteEvent = useDeleteEvent()
+  const itemRefs = useRef(new Map<string, HTMLLIElement>())
+  const [highlightedEventId, setHighlightedEventId] = useState<string | null>(null)
+
+  // A dashboard/calendar-chip link lands here with ?event=<id> — jump straight to it and open its
+  // details instead of leaving the caller to scroll through the whole list to find it.
+  useEffect(() => {
+    if (!linkedEventId || !events?.some((event) => event.id === linkedEventId)) {
+      return
+    }
+
+    setExpandedEventId(linkedEventId)
+    setHighlightedEventId(linkedEventId)
+    itemRefs.current.get(linkedEventId)?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+
+    const nextParams = new URLSearchParams(searchParams)
+    nextParams.delete('event')
+    setSearchParams(nextParams, { replace: true })
+
+    const clearHighlight = setTimeout(() => setHighlightedEventId(null), 2500)
+    return () => clearTimeout(clearHighlight)
+    // Runs once the target event is present in the fetched list; the id is consumed immediately after.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [linkedEventId, events])
 
   if (isLoading) {
     return <p className="text-neutral-400">Ładowanie kalendarza…</p>
@@ -32,7 +58,19 @@ export function EventList() {
   return (
     <ul className="flex w-full max-w-xl flex-col gap-3">
       {events?.map((event) => (
-        <li key={event.id} className="rounded-md border border-neutral-800 p-4">
+        <li
+          key={event.id}
+          ref={(node) => {
+            if (node) {
+              itemRefs.current.set(event.id, node)
+            } else {
+              itemRefs.current.delete(event.id)
+            }
+          }}
+          className={`rounded-md border p-4 transition ${
+            highlightedEventId === event.id ? 'border-red-500 ring-1 ring-red-500/50' : 'border-neutral-800'
+          }`}
+        >
           {editingEventId === event.id ? (
             <EventForm
               initialValues={{
