@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react'
 import type { DailyTeamStatus, MemberDayStatus } from '../../../services/dashboardApi'
 import { DayStatusBadge } from '../../availability/components/DayStatusBadge'
+import { compareSections, sectionOf } from '../../availability/rosterSections'
 import { parseIsoDate } from '../../availability/weekDates'
 import { eventTypeLabels } from '../../calendar/labels'
 
@@ -27,6 +28,29 @@ const MemberRow = React.memo(function MemberRow({ member }: { member: MemberDayS
     </li>
   )
 })
+
+/** A member list grouped the same way as the weekly calendar: Main, then Bench, then Coach last in its own labelled group. */
+function GroupedMemberList({ members }: { members: MemberDayStatus[] }) {
+  const sorted = useMemo(() => [...members].sort(compareSections), [members])
+
+  return (
+    <ul className="flex flex-col gap-1">
+      {sorted.map((member, index) => {
+        const section = sectionOf(member)
+        const previousSection = index > 0 ? sectionOf(sorted[index - 1]) : null
+
+        return (
+          <React.Fragment key={member.userId}>
+            {section === 'Coach' && section !== previousSection && (
+              <li className="mt-1 border-t border-neutral-800 pt-1 text-[10px] text-neutral-500">Trener</li>
+            )}
+            <MemberRow member={member} />
+          </React.Fragment>
+        )
+      })}
+    </ul>
+  )
+}
 
 /** Dashboard tile listing a single day's event and who is available that day. */
 export const DailyStatusCard = React.memo(function DailyStatusCard({
@@ -65,21 +89,13 @@ export const DailyStatusCard = React.memo(function DailyStatusCard({
       {playing.length === 0 ? (
         <p className="text-sm text-neutral-500">Nikt nie zgłosił dostępności.</p>
       ) : (
-        <ul className="flex flex-col gap-1">
-          {playing.map((member) => (
-            <MemberRow key={member.userId} member={member} />
-          ))}
-        </ul>
+        <GroupedMemberList members={playing} />
       )}
 
       {absent.length > 0 && (
-        <div className="border-t border-neutral-800 pt-2">
+        <div className="border-t border-neutral-800 pt-2 opacity-60">
           <p className="mb-1 text-xs text-neutral-500">Nie gra</p>
-          <ul className="flex flex-col gap-1 opacity-60">
-            {absent.map((member) => (
-              <MemberRow key={member.userId} member={member} />
-            ))}
-          </ul>
+          <GroupedMemberList members={absent} />
         </div>
       )}
     </section>
