@@ -20,6 +20,13 @@ export function PinMarkSettings() {
     return null
   }
 
+  // Counts grapheme clusters rather than raw characters, so a single emoji (which can span a
+  // surrogate pair plus modifiers) still counts as "one", matching the backend's own check.
+  function firstGrapheme(value: string): string {
+    const [first] = new Intl.Segmenter(undefined, { granularity: 'grapheme' }).segment(value)
+    return first?.segment ?? ''
+  }
+
   function save() {
     updatePinMark.mutate(mark.trim() === '' ? null : mark.trim())
   }
@@ -35,10 +42,10 @@ export function PinMarkSettings() {
 
       <div className="flex items-center gap-2">
         <input
-          maxLength={4}
+          maxLength={8}
           placeholder="np. 7"
           value={mark}
-          onChange={(event) => setMark(event.target.value)}
+          onChange={(event) => setMark(firstGrapheme(event.target.value))}
           className="w-20 rounded-md border border-neutral-800 bg-neutral-900 px-3 py-2 text-center text-sm outline-none focus:border-neutral-500"
         />
         <button
