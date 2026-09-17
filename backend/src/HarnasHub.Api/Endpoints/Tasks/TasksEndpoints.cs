@@ -23,7 +23,8 @@ public class TasksEndpoints : IEndpoint
 
 		group.MapPost("/", async (AssignTaskRequest request, ISender sender, CancellationToken cancellationToken) =>
 		{
-			var command = new AssignTaskCommand(request.Title, request.Description, request.AssignedToUserId, request.DueAtUtc);
+			var command = new AssignTaskCommand(
+				request.Title, request.Description, request.AssignedToUserId, request.DueAtUtc, request.TrainingMaterialId);
 			var result = await sender.Send(command, cancellationToken);
 			return result.Match(success => Results.Ok(success), errors => errors.ToProblemResult());
 		}).RequireAuthorization(policy => policy.RequireRole("Coach", "Manager"));
@@ -39,4 +40,5 @@ public class TasksEndpoints : IEndpoint
 }
 
 /// <summary>Request body for POST /api/tasks.</summary>
-public record AssignTaskRequest(string Title, string? Description, Guid AssignedToUserId, DateTime? DueAtUtc);
+public record AssignTaskRequest(
+	string Title, string? Description, Guid AssignedToUserId, DateTime? DueAtUtc, Guid? TrainingMaterialId);

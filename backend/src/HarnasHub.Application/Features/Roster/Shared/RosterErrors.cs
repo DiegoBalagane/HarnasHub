@@ -13,6 +13,10 @@ public static class RosterErrors
 		"Roster.CannotChangeOwnRole",
 		"Nie możesz zmienić własnej roli — poproś innego managera.");
 
+	public static Error CannotDeleteOwnAccount => Error.Validation(
+		"Roster.CannotDeleteOwnAccount",
+		"Nie możesz usunąć własnego konta — poproś innego managera.");
+
 	public static Error MainRosterFull => Error.Validation(
 		"Roster.MainRosterFull",
 		"Główny skład jest już pełny (5 zawodników) — najpierw przenieś kogoś na ławkę.");

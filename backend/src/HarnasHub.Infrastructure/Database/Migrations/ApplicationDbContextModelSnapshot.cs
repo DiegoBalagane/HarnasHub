@@ -337,6 +337,79 @@ namespace HarnasHub.Infrastructure.Database.Migrations
                     b.ToTable("PlayerMatchStats", (string)null);
                 });
 
+            modelBuilder.Entity("HarnasHub.Core.Entities.Tactic", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("CreatedByUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Economy")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<string>("MapName")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("Note")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<string>("Side")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Tactics", (string)null);
+                });
+
+            modelBuilder.Entity("HarnasHub.Core.Entities.TacticPoint", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)");
+
+                    b.Property<Guid?>("NadeEntryId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Order")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("TacticId")
+                        .HasColumnType("uuid");
+
+                    b.Property<float>("X")
+                        .HasColumnType("real");
+
+                    b.Property<float>("Y")
+                        .HasColumnType("real");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TacticId");
+
+                    b.ToTable("TacticPoints", (string)null);
+                });
+
             modelBuilder.Entity("HarnasHub.Core.Entities.TaskItem", b =>
                 {
                     b.Property<Guid>("Id")
@@ -367,6 +440,9 @@ namespace HarnasHub.Infrastructure.Database.Migrations
                         .IsRequired()
                         .HasMaxLength(150)
                         .HasColumnType("character varying(150)");
+
+                    b.Property<Guid?>("TrainingMaterialId")
+                        .HasColumnType("uuid");
 
                     b.HasKey("Id");
 
@@ -519,6 +595,20 @@ namespace HarnasHub.Infrastructure.Database.Migrations
                     b.HasIndex("UserId", "StartDate");
 
                     b.ToTable("Vacations", (string)null);
+                });
+
+            modelBuilder.Entity("HarnasHub.Core.Entities.TacticPoint", b =>
+                {
+                    b.HasOne("HarnasHub.Core.Entities.Tactic", null)
+                        .WithMany("Points")
+                        .HasForeignKey("TacticId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("HarnasHub.Core.Entities.Tactic", b =>
+                {
+                    b.Navigation("Points");
                 });
 #pragma warning restore 612, 618
         }

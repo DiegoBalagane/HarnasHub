@@ -10,6 +10,9 @@ export interface TeamTask {
   status: TaskStatus
   dueAtUtc: string | null
   createdAtUtc: string
+  trainingMaterialId: string | null
+  trainingMaterialTitle: string | null
+  trainingMaterialUrl: string | null
 }
 
 export interface AssignTaskPayload {
@@ -17,6 +20,7 @@ export interface AssignTaskPayload {
   description?: string
   assignedToUserId: string
   dueAtUtc?: string
+  trainingMaterialId?: string
 }
 
 export const tasksApi = {

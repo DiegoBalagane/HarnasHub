@@ -33,6 +33,16 @@ export function TaskList() {
               {task.title}
             </p>
             {task.description && <p className="text-sm text-neutral-400">{task.description}</p>}
+            {task.trainingMaterialUrl && (
+              <a
+                href={task.trainingMaterialUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="mt-1 inline-block text-sm text-red-400 hover:text-red-300"
+              >
+                📎 {task.trainingMaterialTitle}
+              </a>
+            )}
             {task.dueAtUtc && (
               <p className="text-xs text-neutral-500">
                 Termin: {dateFormatter.format(new Date(task.dueAtUtc))}

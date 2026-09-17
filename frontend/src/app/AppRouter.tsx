@@ -13,6 +13,7 @@ import { ResultsPage } from './routes/ResultsPage'
 import { RosterPage } from './routes/RosterPage'
 import { SettingsPage } from './routes/SettingsPage'
 import { StatsPage } from './routes/StatsPage'
+import { TacticsPage } from './routes/TacticsPage'
 import { TasksPage } from './routes/TasksPage'
 
 export function AppRouter() {
@@ -67,6 +68,14 @@ export function AppRouter() {
           element={
             <ProtectedRoute>
               <MapStrategyPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/tactics"
+          element={
+            <ProtectedRoute>
+              <TacticsPage />
             </ProtectedRoute>
           }
         />
