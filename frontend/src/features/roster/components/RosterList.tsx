@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { useAuthStore } from '../../auth/stores/useAuthStore'
 import { useIsCoachOrManager } from '../../auth/hooks/useIsCoachOrManager'
 import type { AccessLevel, RosterSlot, TeamMember } from '../../../services/rosterApi'
@@ -10,16 +11,24 @@ import {
   rosterSlotLabels,
   rosterSlots,
 } from '../labels'
-import { useRoster, useSetIsCoach, useUpdateRole, useUpdateRosterSlot } from '../hooks/useRoster'
+import {
+  useDeleteMember,
+  useRoster,
+  useSetIsCoach,
+  useUpdateRole,
+  useUpdateRosterSlot,
+} from '../hooks/useRoster'
 import { TeamRoleBadges, TeamRolesEditor } from './TeamRolesEditor'
 
-/** Displays every team member with their roles; a Manager changes access levels, the Coach tag and roster slot, a Coach/Manager the in-game roles. */
+/** Displays every team member with their roles; a Manager changes access levels, the Coach tag, roster slot and can delete an account. */
 export function RosterList() {
   const { data: roster, isLoading, isError } = useRoster()
   const { userId, role } = useAuthStore()
   const updateRole = useUpdateRole()
   const setIsCoach = useSetIsCoach()
   const updateRosterSlot = useUpdateRosterSlot()
+  const deleteMember = useDeleteMember()
+  const [confirmingUserId, setConfirmingUserId] = useState<string | null>(null)
   const canManageRoles = role === 'Manager'
   const canManageTeamRoles = useIsCoachOrManager()
 
@@ -35,95 +44,134 @@ export function RosterList() {
     <div className="flex w-full max-w-xl flex-col gap-2">
       {updateRosterSlot.isError && <p className="text-sm text-red-400">{updateRosterSlot.error.message}</p>}
       {setIsCoach.isError && <p className="text-sm text-red-400">{setIsCoach.error.message}</p>}
+      {deleteMember.isError && <p className="text-sm text-red-400">{deleteMember.error.message}</p>}
       <ul className="flex flex-col divide-y divide-neutral-800 rounded-md border border-neutral-800">
         {roster?.map((member) => (
-          <li key={member.id} className="flex flex-wrap items-center justify-between gap-3 px-4 py-3">
-            <MemberName member={member} />
-
-            <div className="flex flex-wrap items-center justify-end gap-2">
-              {canManageTeamRoles ? (
-                <TeamRolesEditor member={member} />
-              ) : (
-                <TeamRoleBadges member={member} />
-              )}
-
-              {canManageTeamRoles ? (
-                <select
-                  value={member.rosterSlot ?? ''}
-                  disabled={updateRosterSlot.isPending}
-                  aria-label="Status w składzie"
-                  onChange={(event) =>
-                    updateRosterSlot.mutate({
-                      userId: member.id,
-                      rosterSlot: event.target.value === '' ? null : (event.target.value as RosterSlot),
-                    })
-                  }
-                  className="rounded-md border border-neutral-800 bg-neutral-900 px-2 py-1 text-sm outline-none focus:border-neutral-500"
-                >
-                  <option value="">Nieprzypisany</option>
-                  {rosterSlots.map((slot) => (
-                    <option key={slot} value={slot}>
-                      {rosterSlotLabels[slot]}
-                    </option>
-                  ))}
-                </select>
-              ) : (
-                member.rosterSlot && (
-                  <span className="rounded-full border border-neutral-700 px-2 py-0.5 text-xs text-neutral-300">
-                    {rosterSlotLabels[member.rosterSlot]}
-                  </span>
-                )
-              )}
-
-              {canManageRoles ? (
-                <label
-                  title={member.role === 'Guest' ? 'Najpierw nadaj poziom uprawnień' : isCoachDescription}
-                  className="flex items-center gap-1 text-xs text-neutral-300"
-                >
-                  <input
-                    type="checkbox"
-                    checked={member.isCoach}
-                    disabled={setIsCoach.isPending || member.role === 'Guest'}
-                    onChange={(event) =>
-                      setIsCoach.mutate({ userId: member.id, isCoach: event.target.checked })
+          <li key={member.id} className="flex flex-col gap-2 px-4 py-3">
+            {confirmingUserId === member.id ? (
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <p className="text-sm text-neutral-300">
+                  Na pewno usunąć{' '}
+                  <span className="font-medium">{member.inGameNickname ?? member.displayName}</span>? Wyniki,
+                  granaty i taktyki które dodał zostają — konto i jego dane osobiste znikają bezpowrotnie.
+                </p>
+                <div className="flex shrink-0 gap-2">
+                  <button
+                    type="button"
+                    disabled={deleteMember.isPending}
+                    onClick={() =>
+                      deleteMember.mutate(member.id, { onSuccess: () => setConfirmingUserId(null) })
                     }
-                  />
-                  {isCoachLabel}
-                </label>
-              ) : (
-                member.isCoach && (
-                  <span className="rounded-full border border-neutral-700 px-2 py-0.5 text-xs text-neutral-300">
-                    {isCoachLabel}
-                  </span>
-                )
-              )}
+                    className="rounded-md bg-red-600 px-3 py-1.5 text-xs font-medium text-white transition hover:bg-red-500 disabled:opacity-50"
+                  >
+                    {deleteMember.isPending ? 'Usuwanie…' : 'Tak, usuń'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setConfirmingUserId(null)}
+                    className="rounded-md border border-neutral-700 px-3 py-1.5 text-xs text-neutral-300 transition hover:border-neutral-500"
+                  >
+                    Anuluj
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <MemberName member={member} />
 
-              {canManageRoles && member.id !== userId ? (
-                <select
-                  value={member.role}
-                  disabled={updateRole.isPending}
-                  aria-label="Uprawnienia"
-                  title={accessLevelDescriptions[member.role]}
-                  onChange={(event) =>
-                    updateRole.mutate({ userId: member.id, role: event.target.value as AccessLevel })
-                  }
-                  className="rounded-md border border-neutral-800 bg-neutral-900 px-2 py-1 text-sm outline-none focus:border-neutral-500"
-                >
-                  {accessLevels.map((level) => (
-                    <option key={level} value={level}>
-                      {accessLevelLabels[level]}
-                    </option>
-                  ))}
-                </select>
-              ) : (
-                <span
-                  title={accessLevelDescriptions[member.role]}
-                  className="text-sm text-neutral-400"
-                >
-                  {accessLevelLabels[member.role] ?? member.role}
-                </span>
-              )}
-            </div>
+                <div className="flex flex-wrap items-center justify-end gap-2">
+                  {canManageTeamRoles ? (
+                    <TeamRolesEditor member={member} />
+                  ) : (
+                    <TeamRoleBadges member={member} />
+                  )}
+
+                  {canManageTeamRoles ? (
+                    <select
+                      value={member.rosterSlot ?? ''}
+                      disabled={updateRosterSlot.isPending}
+                      aria-label="Status w składzie"
+                      onChange={(event) =>
+                        updateRosterSlot.mutate({
+                          userId: member.id,
+                          rosterSlot: event.target.value === '' ? null : (event.target.value as RosterSlot),
+                        })
+                      }
+                      className="rounded-md border border-neutral-800 bg-neutral-900 px-2 py-1 text-sm outline-none focus:border-neutral-500"
+                    >
+                      <option value="">Nieprzypisany</option>
+                      {rosterSlots.map((slot) => (
+                        <option key={slot} value={slot}>
+                          {rosterSlotLabels[slot]}
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    member.rosterSlot && (
+                      <span className="rounded-full border border-neutral-700 px-2 py-0.5 text-xs text-neutral-300">
+                        {rosterSlotLabels[member.rosterSlot]}
+                      </span>
+                    )
+                  )}
+
+                  {canManageRoles ? (
+                    <label
+                      title={member.role === 'Guest' ? 'Najpierw nadaj poziom uprawnień' : isCoachDescription}
+                      className="flex items-center gap-1 text-xs text-neutral-300"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={member.isCoach}
+                        disabled={setIsCoach.isPending || member.role === 'Guest'}
+                        onChange={(event) =>
+                          setIsCoach.mutate({ userId: member.id, isCoach: event.target.checked })
+                        }
+                      />
+                      {isCoachLabel}
+                    </label>
+                  ) : (
+                    member.isCoach && (
+                      <span className="rounded-full border border-neutral-700 px-2 py-0.5 text-xs text-neutral-300">
+                        {isCoachLabel}
+                      </span>
+                    )
+                  )}
+
+                  {canManageRoles && member.id !== userId ? (
+                    <select
+                      value={member.role}
+                      disabled={updateRole.isPending}
+                      aria-label="Uprawnienia"
+                      title={accessLevelDescriptions[member.role]}
+                      onChange={(event) =>
+                        updateRole.mutate({ userId: member.id, role: event.target.value as AccessLevel })
+                      }
+                      className="rounded-md border border-neutral-800 bg-neutral-900 px-2 py-1 text-sm outline-none focus:border-neutral-500"
+                    >
+                      {accessLevels.map((level) => (
+                        <option key={level} value={level}>
+                          {accessLevelLabels[level]}
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    <span title={accessLevelDescriptions[member.role]} className="text-sm text-neutral-400">
+                      {accessLevelLabels[member.role] ?? member.role}
+                    </span>
+                  )}
+
+                  {canManageRoles && member.id !== userId && (
+                    <button
+                      type="button"
+                      onClick={() => setConfirmingUserId(member.id)}
+                      className="rounded-md border border-neutral-700 px-2 py-1 text-xs text-neutral-400 transition hover:border-red-500 hover:text-red-400"
+                    >
+                      Usuń z drużyny
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
           </li>
         ))}
       </ul>

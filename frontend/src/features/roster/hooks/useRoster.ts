@@ -122,6 +122,22 @@ export function useUpdateOwnPinMark() {
   })
 }
 
+/** Permanently deletes a team member's account and personal data (Manager only); refreshes every view that could lose a row. */
+export function useDeleteMember() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (userId: string) => rosterApi.deleteMember(userId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['roster'] })
+      queryClient.invalidateQueries({ queryKey: ['availability'] })
+      queryClient.invalidateQueries({ queryKey: ['map-strategy'] })
+      queryClient.invalidateQueries({ queryKey: ['tasks'] })
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] })
+    },
+  })
+}
+
 /** Saves the caller's own in-game nickname and mirrors it into the session store. */
 export function useUpdateOwnNickname() {
   const queryClient = useQueryClient()

@@ -17,7 +17,7 @@ public class AssignTaskCommandValidatorTests
 	[Fact]
 	public void Should_have_error_when_title_is_empty()
 	{
-		var command = new AssignTaskCommand(string.Empty, null, Guid.NewGuid(), null);
+		var command = new AssignTaskCommand(string.Empty, null, Guid.NewGuid(), null, null);
 
 		var result = _validator.TestValidate(command);
 
@@ -27,7 +27,7 @@ public class AssignTaskCommandValidatorTests
 	[Fact]
 	public void Should_have_error_when_assignee_is_empty()
 	{
-		var command = new AssignTaskCommand("Obejrzyj demo", null, Guid.Empty, null);
+		var command = new AssignTaskCommand("Obejrzyj demo", null, Guid.Empty, null, null);
 
 		var result = _validator.TestValidate(command);
 
@@ -37,7 +37,17 @@ public class AssignTaskCommandValidatorTests
 	[Fact]
 	public void Should_not_have_errors_for_a_valid_command()
 	{
-		var command = new AssignTaskCommand("Obejrzyj demo", "Mecz z drużyną X", Guid.NewGuid(), DateTime.UtcNow.AddDays(2));
+		var command = new AssignTaskCommand("Obejrzyj demo", "Mecz z drużyną X", Guid.NewGuid(), DateTime.UtcNow.AddDays(2), null);
+
+		var result = _validator.TestValidate(command);
+
+		result.ShouldNotHaveAnyValidationErrors();
+	}
+
+	[Fact]
+	public void Should_not_have_errors_when_a_material_is_attached()
+	{
+		var command = new AssignTaskCommand("Obejrzyj demo", null, Guid.NewGuid(), null, Guid.NewGuid());
 
 		var result = _validator.TestValidate(command);
 

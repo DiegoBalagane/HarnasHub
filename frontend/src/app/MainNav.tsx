@@ -10,6 +10,7 @@ const navItems = [
   { to: '/opponents', label: 'Przeciwnicy' },
   { to: '/nades', label: 'Granaty' },
   { to: '/map-strategy', label: 'Pozycje' },
+  { to: '/tactics', label: 'Taktyki' },
   { to: '/materials', label: 'Materiały' },
   { to: '/roster', label: 'Skład' },
 ] as const

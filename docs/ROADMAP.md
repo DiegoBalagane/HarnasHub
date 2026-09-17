@@ -52,9 +52,19 @@ Uwaga: każdy z serwera Discord drużyny może się zalogować, ale dostaje kont
 - [x] Nowy typ wydarzenia „Sparing" (`EventType.Scrim`), osobny od „Meczu"
 - [x] Radar mapy Cache dodany do `public/maps/` (pula map kompletna: Dust2/Mirage/Inferno/Nuke/Ancient/Anubis/Cache)
 
+## Faza 7 — Biblioteka taktyk
+- [x] Zapisane taktyki per mapa i strona (CT/TT), z tagiem ekonomii (Eco/Force buy/Full buy/Anti-eco) i dowolną liczbą ponumerowanych punktów na radarze — punkt ma opis i opcjonalny link do konkretnego lineupu z bazy granatów; tworzy/edytuje/usuwa Coach/Manager, cała drużyna ma podgląd
+- [x] Edytor zapisuje cały układ pinezek jedną akcją „Zapisz" zamiast osobnego zapytania na każde przeciągnięcie/dodanie/usunięcie punktu
+
+## Faza 8 — Materiały do przeglądu dla zawodników
+- [x] Zadanie może mieć doczepiony konkretny materiał z biblioteki (`TaskItem.TrainingMaterialId`) — Coach/Manager wybiera go przy przydzielaniu, zawodnik widzi link bezpośrednio na liście swoich zadań; reużywa całego istniejącego mechanizmu Zadań (przydział, powiadomienie Discord/SignalR, odznaczanie „Zrobione") zamiast osobnej funkcji
+
+## Faza 9 — Usuwanie nieaktywnego zawodnika
+- [x] Manager może trwale usunąć konto gracza z `/roster` — kasuje tylko jego prywatne dane (dostępność, urlopy, pozycja na radarze, dodatkowe role, zadania mu przypisane); wyniki meczów, granaty, taktyki i zadania które przydzielił innym zostają, bez utraty dorobku drużyny
+- [x] Panel staty meczu pokazuje wiersz usuniętego gracza jako „Usunięty zawodnik" zamiast po cichu go ukrywać
+
 ## Rozważane później
-- Automatyczne parsowanie demek CS2 (statystyki bez ręcznego wpisywania)
-- Integracja z FACEIT/Steam API
-- Wewnętrzny ranking/ELO na bazie sparingów
+- Automatyczne parsowanie demek CS2 (`.dem`) z własnego serwera scrimów jako źródło statystyk — jedyna realna droga do automatycznego importu, bo sparingi idą przez własny serwer/serwer rywala, nie przez FACEIT (FACEIT/Steam API nic by tam nie zobaczyły)
+- Wewnętrzny ranking/ELO na bazie sparingów — liczony z już istniejących `MatchResult`/`PlayerMatchStat`, niezależny od źródła danych
 - Prawdziwe powiadomienia push (VAPID + custom service worker) — po realnym wdrożeniu
 - Upload plików (demek) do własnego storage (Cloudflare R2) zamiast linków
