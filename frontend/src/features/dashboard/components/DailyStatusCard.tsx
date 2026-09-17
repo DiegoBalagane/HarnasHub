@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react'
+import { Link } from 'react-router-dom'
 import type { DailyTeamStatus, MemberDayStatus } from '../../../services/dashboardApi'
 import { DayStatusBadge } from '../../availability/components/DayStatusBadge'
 import { compareSections, sectionOf } from '../../availability/rosterSections'
@@ -76,12 +77,15 @@ export const DailyStatusCard = React.memo(function DailyStatusCard({
       </div>
 
       {day.event ? (
-        <div className="rounded-md border border-neutral-800 bg-neutral-900 px-2 py-1">
+        <Link
+          to={`/calendar?event=${day.event.id}`}
+          className="rounded-md border border-neutral-800 bg-neutral-900 px-2 py-1 transition hover:border-neutral-600"
+        >
           <p className="truncate text-sm font-medium">{day.event.title}</p>
           <p className="text-xs text-neutral-400">
             {eventTypeLabels[day.event.type]} · {timeFormatter.format(new Date(day.event.startsAtUtc))}
           </p>
-        </div>
+        </Link>
       ) : (
         <p className="text-xs text-neutral-500">Brak wydarzeń tego dnia</p>
       )}

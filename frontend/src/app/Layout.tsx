@@ -38,7 +38,9 @@ export function Layout({ children }: PropsWithChildren) {
         {isAuthenticated && (
           <div className="flex items-center gap-3 text-sm">
             {avatarUrl && <img src={avatarUrl} alt="" className="h-7 w-7 rounded-full" />}
-            <span className="text-neutral-300">{inGameNickname ?? displayName}</span>
+            <span className="text-neutral-300">
+              {inGameNickname ? `${inGameNickname} (${displayName})` : displayName}
+            </span>
             {!isGuest && (
               <Link
                 to="/settings"
