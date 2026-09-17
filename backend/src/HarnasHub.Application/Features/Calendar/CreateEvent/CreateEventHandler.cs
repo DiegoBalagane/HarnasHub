@@ -39,6 +39,7 @@ public class CreateEventHandler(
 			EventType.PickupGame => "Gra luźna",
 			EventType.Match => "Mecz",
 			EventType.Tournament => "Turniej",
+			EventType.Scrim => "Sparing",
 			_ => calendarEvent.Type.ToString()
 		};
 

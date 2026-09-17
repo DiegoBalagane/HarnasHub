@@ -1,6 +1,6 @@
 namespace HarnasHub.Core.Enums;
 
-/// <summary>In-game role a player fills in the team's setup, independent of the access-level <see cref="UserRole"/>.</summary>
+/// <summary>In-game role a player fills in the team's setup, independent of the <see cref="AccessLevel"/>.</summary>
 public enum TeamRole
 {
 	IGL = 0,

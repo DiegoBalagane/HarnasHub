@@ -1,7 +1,7 @@
 import { API_ENDPOINTS } from '../constants'
 import { apiClient } from './apiClient'
 
-export type EventType = 'Training' | 'PickupGame' | 'Match' | 'Tournament'
+export type EventType = 'Training' | 'PickupGame' | 'Match' | 'Tournament' | 'Scrim'
 export type AvailabilityStatus = 'Available' | 'Maybe' | 'Unavailable'
 
 export interface CalendarEvent {

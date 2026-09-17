@@ -1,10 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   rosterApi,
+  type AccessLevel,
   type PinColor,
   type RosterSlot,
   type TeamRole,
-  type UserRole,
 } from '../../../services/rosterApi'
 import { useAuthStore } from '../../auth/stores/useAuthStore'
 
@@ -22,7 +22,20 @@ export function useUpdateRole() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: ({ userId, role }: { userId: string; role: UserRole }) => rosterApi.updateRole(userId, role),
+    mutationFn: ({ userId, role }: { userId: string; role: AccessLevel }) => rosterApi.updateRole(userId, role),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['roster'] })
+    },
+  })
+}
+
+/** Toggles whether a team member is tagged as the team's Coach (Manager only), independent of access level. */
+export function useSetIsCoach() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ userId, isCoach }: { userId: string; isCoach: boolean }) =>
+      rosterApi.updateIsCoach(userId, isCoach),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['roster'] })
     },
