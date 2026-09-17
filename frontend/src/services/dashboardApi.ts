@@ -9,6 +9,10 @@ export interface MemberDayStatus {
   displayName: string
   inGameNickname: string | null
   teamRole: string | null
+  /** 'Main' | 'Bench' | null (unassigned) — grouped the same way as the availability calendar. */
+  rosterSlot: string | null
+  /** Always sorted into its own group at the bottom, regardless of roster slot. */
+  isCoach: boolean
   status: DayStatus
   /** HH:mm:ss, only set for PartiallyAvailable. */
   from: string | null

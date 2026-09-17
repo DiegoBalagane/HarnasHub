@@ -85,6 +85,9 @@ namespace HarnasHub.Infrastructure.Database.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("character varying(20)");
 
+                    b.Property<string>("Url")
+                        .HasColumnType("text");
+
                     b.HasKey("Id");
 
                     b.HasIndex("StartsAtUtc");

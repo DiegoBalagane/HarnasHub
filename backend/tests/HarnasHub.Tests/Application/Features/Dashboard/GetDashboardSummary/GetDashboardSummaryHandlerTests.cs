@@ -133,6 +133,55 @@ public class GetDashboardSummaryHandlerTests
 		Assert.Equal("Mecz", result.Value.Tomorrow.Event?.Title);
 	}
 
+	[Fact]
+	public async Task Should_exclude_guests_and_unassigned_non_coaches_but_keep_an_unassigned_coach()
+	{
+		await using var dbContext = TestApplicationDbContext.Create();
+		var mainPlayerId = Guid.NewGuid();
+		AddUser(dbContext, mainPlayerId, "Zenek");
+
+		var guestId = Guid.NewGuid();
+		dbContext.Users.Add(new User
+		{
+			Id = guestId,
+			DiscordId = guestId.ToString(),
+			DisplayName = "Nowy",
+			AccessLevel = AccessLevel.Guest,
+			CreatedAtUtc = DateTime.UtcNow
+		});
+
+		var unassignedPlayerId = Guid.NewGuid();
+		dbContext.Users.Add(new User
+		{
+			Id = unassignedPlayerId,
+			DiscordId = unassignedPlayerId.ToString(),
+			DisplayName = "Pozostały",
+			AccessLevel = AccessLevel.Player,
+			CreatedAtUtc = DateTime.UtcNow
+		});
+
+		var unassignedCoachId = Guid.NewGuid();
+		dbContext.Users.Add(new User
+		{
+			Id = unassignedCoachId,
+			DiscordId = unassignedCoachId.ToString(),
+			DisplayName = "Trener",
+			AccessLevel = AccessLevel.Player,
+			IsCoach = true,
+			CreatedAtUtc = DateTime.UtcNow
+		});
+
+		await dbContext.SaveChangesAsync(CancellationToken.None);
+
+		var result = await HandleAsync(dbContext, mainPlayerId);
+
+		var names = result.Value.Today.Members.Select(m => m.DisplayName).ToList();
+		Assert.Contains("Zenek", names);
+		Assert.Contains("Trener", names);
+		Assert.DoesNotContain("Nowy", names);
+		Assert.DoesNotContain("Pozostały", names);
+	}
+
 	#endregion
 
 	#region Private Methods
@@ -152,6 +201,7 @@ public class GetDashboardSummaryHandlerTests
 			DisplayName = displayName,
 			InGameNickname = inGameNickname,
 			AccessLevel = AccessLevel.Player,
+			RosterSlot = RosterSlot.Main,
 			CreatedAtUtc = DateTime.UtcNow
 		});
 
