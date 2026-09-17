@@ -1,4 +1,5 @@
 import { Fragment, useMemo, useState } from 'react'
+import { Link } from 'react-router-dom'
 import type { CalendarEvent } from '../../../services/calendarApi'
 import { useAuthStore } from '../../auth/stores/useAuthStore'
 import { useUpcomingEvents } from '../../calendar/hooks/useCalendar'
@@ -189,9 +190,14 @@ export function WeeklyCalendar() {
                     </p>
                   )}
                   {(eventsByDate.get(date) ?? []).map((event) => (
-                    <span key={event.id} className="mt-1 block truncate text-[10px] text-red-400">
+                    <Link
+                      key={event.id}
+                      to={`/calendar?event=${event.id}`}
+                      title="Przejdź do szczegółów wydarzenia"
+                      className="mt-1 block truncate text-[10px] text-red-400 hover:underline"
+                    >
                       ● {event.title}
-                    </span>
+                    </Link>
                   ))}
                 </div>
               )
