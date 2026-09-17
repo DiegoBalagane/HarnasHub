@@ -412,6 +412,11 @@ namespace HarnasHub.Infrastructure.Database.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<string>("AccessLevel")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
                     b.Property<string>("AvatarUrl")
                         .HasMaxLength(500)
                         .HasColumnType("character varying(500)");
@@ -433,6 +438,11 @@ namespace HarnasHub.Infrastructure.Database.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)");
 
+                    b.Property<bool>("IsCoach")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
+
                     b.Property<string>("PinColor")
                         .HasMaxLength(20)
                         .HasColumnType("character varying(20)");
@@ -440,11 +450,6 @@ namespace HarnasHub.Infrastructure.Database.Migrations
                     b.Property<string>("PinMark")
                         .HasMaxLength(4)
                         .HasColumnType("character varying(4)");
-
-                    b.Property<string>("Role")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("character varying(20)");
 
                     b.Property<string>("RosterSlot")
                         .HasMaxLength(20)

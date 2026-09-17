@@ -14,6 +14,7 @@ export const API_ENDPOINTS = {
   roster: {
     list: '/api/roster',
     role: (userId: string) => `/api/roster/${userId}/role`,
+    isCoach: (userId: string) => `/api/roster/${userId}/is-coach`,
     teamRole: (userId: string) => `/api/roster/${userId}/team-role`,
     rosterSlot: (userId: string) => `/api/roster/${userId}/roster-slot`,
     secondaryTeamRoles: (userId: string) => `/api/roster/${userId}/secondary-team-roles`,

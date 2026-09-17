@@ -18,7 +18,7 @@ public class SetDayAvailabilityHandler(
 
 	public async Task<ErrorOr<Success>> Handle(SetDayAvailabilityCommand request, CancellationToken cancellationToken)
 	{
-		var isCoachOrManager = currentUser.Role is "Coach" or "Manager";
+		var isCoachOrManager = currentUser.Role == "Manager" || currentUser.IsCoach;
 
 		if (!isCoachOrManager && request.Date < DateOnly.FromDateTime(DateTime.UtcNow))
 		{

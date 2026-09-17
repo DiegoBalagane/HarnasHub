@@ -25,7 +25,7 @@ public class DeleteVacationHandler(
 		}
 
 		var isOwner = vacation.UserId == currentUser.UserId;
-		var isCoachOrManager = currentUser.Role is "Coach" or "Manager";
+		var isCoachOrManager = currentUser.Role == "Manager" || currentUser.IsCoach;
 
 		if (!isOwner && !isCoachOrManager)
 		{

@@ -1,8 +1,8 @@
 import { API_ENDPOINTS } from '../constants'
 import { apiClient } from './apiClient'
 
-/** Access level inside HarnasHub — controls what a member may see and edit; `Guest` awaits a Manager's approval. */
-export type UserRole = 'Guest' | 'Player' | 'Coach' | 'Manager'
+/** Access level inside HarnasHub — controls what a member may see and edit; `Guest` awaits a Manager's approval. Independent of `isCoach`. */
+export type AccessLevel = 'Guest' | 'Player' | 'Manager'
 
 /** In-game role a player fills in the team's setup, unrelated to the access level. */
 export type TeamRole = 'IGL' | 'EntryFragger' | 'Support' | 'AWPer' | 'Lurker' | 'Rifler' | 'Bambik'
@@ -16,7 +16,9 @@ export type PinColor = 'Orange' | 'Yellow' | 'Purple' | 'Green' | 'Blue'
 export interface TeamMember {
   id: string
   displayName: string
-  role: UserRole
+  role: AccessLevel
+  /** Whether this member is tagged as the team's Coach, independent of access level. */
+  isCoach: boolean
   avatarUrl: string | null
   teamRole: TeamRole | null
   rosterSlot: RosterSlot | null
@@ -30,8 +32,11 @@ export interface TeamMember {
 
 export const rosterApi = {
   getRoster: () => apiClient.get<TeamMember[]>(API_ENDPOINTS.roster.list),
-  updateRole: (userId: string, role: UserRole) =>
+  updateRole: (userId: string, role: AccessLevel) =>
     apiClient.patch<TeamMember>(API_ENDPOINTS.roster.role(userId), { role }),
+  /** Manager only; toggles whether a member is tagged as the team's Coach, independent of access level. */
+  updateIsCoach: (userId: string, isCoach: boolean) =>
+    apiClient.patch<TeamMember>(API_ENDPOINTS.roster.isCoach(userId), { isCoach }),
   updateTeamRole: (userId: string, teamRole: TeamRole | null) =>
     apiClient.patch<TeamMember>(API_ENDPOINTS.roster.teamRole(userId), { teamRole }),
   updateRosterSlot: (userId: string, rosterSlot: RosterSlot | null) =>

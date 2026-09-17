@@ -137,7 +137,7 @@ public class SetPlayerPositionHandlerTests
 			Id = _userId,
 			DiscordId = "1",
 			DisplayName = "Kacper",
-			Role = UserRole.Player,
+			AccessLevel = AccessLevel.Player,
 			TeamRole = Core.Enums.TeamRole.AWPer,
 			InGameNickname = "s1mple",
 			CreatedAtUtc = DateTime.UtcNow

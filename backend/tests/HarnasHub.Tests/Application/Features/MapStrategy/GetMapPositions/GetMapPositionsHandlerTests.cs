@@ -64,7 +64,7 @@ public class GetMapPositionsHandlerTests
 			Id = Guid.NewGuid(),
 			DiscordId = Guid.NewGuid().ToString(),
 			DisplayName = displayName,
-			Role = UserRole.Player,
+			AccessLevel = AccessLevel.Player,
 			TeamRole = teamRole,
 			InGameNickname = nickname,
 			CreatedAtUtc = DateTime.UtcNow

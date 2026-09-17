@@ -144,14 +144,13 @@ public class GetWeekAvailabilityHandlerTests
 	}
 
 	[Fact]
-	public async Task Should_exclude_stand_ins_and_sort_main_before_bench_before_unassigned()
+	public async Task Should_exclude_stand_ins_and_sort_main_before_bench()
 	{
 		await using var dbContext = TestApplicationDbContext.Create();
 		var mainUser = CreateUserWithSlot("ZZZMain", RosterSlot.Main);
 		var benchUser = CreateUserWithSlot("AAABench", RosterSlot.Bench);
-		var unassignedUser = CreateUserWithSlot("MMMUnassigned", null);
 		var standInUser = CreateUserWithSlot("StandIn", RosterSlot.StandIn);
-		dbContext.Users.AddRange(mainUser, benchUser, unassignedUser, standInUser);
+		dbContext.Users.AddRange(mainUser, benchUser, standInUser);
 		await dbContext.SaveChangesAsync(CancellationToken.None);
 
 		var handler = new GetWeekAvailabilityHandler(dbContext);
@@ -159,11 +158,68 @@ public class GetWeekAvailabilityHandlerTests
 		var result = await handler.Handle(new GetWeekAvailabilityQuery(WeekStart), CancellationToken.None);
 
 		Assert.Equal(
-			["ZZZMain", "AAABench", "MMMUnassigned"],
+			["ZZZMain", "AAABench"],
 			result.Value.Members.Select(member => member.DisplayName));
 		Assert.Equal(nameof(RosterSlot.Main), result.Value.Members[0].RosterSlot);
 		Assert.Equal(nameof(RosterSlot.Bench), result.Value.Members[1].RosterSlot);
+	}
+
+	[Fact]
+	public async Task Should_exclude_guests_and_unassigned_non_coaches()
+	{
+		await using var dbContext = TestApplicationDbContext.Create();
+		var mainUser = CreateUserWithSlot("WSkładzie", RosterSlot.Main);
+		var guestUser = CreateUserWithSlot("Gość", RosterSlot.Main, AccessLevel.Guest);
+		var unassignedUser = CreateUserWithSlot("Pozostali", null);
+		dbContext.Users.AddRange(mainUser, guestUser, unassignedUser);
+		await dbContext.SaveChangesAsync(CancellationToken.None);
+
+		var handler = new GetWeekAvailabilityHandler(dbContext);
+
+		var result = await handler.Handle(new GetWeekAvailabilityQuery(WeekStart), CancellationToken.None);
+
+		Assert.Equal(["WSkładzie"], result.Value.Members.Select(member => member.DisplayName));
+	}
+
+	[Fact]
+	public async Task Should_include_a_coach_without_a_roster_slot_and_sort_them_last()
+	{
+		await using var dbContext = TestApplicationDbContext.Create();
+		var mainUser = CreateUserWithSlot("ZZZMain", RosterSlot.Main);
+		var benchUser = CreateUserWithSlot("AAABench", RosterSlot.Bench);
+		var coach = CreateUserWithSlot("AAATrener", null, isCoach: true);
+		dbContext.Users.AddRange(mainUser, benchUser, coach);
+		await dbContext.SaveChangesAsync(CancellationToken.None);
+
+		var handler = new GetWeekAvailabilityHandler(dbContext);
+
+		var result = await handler.Handle(new GetWeekAvailabilityQuery(WeekStart), CancellationToken.None);
+
+		// Alphabetically first, yet the coach still lands at the bottom in their own section.
+		Assert.Equal(
+			["ZZZMain", "AAABench", "AAATrener"],
+			result.Value.Members.Select(member => member.DisplayName));
+		Assert.True(result.Value.Members[2].IsCoach);
 		Assert.Null(result.Value.Members[2].RosterSlot);
+		Assert.All(result.Value.Members.Take(2), member => Assert.False(member.IsCoach));
+	}
+
+	[Fact]
+	public async Task Should_sort_a_coach_last_even_when_they_hold_a_main_roster_slot()
+	{
+		await using var dbContext = TestApplicationDbContext.Create();
+		var mainUser = CreateUserWithSlot("ZZZMain", RosterSlot.Main);
+		var playingCoach = CreateUserWithSlot("AAAGrającyTrener", RosterSlot.Main, AccessLevel.Manager, isCoach: true);
+		dbContext.Users.AddRange(mainUser, playingCoach);
+		await dbContext.SaveChangesAsync(CancellationToken.None);
+
+		var handler = new GetWeekAvailabilityHandler(dbContext);
+
+		var result = await handler.Handle(new GetWeekAvailabilityQuery(WeekStart), CancellationToken.None);
+
+		Assert.Equal(
+			["ZZZMain", "AAAGrającyTrener"],
+			result.Value.Members.Select(member => member.DisplayName));
 	}
 
 	[Fact]
@@ -177,7 +233,8 @@ public class GetWeekAvailabilityHandlerTests
 			DiscordId = userId.ToString(),
 			DisplayName = "DiscordowaNazwa",
 			InGameNickname = "Zenus",
-			Role = UserRole.Player,
+			AccessLevel = AccessLevel.Player,
+			RosterSlot = RosterSlot.Main,
 			CreatedAtUtc = DateTime.UtcNow
 		});
 		await dbContext.SaveChangesAsync(CancellationToken.None);
@@ -195,17 +252,23 @@ public class GetWeekAvailabilityHandlerTests
 
 	#region Private Methods
 
+	// Members need a roster slot to show up in the calendar at all, so the shared helper hands out Main by default.
 	private static void AddUser(TestApplicationDbContext dbContext, Guid userId, string displayName) =>
 		dbContext.Users.Add(new User
 		{
 			Id = userId,
 			DiscordId = userId.ToString(),
 			DisplayName = displayName,
-			Role = UserRole.Player,
+			AccessLevel = AccessLevel.Player,
+			RosterSlot = RosterSlot.Main,
 			CreatedAtUtc = DateTime.UtcNow
 		});
 
-	private static User CreateUserWithSlot(string displayName, RosterSlot? rosterSlot)
+	private static User CreateUserWithSlot(
+		string displayName,
+		RosterSlot? rosterSlot,
+		AccessLevel accessLevel = AccessLevel.Player,
+		bool isCoach = false)
 	{
 		var id = Guid.NewGuid();
 		return new User
@@ -213,7 +276,8 @@ public class GetWeekAvailabilityHandlerTests
 			Id = id,
 			DiscordId = id.ToString(),
 			DisplayName = displayName,
-			Role = UserRole.Player,
+			AccessLevel = accessLevel,
+			IsCoach = isCoach,
 			RosterSlot = rosterSlot,
 			CreatedAtUtc = DateTime.UtcNow
 		};

@@ -1,12 +1,9 @@
 import { AddMaterialForm } from '../../features/materials/components/AddMaterialForm'
 import { MaterialList } from '../../features/materials/components/MaterialList'
-import { useAuthStore } from '../../features/auth/stores/useAuthStore'
-
-const coachRoles = new Set(['Coach', 'Manager'])
+import { useIsCoachOrManager } from '../../features/auth/hooks/useIsCoachOrManager'
 
 export function MaterialsPage() {
-  const role = useAuthStore((state) => state.role)
-  const canManage = role !== null && coachRoles.has(role)
+  const canManage = useIsCoachOrManager()
 
   return (
     <>

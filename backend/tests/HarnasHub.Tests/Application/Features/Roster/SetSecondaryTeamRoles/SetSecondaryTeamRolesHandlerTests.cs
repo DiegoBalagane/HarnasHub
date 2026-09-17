@@ -94,7 +94,7 @@ public class SetSecondaryTeamRolesHandlerTests
 		Id = id,
 		DiscordId = id.ToString("N"),
 		DisplayName = "Zawodnik",
-		Role = UserRole.Player,
+		AccessLevel = AccessLevel.Player,
 		TeamRole = teamRole,
 		CreatedAtUtc = DateTime.UtcNow
 	};

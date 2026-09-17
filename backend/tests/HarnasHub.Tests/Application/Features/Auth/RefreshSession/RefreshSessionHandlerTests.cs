@@ -20,7 +20,7 @@ public class RefreshSessionHandlerTests
 			Id = Guid.NewGuid(),
 			DiscordId = "111",
 			DisplayName = "Nowy Zawodnik",
-			Role = UserRole.Player,
+			AccessLevel = AccessLevel.Player,
 			CreatedAtUtc = DateTime.UtcNow
 		};
 		dbContext.Users.Add(user);
@@ -31,8 +31,8 @@ public class RefreshSessionHandlerTests
 		var result = await handler.Handle(new RefreshSessionCommand(), CancellationToken.None);
 
 		Assert.False(result.IsError);
-		Assert.Equal(nameof(UserRole.Player), result.Value.Role);
-		Assert.Equal($"token-{user.Id}-{UserRole.Player}", result.Value.AccessToken);
+		Assert.Equal(nameof(AccessLevel.Player), result.Value.Role);
+		Assert.Equal($"token-{user.Id}-{AccessLevel.Player}", result.Value.AccessToken);
 	}
 
 	[Fact]
@@ -53,7 +53,7 @@ public class RefreshSessionHandlerTests
 	/// <summary>Produces a token that encodes the role it was generated for, so tests can assert a promotion is picked up.</summary>
 	private sealed class StubJwtTokenGenerator : IJwtTokenGenerator
 	{
-		public string GenerateToken(User user) => $"token-{user.Id}-{user.Role}";
+		public string GenerateToken(User user) => $"token-{user.Id}-{user.AccessLevel}";
 	}
 
 	#endregion

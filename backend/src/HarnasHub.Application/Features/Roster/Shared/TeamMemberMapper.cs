@@ -11,7 +11,8 @@ public static class TeamMemberMapper
 	public static TeamMemberDto ToTeamMemberDto(this User user, IReadOnlyList<string>? secondaryTeamRoles = null) => new(
 		user.Id,
 		user.DisplayName,
-		user.Role.ToString(),
+		user.AccessLevel.ToString(),
+		user.IsCoach,
 		user.AvatarUrl,
 		user.TeamRole?.ToString(),
 		user.RosterSlot?.ToString(),

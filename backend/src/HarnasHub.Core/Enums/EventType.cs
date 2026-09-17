@@ -6,5 +6,6 @@ public enum EventType
 	Training = 0,
 	PickupGame = 1,
 	Match = 2,
-	Tournament = 3
+	Tournament = 3,
+	Scrim = 4
 }

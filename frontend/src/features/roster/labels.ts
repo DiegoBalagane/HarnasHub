@@ -1,12 +1,25 @@
-import type { PinColor, RosterSlot, TeamRole, UserRole } from '../../services/rosterApi'
+import type { AccessLevel, PinColor, RosterSlot, TeamRole } from '../../services/rosterApi'
 
-/** Polish labels for the access-level role shown next to every member. */
-export const roleLabels: Record<UserRole, string> = {
+/** Polish labels for the access-level shown next to every member; independent of the Coach tag (see `isCoachLabel`). */
+export const accessLevelLabels: Record<AccessLevel, string> = {
   Guest: 'Gość',
   Player: 'Zawodnik',
-  Coach: 'Trener',
   Manager: 'Zarządca',
 }
+
+/** Polish label for the independent "is this member the team's Coach" toggle. */
+export const isCoachLabel = 'Trener'
+
+/** Tooltip text explaining each access level, shown on hover in the roster's permission select. */
+export const accessLevelDescriptions: Record<AccessLevel, string> = {
+  Guest: 'Konto czeka na przydzielenie roli — brak dostępu do danych drużyny.',
+  Player: 'Widzi skład, kalendarz i mapy; nie zarządza uprawnieniami ani składem innych.',
+  Manager: 'Pełny dostęp: zarządza uprawnieniami, składem, kalendarzem i rolą Trenera.',
+}
+
+/** Tooltip text for the Coach toggle, shown regardless of the member's access level. */
+export const isCoachDescription =
+  'Układa skład, role w grze i taktykę — niezależnie od poziomu uprawnień (Zawodnik lub Zarządca może być Trenerem).'
 
 /** Polish labels for the in-game role a player fills in the team's setup. */
 export const teamRoleLabels: Record<TeamRole, string> = {
@@ -51,7 +64,7 @@ export const pinColorSwatch: Record<PinColor, string> = {
 }
 
 /** Selectable access levels, in the order they appear in the roster dropdown. */
-export const userRoles: UserRole[] = ['Guest', 'Player', 'Coach', 'Manager']
+export const accessLevels: AccessLevel[] = ['Guest', 'Player', 'Manager']
 
 /** Selectable in-game roles, in the order they appear in the roster dropdown. */
 export const teamRoles: TeamRole[] = ['IGL', 'EntryFragger', 'Support', 'AWPer', 'Lurker', 'Rifler', 'Bambik']
