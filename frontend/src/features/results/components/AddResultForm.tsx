@@ -1,6 +1,7 @@
 import { useState } from 'react'
-import type { MatchCategory } from '../../../services/resultsApi'
+import type { MatchCategory, MatchResult } from '../../../services/resultsApi'
 import type { LeagueType } from '../../../services/leaguesApi'
+import { ApiError } from '../../../services/apiClient'
 import { useAddResult } from '../hooks/useResults'
 import { useCreateLeague, useLeagues } from '../hooks/useLeagues'
 import { useCreateTournament, useTournaments } from '../hooks/useTournaments'
@@ -16,11 +17,15 @@ export function AddResultForm() {
   const [opponentScore, setOpponentScore] = useState('')
   const [mapName, setMapName] = useState('')
   const [demoUrl, setDemoUrl] = useState('')
+  const [demoFile, setDemoFile] = useState<File | null>(null)
   const [notes, setNotes] = useState('')
   const [playedAt, setPlayedAt] = useState('')
   const [category, setCategory] = useState<MatchCategory>('Scrimmage')
   const [tournamentId, setTournamentId] = useState('')
   const [leagueId, setLeagueId] = useState('')
+  const [saved, setSaved] = useState<MatchResult | null>(null)
+  // A file input keeps showing the chosen file name after its state is cleared — remounting it is the only way to reset it.
+  const [demoInputKey, setDemoInputKey] = useState(0)
 
   const addResult = useAddResult()
   const { data: tournaments } = useTournaments()
@@ -28,13 +33,15 @@ export function AddResultForm() {
 
   function handleSubmit(event: React.FormEvent) {
     event.preventDefault()
+    setSaved(null)
     addResult.mutate(
       {
         opponent,
-        ourScore: Number(ourScore),
-        opponentScore: Number(opponentScore),
+        ourScore: ourScore === '' ? undefined : Number(ourScore),
+        opponentScore: opponentScore === '' ? undefined : Number(opponentScore),
         mapName: mapName || undefined,
         demoUrl: demoUrl || undefined,
+        demoFile,
         notes: notes || undefined,
         playedAtUtc: new Date(playedAt || Date.now()).toISOString(),
         category,
@@ -42,21 +49,28 @@ export function AddResultForm() {
         leagueId: category === 'League' ? leagueId || undefined : undefined,
       },
       {
-        onSuccess: () => {
+        onSuccess: (result) => {
           setOpponent('')
           setOurScore('')
           setOpponentScore('')
           setMapName('')
           setDemoUrl('')
+          setDemoFile(null)
+          setDemoInputKey((key) => key + 1)
           setNotes('')
           setPlayedAt('')
+          setSaved(result)
         },
       },
     )
   }
 
+  // Without a demo to read the score off, both halves of it have to be typed in.
+  const hasScore = demoFile !== null || (ourScore !== '' && opponentScore !== '')
   const canSubmit =
-    (category !== 'Tournament' || tournamentId !== '') && (category !== 'League' || leagueId !== '')
+    hasScore &&
+    (category !== 'Tournament' || tournamentId !== '') &&
+    (category !== 'League' || leagueId !== '')
 
   return (
     <form
@@ -74,7 +88,6 @@ export function AddResultForm() {
           className={inputClass}
         />
         <input
-          required
           type="number"
           min={0}
           placeholder="Nasz wynik"
@@ -83,7 +96,6 @@ export function AddResultForm() {
           className="w-28 rounded-md border border-neutral-800 bg-neutral-900 px-3 py-2 text-sm outline-none focus:border-neutral-500"
         />
         <input
-          required
           type="number"
           min={0}
           placeholder="Wynik przeciwnika"
@@ -134,6 +146,17 @@ export function AddResultForm() {
 
       {category === 'League' && <LeaguePicker leagues={leagues ?? []} value={leagueId} onChange={setLeagueId} />}
 
+      <label className="flex flex-col gap-1 text-sm text-neutral-400">
+        Plik demki (opcjonalnie) — wynik i mapa policzą się same
+        <input
+          type="file"
+          accept=".dem"
+          key={demoInputKey}
+          onChange={(event) => setDemoFile(event.target.files?.[0] ?? null)}
+          className="rounded-md border border-neutral-800 bg-neutral-900 px-3 py-2 text-sm text-neutral-200 outline-none file:mr-3 file:rounded file:border-0 file:bg-neutral-800 file:px-3 file:py-1 file:text-sm file:text-neutral-200 focus:border-neutral-500"
+        />
+      </label>
+
       <input
         placeholder="Link do demki (opcjonalnie)"
         value={demoUrl}
@@ -148,7 +171,17 @@ export function AddResultForm() {
         className="rounded-md border border-neutral-800 bg-neutral-900 px-3 py-2 text-sm outline-none focus:border-neutral-500"
       />
 
-      {addResult.isError && <p className="text-sm text-red-400">Nie udało się dodać wyniku.</p>}
+      {addResult.isError && (
+        <p className="text-sm text-red-400">
+          {addResult.error instanceof ApiError ? addResult.error.message : 'Nie udało się dodać wyniku.'}
+        </p>
+      )}
+
+      {saved && (
+        <p className="text-sm text-green-400">
+          Zapisano: {saved.mapName ?? 'bez mapy'}, {saved.ourScore}:{saved.opponentScore}
+        </p>
+      )}
 
       <button
         type="submit"

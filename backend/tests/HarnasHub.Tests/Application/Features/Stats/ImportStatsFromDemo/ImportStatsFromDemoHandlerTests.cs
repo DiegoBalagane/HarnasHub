@@ -27,7 +27,7 @@ public class ImportStatsFromDemoHandlerTests
 	public async Task Should_return_invalid_demo_file_when_no_rounds_were_parsed()
 	{
 		await using var dbContext = TestApplicationDbContext.Create();
-		var parser = new TestDemoParser(new DemoParseResult(0, null, [Player(1, "Bot")]));
+		var parser = new TestDemoParser(new DemoParseResult(0, null, [Player(1, "Bot")], []));
 		var handler = new ImportStatsFromDemoHandler(parser, dbContext);
 
 		var result = await handler.Handle(new ImportStatsFromDemoCommand(Stream.Null), CancellationToken.None);
@@ -41,7 +41,7 @@ public class ImportStatsFromDemoHandlerTests
 	{
 		await using var dbContext = TestApplicationDbContext.Create();
 		// 10 rounds, 500 total damage dealt -> 50 ADR; 2 of 4 kills were headshots -> 50%.
-		var parsed = new DemoParseResult(10, null, [Player(76561198012345678, "s1mple", kills: 4, deaths: 3, assists: 1, headshots: 2, damage: 500)]);
+		var parsed = new DemoParseResult(10, null, [Player(76561198012345678, "s1mple", kills: 4, deaths: 3, assists: 1, headshots: 2, damage: 500)], []);
 		var handler = new ImportStatsFromDemoHandler(new TestDemoParser(parsed), dbContext);
 
 		var result = await handler.Handle(new ImportStatsFromDemoCommand(Stream.Null), CancellationToken.None);
@@ -59,7 +59,7 @@ public class ImportStatsFromDemoHandlerTests
 	{
 		await using var dbContext = TestApplicationDbContext.Create();
 		// Contributed (kill/assist/survived/traded) in 18 of 24 rounds -> 75%.
-		var parsed = new DemoParseResult(24, null, [Player(1, "shadow", kastRounds: 18)]);
+		var parsed = new DemoParseResult(24, null, [Player(1, "shadow", kastRounds: 18)], []);
 		var handler = new ImportStatsFromDemoHandler(new TestDemoParser(parsed), dbContext);
 
 		var result = await handler.Handle(new ImportStatsFromDemoCommand(Stream.Null), CancellationToken.None);
@@ -75,7 +75,7 @@ public class ImportStatsFromDemoHandlerTests
 		var parsed = new DemoParseResult(20, null, [
 			Player(1, "magnificull", entryKills: 4, entryDeaths: 2, utilityDamage: 120, flashAssists: 3,
 				multiKillRounds: new Dictionary<int, int> { [2] = 3, [3] = 1, [4] = 0, [5] = 0 })
-		]);
+		], []);
 		var handler = new ImportStatsFromDemoHandler(new TestDemoParser(parsed), dbContext);
 
 		var result = await handler.Handle(new ImportStatsFromDemoCommand(Stream.Null), CancellationToken.None);
@@ -97,7 +97,7 @@ public class ImportStatsFromDemoHandlerTests
 		await using var dbContext = TestApplicationDbContext.Create();
 		var parsed = new DemoParseResult(5, MapName.Mirage, [
 			Player(1, "shadow", deathPositions: [new DemoDeathPosition(0.25f, 0.6f, MapSide.CT), new DemoDeathPosition(0.4f, 0.1f, MapSide.T)])
-		]);
+		], []);
 		var handler = new ImportStatsFromDemoHandler(new TestDemoParser(parsed), dbContext);
 
 		var result = await handler.Handle(new ImportStatsFromDemoCommand(Stream.Null), CancellationToken.None);
@@ -126,7 +126,7 @@ public class ImportStatsFromDemoHandlerTests
 		dbContext.Users.Add(user);
 		await dbContext.SaveChangesAsync(CancellationToken.None);
 
-		var parsed = new DemoParseResult(5, null, [Player(76561198012345678, "s1mple", kills: 5, deaths: 5, damage: 250)]);
+		var parsed = new DemoParseResult(5, null, [Player(76561198012345678, "s1mple", kills: 5, deaths: 5, damage: 250)], []);
 		var handler = new ImportStatsFromDemoHandler(new TestDemoParser(parsed), dbContext);
 
 		var result = await handler.Handle(new ImportStatsFromDemoCommand(Stream.Null), CancellationToken.None);
@@ -140,7 +140,7 @@ public class ImportStatsFromDemoHandlerTests
 	public async Task Should_leave_a_player_unmatched_when_no_roster_member_shares_their_steam_id_64()
 	{
 		await using var dbContext = TestApplicationDbContext.Create();
-		var parsed = new DemoParseResult(5, null, [Player(999, "Losowy gracz", kills: 1, deaths: 1, damage: 50)]);
+		var parsed = new DemoParseResult(5, null, [Player(999, "Losowy gracz", kills: 1, deaths: 1, damage: 50)], []);
 		var handler = new ImportStatsFromDemoHandler(new TestDemoParser(parsed), dbContext);
 
 		var result = await handler.Handle(new ImportStatsFromDemoCommand(Stream.Null), CancellationToken.None);

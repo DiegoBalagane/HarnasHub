@@ -16,6 +16,7 @@ public class DemoFileParser : IDemoParser
 		var demo = new CsDemoParser();
 		var accumulators = new Dictionary<ulong, PlayerAccumulator>();
 		var roundsPlayed = 0;
+		var rounds = new List<DemoRoundResult>();
 
 		// Reset every round; folded into each player's totals at RoundEnd.
 		var roundKills = new Dictionary<ulong, int>();
@@ -122,9 +123,30 @@ public class DemoFileParser : IDemoParser
 			}
 		};
 
-		demo.Source1GameEvents.RoundEnd += _ =>
+		demo.Source1GameEvents.RoundEnd += e =>
 		{
 			roundsPlayed++;
+
+			var winnerSide = e.Winner switch
+			{
+				(int)CSTeamNumber.Terrorist => MapSide.T,
+				(int)CSTeamNumber.CounterTerrorist => MapSide.CT,
+				_ => (MapSide?)null
+			};
+
+			// A round the demo doesn't attribute to either side (warmup/aborted) still counts towards the
+			// per-player bookkeeping below, but can't contribute to the score.
+			if (winnerSide is { } side)
+			{
+				// Read straight off each player controller's current team rather than tracking player_team events:
+				// that event only fires on an actual team *change* (e.g. the halftime swap), so a demo that starts
+				// recording after the initial round-1 team joins already happened would see no side data at all
+				// until the first swap. The controller's own state is always current, regardless of when the
+				// recording started.
+				var terrorists = demo.Players.Where(p => p.CSTeamNum == CSTeamNumber.Terrorist).Select(p => (long)p.SteamID).ToList();
+				var counterTerrorists = demo.Players.Where(p => p.CSTeamNum == CSTeamNumber.CounterTerrorist).Select(p => (long)p.SteamID).ToList();
+				rounds.Add(new DemoRoundResult(side, terrorists, counterTerrorists));
+			}
 
 			foreach (var (steamId, kills) in roundKills)
 			{
@@ -170,7 +192,7 @@ public class DemoFileParser : IDemoParser
 				ResolveDeathPositions(a, mapName)))
 			.ToList();
 
-		return new DemoParseResult(roundsPlayed, mapName, players);
+		return new DemoParseResult(roundsPlayed, mapName, players, rounds);
 	}
 
 	#endregion
