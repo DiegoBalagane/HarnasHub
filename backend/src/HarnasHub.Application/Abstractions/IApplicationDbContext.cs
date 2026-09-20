@@ -21,6 +21,8 @@ public interface IApplicationDbContext
 	DbSet<UserSecondaryTeamRole> UserSecondaryTeamRoles { get; }
 	DbSet<Tactic> Tactics { get; }
 	DbSet<TacticPoint> TacticPoints { get; }
+	DbSet<Tournament> Tournaments { get; }
+	DbSet<League> Leagues { get; }
 
 	Task<int> SaveChangesAsync(CancellationToken cancellationToken);
 }

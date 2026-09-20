@@ -3,6 +3,7 @@ using HarnasHub.Application.Abstractions;
 using HarnasHub.Application.Features.Results.Shared;
 using HarnasHub.Core.Entities;
 using MediatR;
+using Microsoft.EntityFrameworkCore;
 
 namespace HarnasHub.Application.Features.Results.AddResult;
 
@@ -24,6 +25,9 @@ public class AddResultHandler(IApplicationDbContext dbContext, ICurrentUserServi
 			DemoUrl = request.DemoUrl,
 			Notes = request.Notes,
 			PlayedAtUtc = request.PlayedAtUtc,
+			Category = request.Category,
+			TournamentId = request.TournamentId,
+			LeagueId = request.LeagueId,
 			CreatedByUserId = currentUser.UserId,
 			CreatedAtUtc = DateTime.UtcNow
 		};
@@ -35,6 +39,13 @@ public class AddResultHandler(IApplicationDbContext dbContext, ICurrentUserServi
 		await realtimeNotifier.NotifyAsync("stats", cancellationToken);
 		await realtimeNotifier.NotifyAsync("dashboard", cancellationToken);
 
+		var tournament = request.TournamentId is null
+			? null
+			: await dbContext.Tournaments.FirstOrDefaultAsync(t => t.Id == request.TournamentId, cancellationToken);
+		var league = request.LeagueId is null
+			? null
+			: await dbContext.Leagues.FirstOrDefaultAsync(l => l.Id == request.LeagueId, cancellationToken);
+
 		return new MatchResultDto(
 			result.Id,
 			result.Opponent,
@@ -43,7 +54,14 @@ public class AddResultHandler(IApplicationDbContext dbContext, ICurrentUserServi
 			result.MapName,
 			result.DemoUrl,
 			result.Notes,
-			result.PlayedAtUtc);
+			result.PlayedAtUtc,
+			result.Category,
+			tournament?.Id,
+			tournament?.Name,
+			league?.Id,
+			league?.Name,
+			league?.Season,
+			league?.Type);
 	}
 
 	#endregion

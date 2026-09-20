@@ -1,7 +1,15 @@
 import { useState } from 'react'
+import type { MatchCategory } from '../../../services/resultsApi'
+import type { LeagueType } from '../../../services/leaguesApi'
 import { useAddResult } from '../hooks/useResults'
+import { useCreateLeague, useLeagues } from '../hooks/useLeagues'
+import { useCreateTournament, useTournaments } from '../hooks/useTournaments'
+import { leagueTypeLabels, leagueTypes, matchCategories, matchCategoryLabels } from '../labels'
 
-/** Coach/Manager-only form for logging a scrim/match/tournament result. */
+const inputClass =
+  'flex-1 rounded-md border border-neutral-800 bg-neutral-900 px-3 py-2 text-sm outline-none focus:border-neutral-500'
+
+/** Coach/Manager-only form for logging a scrim/match/tournament result, grouped under a tournament or league when relevant. */
 export function AddResultForm() {
   const [opponent, setOpponent] = useState('')
   const [ourScore, setOurScore] = useState('')
@@ -10,7 +18,13 @@ export function AddResultForm() {
   const [demoUrl, setDemoUrl] = useState('')
   const [notes, setNotes] = useState('')
   const [playedAt, setPlayedAt] = useState('')
+  const [category, setCategory] = useState<MatchCategory>('Scrimmage')
+  const [tournamentId, setTournamentId] = useState('')
+  const [leagueId, setLeagueId] = useState('')
+
   const addResult = useAddResult()
+  const { data: tournaments } = useTournaments()
+  const { data: leagues } = useLeagues()
 
   function handleSubmit(event: React.FormEvent) {
     event.preventDefault()
@@ -23,6 +37,9 @@ export function AddResultForm() {
         demoUrl: demoUrl || undefined,
         notes: notes || undefined,
         playedAtUtc: new Date(playedAt || Date.now()).toISOString(),
+        category,
+        tournamentId: category === 'Tournament' ? tournamentId || undefined : undefined,
+        leagueId: category === 'League' ? leagueId || undefined : undefined,
       },
       {
         onSuccess: () => {
@@ -38,6 +55,9 @@ export function AddResultForm() {
     )
   }
 
+  const canSubmit =
+    (category !== 'Tournament' || tournamentId !== '') && (category !== 'League' || leagueId !== '')
+
   return (
     <form
       onSubmit={handleSubmit}
@@ -51,7 +71,7 @@ export function AddResultForm() {
           placeholder="Przeciwnik"
           value={opponent}
           onChange={(event) => setOpponent(event.target.value)}
-          className="flex-1 rounded-md border border-neutral-800 bg-neutral-900 px-3 py-2 text-sm outline-none focus:border-neutral-500"
+          className={inputClass}
         />
         <input
           required
@@ -74,19 +94,45 @@ export function AddResultForm() {
       </div>
 
       <div className="flex gap-3">
+        <select
+          value={category}
+          onChange={(event) => {
+            setCategory(event.target.value as MatchCategory)
+            setTournamentId('')
+            setLeagueId('')
+          }}
+          className="rounded-md border border-neutral-800 bg-neutral-900 px-3 py-2 text-sm outline-none focus:border-neutral-500"
+        >
+          {matchCategories.map((option) => (
+            <option key={option} value={option}>
+              {matchCategoryLabels[option]}
+            </option>
+          ))}
+        </select>
+
         <input
           placeholder="Mapa (opcjonalnie)"
           value={mapName}
           onChange={(event) => setMapName(event.target.value)}
-          className="flex-1 rounded-md border border-neutral-800 bg-neutral-900 px-3 py-2 text-sm outline-none focus:border-neutral-500"
+          className={inputClass}
         />
         <input
           type="datetime-local"
           value={playedAt}
           onChange={(event) => setPlayedAt(event.target.value)}
-          className="flex-1 rounded-md border border-neutral-800 bg-neutral-900 px-3 py-2 text-sm outline-none focus:border-neutral-500"
+          className={inputClass}
         />
       </div>
+
+      {category === 'Tournament' && (
+        <TournamentPicker
+          tournaments={tournaments ?? []}
+          value={tournamentId}
+          onChange={setTournamentId}
+        />
+      )}
+
+      {category === 'League' && <LeaguePicker leagues={leagues ?? []} value={leagueId} onChange={setLeagueId} />}
 
       <input
         placeholder="Link do demki (opcjonalnie)"
@@ -106,11 +152,144 @@ export function AddResultForm() {
 
       <button
         type="submit"
-        disabled={addResult.isPending}
+        disabled={addResult.isPending || !canSubmit}
         className="self-start rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-red-500 disabled:opacity-50"
       >
         {addResult.isPending ? 'Dodawanie…' : 'Dodaj wynik'}
       </button>
     </form>
+  )
+}
+
+interface TournamentPickerProps {
+  tournaments: { id: string; name: string }[]
+  value: string
+  onChange: (tournamentId: string) => void
+}
+
+/** Selects an existing tournament to group this result under, or creates a new one inline. */
+function TournamentPicker({ tournaments, value, onChange }: TournamentPickerProps) {
+  const [newName, setNewName] = useState('')
+  const createTournament = useCreateTournament()
+
+  function handleCreate() {
+    if (!newName.trim()) return
+    createTournament.mutate(newName, {
+      onSuccess: (tournament) => {
+        onChange(tournament.id)
+        setNewName('')
+      },
+    })
+  }
+
+  return (
+    <div className="flex gap-2">
+      <select
+        required
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        className="flex-1 rounded-md border border-neutral-800 bg-neutral-900 px-3 py-2 text-sm outline-none focus:border-neutral-500"
+      >
+        <option value="">Wybierz turniej…</option>
+        {tournaments.map((tournament) => (
+          <option key={tournament.id} value={tournament.id}>
+            {tournament.name}
+          </option>
+        ))}
+      </select>
+      <input
+        placeholder="Nowy turniej"
+        value={newName}
+        onChange={(event) => setNewName(event.target.value)}
+        className="w-40 rounded-md border border-neutral-800 bg-neutral-900 px-2 py-2 text-sm outline-none focus:border-neutral-500"
+      />
+      <button
+        type="button"
+        onClick={handleCreate}
+        disabled={createTournament.isPending || !newName.trim()}
+        className="shrink-0 rounded-md border border-neutral-700 px-3 py-2 text-sm text-neutral-300 transition hover:border-neutral-500 disabled:opacity-50"
+      >
+        + Dodaj
+      </button>
+    </div>
+  )
+}
+
+interface LeaguePickerProps {
+  leagues: { id: string; name: string; season: string; type: LeagueType }[]
+  value: string
+  onChange: (leagueId: string) => void
+}
+
+/** Selects an existing league season to group this result under, or creates a new one inline. */
+function LeaguePicker({ leagues, value, onChange }: LeaguePickerProps) {
+  const [newName, setNewName] = useState('')
+  const [newSeason, setNewSeason] = useState('')
+  const [newType, setNewType] = useState<LeagueType>('Online')
+  const createLeague = useCreateLeague()
+
+  function handleCreate() {
+    if (!newName.trim() || !newSeason.trim()) return
+    createLeague.mutate(
+      { name: newName, season: newSeason, type: newType },
+      {
+        onSuccess: (league) => {
+          onChange(league.id)
+          setNewName('')
+          setNewSeason('')
+        },
+      },
+    )
+  }
+
+  return (
+    <div className="flex flex-col gap-2">
+      <select
+        required
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        className="rounded-md border border-neutral-800 bg-neutral-900 px-3 py-2 text-sm outline-none focus:border-neutral-500"
+      >
+        <option value="">Wybierz ligę…</option>
+        {leagues.map((league) => (
+          <option key={league.id} value={league.id}>
+            {league.name} — {league.season} ({leagueTypeLabels[league.type]})
+          </option>
+        ))}
+      </select>
+      <div className="flex gap-2">
+        <input
+          placeholder="Nowa liga: nazwa"
+          value={newName}
+          onChange={(event) => setNewName(event.target.value)}
+          className="flex-1 rounded-md border border-neutral-800 bg-neutral-900 px-2 py-2 text-sm outline-none focus:border-neutral-500"
+        />
+        <input
+          placeholder="Sezon (np. 2026 Wiosna)"
+          value={newSeason}
+          onChange={(event) => setNewSeason(event.target.value)}
+          className="w-40 rounded-md border border-neutral-800 bg-neutral-900 px-2 py-2 text-sm outline-none focus:border-neutral-500"
+        />
+        <select
+          value={newType}
+          onChange={(event) => setNewType(event.target.value as LeagueType)}
+          className="rounded-md border border-neutral-800 bg-neutral-900 px-2 py-2 text-sm outline-none focus:border-neutral-500"
+        >
+          {leagueTypes.map((type) => (
+            <option key={type} value={type}>
+              {leagueTypeLabels[type]}
+            </option>
+          ))}
+        </select>
+        <button
+          type="button"
+          onClick={handleCreate}
+          disabled={createLeague.isPending || !newName.trim() || !newSeason.trim()}
+          className="shrink-0 rounded-md border border-neutral-700 px-3 py-2 text-sm text-neutral-300 transition hover:border-neutral-500 disabled:opacity-50"
+        >
+          + Dodaj
+        </button>
+      </div>
+    </div>
   )
 }
