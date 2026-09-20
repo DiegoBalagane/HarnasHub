@@ -1,3 +1,4 @@
+using System.Text.Json;
 using ErrorOr;
 using HarnasHub.Application.Abstractions;
 using HarnasHub.Application.Features.Stats.Shared;
@@ -14,7 +15,7 @@ public class GetMatchStatsHandler(IApplicationDbContext dbContext)
 
 	public async Task<ErrorOr<List<PlayerMatchStatDto>>> Handle(GetMatchStatsQuery request, CancellationToken cancellationToken)
 	{
-		return await (
+		var rows = await (
 			from stat in dbContext.PlayerMatchStats
 			where stat.MatchResultId == request.MatchResultId
 			// Left join: a departed player's stat line stays even after their account is deleted (see
@@ -22,26 +23,35 @@ public class GetMatchStatsHandler(IApplicationDbContext dbContext)
 			join user in dbContext.Users on stat.UserId equals user.Id into userGroup
 			from user in userGroup.DefaultIfEmpty()
 			orderby stat.Rating descending
-			select new PlayerMatchStatDto(
-				stat.Id,
-				stat.UserId,
-				stat.UserId == null ? (stat.DemoPlayerName ?? "Niepołączony gracz") : (user != null ? user.DisplayName : "Usunięty zawodnik"),
-				stat.Kills,
-				stat.Deaths,
-				stat.Assists,
-				stat.Adr,
-				stat.HeadshotPercentage,
-				stat.Rating,
-				stat.EntryKills,
-				stat.EntryDeaths,
-				stat.KastPercentage,
-				stat.MultiKill2K,
-				stat.MultiKill3K,
-				stat.MultiKill4K,
-				stat.MultiKill5K,
-				stat.UtilityDamage,
-				stat.FlashAssists))
+			select new { stat, user })
 			.ToListAsync(cancellationToken);
+
+		// DeathPositionsJson deserialization can't be translated to SQL, so it happens here, after the query
+		// that needs the roster join has already run.
+		return rows
+			.Select(row => new PlayerMatchStatDto(
+				row.stat.Id,
+				row.stat.UserId,
+				row.stat.UserId == null ? (row.stat.DemoPlayerName ?? "Niepołączony gracz") : (row.user != null ? row.user.DisplayName : "Usunięty zawodnik"),
+				row.stat.Kills,
+				row.stat.Deaths,
+				row.stat.Assists,
+				row.stat.Adr,
+				row.stat.HeadshotPercentage,
+				row.stat.Rating,
+				row.stat.EntryKills,
+				row.stat.EntryDeaths,
+				row.stat.KastPercentage,
+				row.stat.MultiKill2K,
+				row.stat.MultiKill3K,
+				row.stat.MultiKill4K,
+				row.stat.MultiKill5K,
+				row.stat.UtilityDamage,
+				row.stat.FlashAssists,
+				row.stat.DeathPositionsJson is null
+					? []
+					: JsonSerializer.Deserialize<List<DeathPositionDto>>(row.stat.DeathPositionsJson) ?? []))
+			.ToList();
 	}
 
 	#endregion
