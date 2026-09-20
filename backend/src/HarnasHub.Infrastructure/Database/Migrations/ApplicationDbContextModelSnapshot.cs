@@ -365,7 +365,19 @@ namespace HarnasHub.Infrastructure.Database.Migrations
                     b.Property<int>("Deaths")
                         .HasColumnType("integer");
 
+                    b.Property<int?>("EntryDeaths")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("EntryKills")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("FlashAssists")
+                        .HasColumnType("integer");
+
                     b.Property<double>("HeadshotPercentage")
+                        .HasColumnType("double precision");
+
+                    b.Property<double?>("KastPercentage")
                         .HasColumnType("double precision");
 
                     b.Property<int>("Kills")
@@ -374,11 +386,26 @@ namespace HarnasHub.Infrastructure.Database.Migrations
                     b.Property<Guid>("MatchResultId")
                         .HasColumnType("uuid");
 
+                    b.Property<int?>("MultiKill2K")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("MultiKill3K")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("MultiKill4K")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("MultiKill5K")
+                        .HasColumnType("integer");
+
                     b.Property<double>("Rating")
                         .HasColumnType("double precision");
 
                     b.Property<Guid>("UserId")
                         .HasColumnType("uuid");
+
+                    b.Property<int?>("UtilityDamage")
+                        .HasColumnType("integer");
 
                     b.HasKey("Id");
 

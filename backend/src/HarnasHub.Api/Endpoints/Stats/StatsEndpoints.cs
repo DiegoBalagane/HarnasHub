@@ -33,7 +33,10 @@ public class StatsEndpoints : IEndpoint
 		{
 			var command = new AddPlayerStatCommand(
 				matchResultId, request.UserId, request.Kills, request.Deaths, request.Assists,
-				request.Adr, request.HeadshotPercentage, request.Rating);
+				request.Adr, request.HeadshotPercentage, request.Rating,
+				request.EntryKills, request.EntryDeaths, request.KastPercentage,
+				request.MultiKill2K, request.MultiKill3K, request.MultiKill4K, request.MultiKill5K,
+				request.UtilityDamage, request.FlashAssists);
 			var result = await sender.Send(command, cancellationToken);
 			return result.Match(success => Results.Ok(success), errors => errors.ToProblemResult());
 		}).RequireAuthorization(policy => policy.RequireRole("Coach", "Manager"));
@@ -67,7 +70,10 @@ public class StatsEndpoints : IEndpoint
 				return Results.BadRequest("Oczekiwano pliku demki jako multipart/form-data.");
 			}
 
-			var form = await request.ReadFormAsync(cancellationToken);
+			// ReadFormAsync's own MultipartBodyLengthLimit defaults to 128MB regardless of the Kestrel
+			// request-body cap raised above — must be set separately or large demos are rejected mid-read.
+			var formOptions = new FormOptions { MultipartBodyLengthLimit = 320_000_000 };
+			var form = await request.ReadFormAsync(formOptions, cancellationToken);
 			var file = form.Files.GetFile("demo");
 
 			if (file is null || file.Length == 0)
@@ -84,5 +90,22 @@ public class StatsEndpoints : IEndpoint
 	#endregion
 }
 
-/// <summary>Request body for POST /api/matches/{matchResultId}/stats.</summary>
-public record AddPlayerStatRequest(Guid UserId, int Kills, int Deaths, int Assists, double Adr, double HeadshotPercentage, double Rating);
+/// <summary>Request body for POST /api/matches/{matchResultId}/stats. Everything from <paramref name="EntryKills"/> onward
+/// is optional — the manual entry form never sends it, only a demo import does.</summary>
+public record AddPlayerStatRequest(
+	Guid UserId,
+	int Kills,
+	int Deaths,
+	int Assists,
+	double Adr,
+	double HeadshotPercentage,
+	double Rating,
+	int? EntryKills = null,
+	int? EntryDeaths = null,
+	double? KastPercentage = null,
+	int? MultiKill2K = null,
+	int? MultiKill3K = null,
+	int? MultiKill4K = null,
+	int? MultiKill5K = null,
+	int? UtilityDamage = null,
+	int? FlashAssists = null);

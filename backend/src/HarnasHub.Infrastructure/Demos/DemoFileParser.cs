@@ -1,6 +1,7 @@
 using DemoFile;
 using DemoFile.Game.Cs;
 using HarnasHub.Application.Abstractions;
+using HarnasHub.Core.Enums;
 
 namespace HarnasHub.Infrastructure.Demos;
 
@@ -16,6 +17,18 @@ public class DemoFileParser : IDemoParser
 		var accumulators = new Dictionary<ulong, PlayerAccumulator>();
 		var roundsPlayed = 0;
 
+		// Reset every round; folded into each player's totals at RoundEnd.
+		var roundKills = new Dictionary<ulong, int>();
+		var roundKilledOrAssisted = new HashSet<ulong>();
+		var roundDied = new HashSet<ulong>();
+		var roundHasEntryEvent = false;
+
+		// player_death's own PlayerPawn reference resolves to a zeroed-out position by the time the event fires
+		// (the pawn is already mid-teardown) — so instead we remember each player's position as of their last
+		// player_hurt (which fires, including for the fatal hit, while the pawn is still fully valid) and use
+		// that snapshot at the moment of death.
+		var lastKnownPosition = new Dictionary<ulong, (float X, float Y)>();
+
 		PlayerAccumulator GetOrAddAccumulator(CCSPlayerController player)
 		{
 			if (!accumulators.TryGetValue(player.SteamID, out var accumulator))
@@ -27,50 +40,162 @@ public class DemoFileParser : IDemoParser
 			return accumulator;
 		}
 
+		demo.Source1GameEvents.RoundStart += _ =>
+		{
+			roundKills.Clear();
+			roundKilledOrAssisted.Clear();
+			roundDied.Clear();
+			roundHasEntryEvent = false;
+		};
+
 		demo.Source1GameEvents.PlayerDeath += e =>
 		{
 			if (e.Player is { } victim)
 			{
-				GetOrAddAccumulator(victim).Deaths++;
+				var victimAcc = GetOrAddAccumulator(victim);
+				victimAcc.Deaths++;
+				roundDied.Add(victim.SteamID);
+
+				if (!roundHasEntryEvent)
+				{
+					victimAcc.EntryDeaths++;
+				}
+
+				var side = victim.CSTeamNum == CSTeamNumber.Terrorist ? MapSide.T : MapSide.CT;
+				if (lastKnownPosition.TryGetValue(victim.SteamID, out var position))
+				{
+					victimAcc.RawDeathPositions.Add((position.X, position.Y, side));
+				}
 			}
 
-			// Suicides/world kills (Attacker null or the victim itself) don't credit anyone.
+			// Suicides/world kills (Attacker null or the victim itself) don't credit anyone, and don't count as an entry.
 			if (e.Attacker is { } attacker && !ReferenceEquals(attacker, e.Player))
 			{
-				var accumulator = GetOrAddAccumulator(attacker);
-				accumulator.Kills++;
+				var attackerAcc = GetOrAddAccumulator(attacker);
+				attackerAcc.Kills++;
+				roundKilledOrAssisted.Add(attacker.SteamID);
 
 				if (e.Headshot)
 				{
-					accumulator.Headshots++;
+					attackerAcc.Headshots++;
+				}
+
+				roundKills.TryGetValue(attacker.SteamID, out var killsSoFar);
+				roundKills[attacker.SteamID] = killsSoFar + 1;
+
+				if (!roundHasEntryEvent)
+				{
+					roundHasEntryEvent = true;
+					attackerAcc.EntryKills++;
 				}
 			}
 
 			if (e.Assister is { } assister)
 			{
-				GetOrAddAccumulator(assister).Assists++;
+				var assisterAcc = GetOrAddAccumulator(assister);
+				assisterAcc.Assists++;
+				roundKilledOrAssisted.Add(assister.SteamID);
+
+				if (e.Assistedflash)
+				{
+					assisterAcc.FlashAssists++;
+				}
 			}
 		};
 
 		demo.Source1GameEvents.PlayerHurt += e =>
 		{
-			// Self-damage (fall damage, own nade) shouldn't count toward ADR.
 			if (e.Attacker is { } attacker && !ReferenceEquals(attacker, e.Player))
 			{
-				GetOrAddAccumulator(attacker).DamageDealt += e.DmgHealth;
+				var accumulator = GetOrAddAccumulator(attacker);
+				accumulator.DamageDealt += e.DmgHealth;
+
+				if (e.Weapon is "hegrenade" or "inferno" or "molotov")
+				{
+					accumulator.UtilityDamage += e.DmgHealth;
+				}
+			}
+
+			if (e.Player is { } victim && e.PlayerPawn is { } victimPawn)
+			{
+				lastKnownPosition[victim.SteamID] = (victimPawn.Origin.X, victimPawn.Origin.Y);
 			}
 		};
 
-		demo.Source1GameEvents.RoundEnd += _ => roundsPlayed++;
+		demo.Source1GameEvents.RoundEnd += _ =>
+		{
+			roundsPlayed++;
+
+			foreach (var (steamId, kills) in roundKills)
+			{
+				if (kills >= 2 && accumulators.TryGetValue(steamId, out var accumulator))
+				{
+					accumulator.MultiKillRounds[Math.Min(kills, 5)]++;
+				}
+			}
+
+			foreach (var accumulator in accumulators.Values)
+			{
+				var contributed = roundKilledOrAssisted.Contains(accumulator.SteamId64) || !roundDied.Contains(accumulator.SteamId64);
+				if (contributed)
+				{
+					accumulator.KastRounds++;
+				}
+			}
+		};
 
 		var reader = DemoFileReader.Create(demo, demoStream);
 		await reader.ReadAllAsync(cancellationToken);
 
+		// game_newmap only fires on a mid-session map *change*, never for the map a recording starts on — which
+		// is every standalone demo — so the server info packet (present from the start) is the reliable source.
+		var rawMapName = demo.ServerInfo?.MapName;
+		var mapName = rawMapName is null ? null : MapCalibration.ParseMapName(rawMapName);
+
 		var players = accumulators.Values
-			.Select(a => new DemoPlayerStats((long)a.SteamId64, a.PlayerName, a.Kills, a.Deaths, a.Assists, a.Headshots, a.DamageDealt))
+			.Select(a => new DemoPlayerStats(
+				(long)a.SteamId64,
+				a.PlayerName,
+				a.Kills,
+				a.Deaths,
+				a.Assists,
+				a.Headshots,
+				a.DamageDealt,
+				a.EntryKills,
+				a.EntryDeaths,
+				a.KastRounds,
+				a.UtilityDamage,
+				a.FlashAssists,
+				a.MultiKillRounds,
+				ResolveDeathPositions(a, mapName)))
 			.ToList();
 
-		return new DemoParseResult(roundsPlayed, players);
+		return new DemoParseResult(roundsPlayed, mapName, players);
+	}
+
+	#endregion
+
+	#region Private Methods
+
+	private static IReadOnlyList<DemoDeathPosition> ResolveDeathPositions(PlayerAccumulator accumulator, MapName? mapName)
+	{
+		if (mapName is null)
+		{
+			return [];
+		}
+
+		var resolved = new List<DemoDeathPosition>(accumulator.RawDeathPositions.Count);
+
+		foreach (var (worldX, worldY, side) in accumulator.RawDeathPositions)
+		{
+			var fraction = MapCalibration.ToRadarFraction(mapName.Value, worldX, worldY);
+			if (fraction is { } f)
+			{
+				resolved.Add(new DemoDeathPosition(f.X, f.Y, side));
+			}
+		}
+
+		return resolved;
 	}
 
 	#endregion
@@ -87,6 +212,13 @@ public class DemoFileParser : IDemoParser
 		public int Assists { get; set; }
 		public int Headshots { get; set; }
 		public int DamageDealt { get; set; }
+		public int UtilityDamage { get; set; }
+		public int EntryKills { get; set; }
+		public int EntryDeaths { get; set; }
+		public int KastRounds { get; set; }
+		public int FlashAssists { get; set; }
+		public Dictionary<int, int> MultiKillRounds { get; } = new() { [2] = 0, [3] = 0, [4] = 0, [5] = 0 };
+		public List<(float WorldX, float WorldY, MapSide Side)> RawDeathPositions { get; } = [];
 	}
 
 	#endregion

@@ -17,6 +17,17 @@ public class AddPlayerStatCommandValidator : AbstractValidator<AddPlayerStatComm
 		RuleFor(x => x.Adr).GreaterThanOrEqualTo(0).WithMessage("ADR nie może być ujemne.");
 		RuleFor(x => x.HeadshotPercentage).InclusiveBetween(0, 100).WithMessage("HS% musi być między 0 a 100.");
 		RuleFor(x => x.Rating).GreaterThanOrEqualTo(0).WithMessage("Rating nie może być ujemny.");
+
+		RuleFor(x => x.EntryKills).GreaterThanOrEqualTo(0).When(x => x.EntryKills.HasValue, ApplyConditionTo.CurrentValidator)
+			.WithMessage("Liczba entry killi nie może być ujemna.");
+		RuleFor(x => x.EntryDeaths).GreaterThanOrEqualTo(0).When(x => x.EntryDeaths.HasValue, ApplyConditionTo.CurrentValidator)
+			.WithMessage("Liczba entry śmierci nie może być ujemna.");
+		RuleFor(x => x.KastPercentage).InclusiveBetween(0, 100).When(x => x.KastPercentage.HasValue, ApplyConditionTo.CurrentValidator)
+			.WithMessage("KAST% musi być między 0 a 100.");
+		RuleFor(x => x.UtilityDamage).GreaterThanOrEqualTo(0).When(x => x.UtilityDamage.HasValue, ApplyConditionTo.CurrentValidator)
+			.WithMessage("Obrażenia z granatów nie mogą być ujemne.");
+		RuleFor(x => x.FlashAssists).GreaterThanOrEqualTo(0).When(x => x.FlashAssists.HasValue, ApplyConditionTo.CurrentValidator)
+			.WithMessage("Liczba asyst z flashy nie może być ujemna.");
 	}
 
 	#endregion
