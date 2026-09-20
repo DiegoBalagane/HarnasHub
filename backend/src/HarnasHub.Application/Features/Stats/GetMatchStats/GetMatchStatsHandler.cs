@@ -25,7 +25,7 @@ public class GetMatchStatsHandler(IApplicationDbContext dbContext)
 			select new PlayerMatchStatDto(
 				stat.Id,
 				stat.UserId,
-				user != null ? user.DisplayName : "Usunięty zawodnik",
+				stat.UserId == null ? (stat.DemoPlayerName ?? "Niepołączony gracz") : (user != null ? user.DisplayName : "Usunięty zawodnik"),
 				stat.Kills,
 				stat.Deaths,
 				stat.Assists,

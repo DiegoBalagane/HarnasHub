@@ -97,7 +97,7 @@ public class AddResultHandlerTests
 	}
 
 	[Fact]
-	public async Task Should_import_a_stat_line_for_every_roster_member_matched_in_an_analysed_demo()
+	public async Task Should_import_every_player_on_the_picked_team_whether_matched_or_not()
 	{
 		await using var dbContext = TestApplicationDbContext.Create();
 		var matched = await AddRosterMemberAsync(dbContext, "76561198012345678");
@@ -105,29 +105,49 @@ public class AddResultHandlerTests
 		var demoPlayers = new[]
 		{
 			Player("76561198012345678", "shadow", kills: 20, deaths: 10, assists: 5, headshots: 8, damage: 1500, kastRounds: 1),
-			Player("999", "unmatched-opponent", kills: 10, deaths: 20)
+			Player("111", "teammate-without-steamid", kills: 15, deaths: 12),
+			Player("999", "opponent-not-on-our-team", kills: 10, deaths: 20)
 		};
 		var handler = Handler(dbContext);
 
 		var result = await handler.Handle(
-			Command(demoRoundsPlayed: 1, demoPlayers: demoPlayers),
+			Command(demoRoundsPlayed: 1, demoPlayers: demoPlayers, ourTeamSteamIds: ["76561198012345678", "111"]),
 			CancellationToken.None);
 
 		Assert.False(result.IsError);
+		Assert.Equal(2, dbContext.PlayerMatchStats.Count());
 
-		var stat = Assert.Single(dbContext.PlayerMatchStats);
-		Assert.Equal(matched.Id, stat.UserId);
-		Assert.Equal(result.Value.Id, stat.MatchResultId);
-		Assert.Equal(20, stat.Kills);
-		Assert.Equal(10, stat.Deaths);
-		Assert.NotNull(stat.KastPercentage);
+		var connected = dbContext.PlayerMatchStats.Single(s => s.UserId == matched.Id);
+		Assert.Equal(20, connected.Kills);
+		Assert.Null(connected.DemoPlayerName);
+
+		var unconnected = dbContext.PlayerMatchStats.Single(s => s.UserId == null);
+		Assert.Equal("teammate-without-steamid", unconnected.DemoPlayerName);
+		Assert.Equal(15, unconnected.Kills);
 	}
 
 	[Fact]
-	public async Task Should_not_import_any_stats_when_nobody_in_the_analysed_demo_matches_the_roster()
+	public async Task Should_not_import_a_roster_matched_player_who_is_not_on_the_picked_team()
 	{
 		await using var dbContext = TestApplicationDbContext.Create();
-		var demoPlayers = new[] { Player("999", "opponent", kills: 10, deaths: 5) };
+		await AddRosterMemberAsync(dbContext, "76561198012345678");
+
+		var demoPlayers = new[] { Player("76561198012345678", "shadow", kills: 20, deaths: 10) };
+		var handler = Handler(dbContext);
+
+		var result = await handler.Handle(
+			Command(ourScore: 13, opponentScore: 7, demoRoundsPlayed: 1, demoPlayers: demoPlayers, ourTeamSteamIds: ["999"]),
+			CancellationToken.None);
+
+		Assert.False(result.IsError);
+		Assert.Empty(dbContext.PlayerMatchStats);
+	}
+
+	[Fact]
+	public async Task Should_not_import_any_stats_when_no_team_was_picked()
+	{
+		await using var dbContext = TestApplicationDbContext.Create();
+		var demoPlayers = new[] { Player("76561198012345678", "shadow", kills: 20, deaths: 10) };
 		var handler = Handler(dbContext);
 
 		var result = await handler.Handle(
@@ -153,8 +173,9 @@ public class AddResultHandlerTests
 		int? opponentScore = 10,
 		string? mapName = "Mirage",
 		int? demoRoundsPlayed = null,
-		IReadOnlyList<AnalyzedDemoPlayerDto>? demoPlayers = null) =>
-		new("Team X", ourScore, opponentScore, mapName, null, null, DateTime.UtcNow, category, tournamentId, leagueId, demoRoundsPlayed, demoPlayers);
+		IReadOnlyList<AnalyzedDemoPlayerDto>? demoPlayers = null,
+		IReadOnlyList<string>? ourTeamSteamIds = null) =>
+		new("Team X", ourScore, opponentScore, mapName, null, null, DateTime.UtcNow, category, tournamentId, leagueId, demoRoundsPlayed, demoPlayers, ourTeamSteamIds);
 
 	private static async Task<User> AddRosterMemberAsync(IApplicationDbContext dbContext, string steamId64)
 	{

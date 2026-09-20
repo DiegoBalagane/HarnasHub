@@ -37,10 +37,3 @@ export function useTeamTrend() {
     queryFn: statsApi.getTeamTrend,
   })
 }
-
-/** Parses an uploaded CS2 demo into per-player stats — nothing is saved until each row is reviewed and confirmed individually. */
-export function useImportStatsFromDemo() {
-  return useMutation({
-    mutationFn: (demoFile: File) => statsApi.importStatsFromDemo(demoFile),
-  })
-}

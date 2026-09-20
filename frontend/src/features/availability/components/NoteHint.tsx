@@ -55,15 +55,18 @@ export function NoteHint({ note }: NoteHintProps) {
       ref={triggerRef}
       role="button"
       tabIndex={0}
-      title="Pokaż notatkę"
+      // The native title tooltip surfaces the note itself on a plain hover (desktop) — the click-to-open
+      // popover below is what makes it reachable on touch, where hover/title never fires.
+      title={note}
       onClick={toggle}
       onKeyDown={(event) => {
         if (event.key === 'Enter' || event.key === ' ') {
           toggle(event)
         }
       }}
-      className="absolute -right-0.5 -top-0.5 h-2 w-2 cursor-pointer rounded-full border border-black/40 bg-amber-400"
+      className="absolute -right-1 -top-1 flex h-3.5 w-3.5 cursor-pointer items-center justify-center rounded-full border border-black/50 bg-amber-400 text-[8px] leading-none text-amber-950 shadow-sm shadow-black/50"
     >
+      !
       {position !== null &&
         createPortal(
           <span

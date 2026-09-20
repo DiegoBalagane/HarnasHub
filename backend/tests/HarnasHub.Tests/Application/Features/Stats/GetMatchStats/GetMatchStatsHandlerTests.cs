@@ -78,5 +78,36 @@ public class GetMatchStatsHandlerTests
 		Assert.Equal("Usunięty zawodnik", stat.DisplayName);
 	}
 
+	[Fact]
+	public async Task Should_show_the_demo_name_for_a_player_never_connected_to_a_roster_account()
+	{
+		await using var dbContext = TestApplicationDbContext.Create();
+		var matchId = Guid.NewGuid();
+		dbContext.PlayerMatchStats.Add(new PlayerMatchStat
+		{
+			Id = Guid.NewGuid(),
+			MatchResultId = matchId,
+			UserId = null,
+			DemoPlayerName = "shadow",
+			Kills = 20,
+			Deaths = 10,
+			Assists = 5,
+			Adr = 85.5,
+			HeadshotPercentage = 40,
+			Rating = 1.2,
+			CreatedAtUtc = DateTime.UtcNow
+		});
+		await dbContext.SaveChangesAsync(CancellationToken.None);
+
+		var handler = new GetMatchStatsHandler(dbContext);
+
+		var result = await handler.Handle(new GetMatchStatsQuery(matchId), CancellationToken.None);
+
+		Assert.False(result.IsError);
+		var stat = result.Value.Single();
+		Assert.Null(stat.UserId);
+		Assert.Equal("shadow", stat.DisplayName);
+	}
+
 	#endregion
 }
