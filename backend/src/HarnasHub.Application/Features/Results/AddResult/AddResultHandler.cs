@@ -1,48 +1,23 @@
 using ErrorOr;
 using HarnasHub.Application.Abstractions;
 using HarnasHub.Application.Features.Results.Shared;
+using HarnasHub.Application.Features.Stats.Shared;
 using HarnasHub.Core.Entities;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
 namespace HarnasHub.Application.Features.Results.AddResult;
 
-/// <summary>Handles <see cref="AddResultCommand"/> by persisting the new match result, deriving its score and map from
-/// an attached demo when one was uploaded and falling back to the manually entered values otherwise.</summary>
-public class AddResultHandler(
-	IApplicationDbContext dbContext,
-	ICurrentUserService currentUser,
-	IRealtimeNotifier realtimeNotifier,
-	IDemoParser demoParser)
+/// <summary>Handles <see cref="AddResultCommand"/> by persisting the new match result and, when the coach analysed a
+/// demo beforehand, a stat line for every demo participant who matches a roster member's SteamID64.</summary>
+public class AddResultHandler(IApplicationDbContext dbContext, ICurrentUserService currentUser, IRealtimeNotifier realtimeNotifier)
 	: IRequestHandler<AddResultCommand, ErrorOr<MatchResultDto>>
 {
 	#region Public Methods
 
 	public async Task<ErrorOr<MatchResultDto>> Handle(AddResultCommand request, CancellationToken cancellationToken)
 	{
-		var ourScore = request.OurScore;
-		var opponentScore = request.OpponentScore;
-		var mapName = request.MapName;
-
-		if (request.DemoStream is not null)
-		{
-			var derived = await DeriveFromDemoAsync(request.DemoStream, cancellationToken);
-			if (derived.IsError)
-			{
-				return derived.Errors;
-			}
-
-			// The demo only overrides what it could actually tell us — an unattributable score or an unrecognised
-			// map leaves whatever the coach typed in place.
-			mapName = derived.Value.MapName ?? mapName;
-			if (derived.Value.Score is { } score)
-			{
-				ourScore = score.OurScore;
-				opponentScore = score.OpponentScore;
-			}
-		}
-
-		if (ourScore is not { } resolvedOurScore || opponentScore is not { } resolvedOpponentScore)
+		if (request.OurScore is not { } resolvedOurScore || request.OpponentScore is not { } resolvedOpponentScore)
 		{
 			return ResultErrors.ScoreRequired;
 		}
@@ -53,7 +28,7 @@ public class AddResultHandler(
 			Opponent = request.Opponent,
 			OurScore = resolvedOurScore,
 			OpponentScore = resolvedOpponentScore,
-			MapName = mapName,
+			MapName = request.MapName,
 			DemoUrl = request.DemoUrl,
 			Notes = request.Notes,
 			PlayedAtUtc = request.PlayedAtUtc,
@@ -65,11 +40,22 @@ public class AddResultHandler(
 		};
 
 		dbContext.MatchResults.Add(result);
+
+		var importedStatCount = 0;
+		if (request.DemoPlayers is { Count: > 0 } demoPlayers && request.DemoRoundsPlayed is { } roundsPlayed and > 0)
+		{
+			importedStatCount = await ImportMatchedPlayerStatsAsync(result.Id, demoPlayers, roundsPlayed, cancellationToken);
+		}
+
 		await dbContext.SaveChangesAsync(cancellationToken);
 
 		await realtimeNotifier.NotifyAsync("results", cancellationToken);
 		await realtimeNotifier.NotifyAsync("stats", cancellationToken);
 		await realtimeNotifier.NotifyAsync("dashboard", cancellationToken);
+		if (importedStatCount > 0)
+		{
+			await realtimeNotifier.NotifyAsync($"match-stats:{result.Id}", cancellationToken);
+		}
 
 		var tournament = request.TournamentId is null
 			? null
@@ -100,57 +86,79 @@ public class AddResultHandler(
 
 	#region Private Methods
 
-	/// <summary>Parses the uploaded demo in memory (it is never persisted) and reads the map plus the score, the latter
-	/// only when at least one round has a roster member on one of its sides.</summary>
-	private async Task<ErrorOr<DerivedFromDemo>> DeriveFromDemoAsync(Stream demoStream, CancellationToken cancellationToken)
+	/// <summary>Saves a stat line for every analysed demo participant who matches a roster member's SteamID64 —
+	/// anyone else (the opposition, bots, an unmatched teammate) has nowhere to be saved against and is skipped.
+	/// Returns how many rows were queued so the caller knows whether a per-match realtime notify is worth sending.</summary>
+	private async Task<int> ImportMatchedPlayerStatsAsync(
+		Guid matchResultId,
+		IReadOnlyList<AnalyzedDemoPlayerDto> players,
+		int roundsPlayed,
+		CancellationToken cancellationToken)
 	{
-		DemoParseResult parsed;
+		var steamIds = players.Select(p => p.SteamId64).ToList();
+		var matchedUsers = await dbContext.Users
+			.Where(u => u.SteamId64 != null && steamIds.Contains(u.SteamId64))
+			.ToDictionaryAsync(u => u.SteamId64!, cancellationToken);
 
-		try
+		if (matchedUsers.Count == 0)
 		{
-			parsed = await demoParser.ParseAsync(demoStream, cancellationToken);
-		}
-		catch (Exception)
-		{
-			// Any parser failure (corrupt file, unsupported build, wrong file type) is a validation problem for the
-			// caller, not a server error — the demo bytes themselves are untrusted input.
-			return ResultErrors.InvalidDemoFile;
+			return 0;
 		}
 
-		if (parsed.RoundsPlayed == 0)
+		var imported = 0;
+
+		foreach (var player in players)
 		{
-			return ResultErrors.InvalidDemoFile;
+			if (!matchedUsers.TryGetValue(player.SteamId64, out var user))
+			{
+				continue;
+			}
+
+			var demoPlayer = new DemoPlayerStats(
+				long.Parse(player.SteamId64),
+				player.DemoPlayerName,
+				player.Kills,
+				player.Deaths,
+				player.Assists,
+				player.Headshots,
+				player.DamageDealt,
+				player.EntryKills,
+				player.EntryDeaths,
+				player.KastRounds,
+				player.UtilityDamage,
+				player.FlashAssists,
+				new Dictionary<int, int> { [2] = player.MultiKill2K, [3] = player.MultiKill3K, [4] = player.MultiKill4K, [5] = player.MultiKill5K },
+				[]);
+			var computed = PlayerStatCalculator.Compute(demoPlayer, roundsPlayed);
+
+			dbContext.PlayerMatchStats.Add(new PlayerMatchStat
+			{
+				Id = Guid.NewGuid(),
+				MatchResultId = matchResultId,
+				UserId = user.Id,
+				Kills = player.Kills,
+				Deaths = player.Deaths,
+				Assists = player.Assists,
+				Adr = computed.Adr,
+				HeadshotPercentage = computed.HeadshotPercentage,
+				Rating = computed.Rating,
+				EntryKills = player.EntryKills,
+				EntryDeaths = player.EntryDeaths,
+				KastPercentage = computed.KastPercentage,
+				MultiKill2K = player.MultiKill2K,
+				MultiKill3K = player.MultiKill3K,
+				MultiKill4K = player.MultiKill4K,
+				MultiKill5K = player.MultiKill5K,
+				UtilityDamage = player.UtilityDamage,
+				FlashAssists = player.FlashAssists,
+				CreatedAtUtc = DateTime.UtcNow
+			});
+
+			imported++;
 		}
 
-		var rosterSteamIds = await ResolveRosterSteamIdsAsync(cancellationToken);
-		var score = DemoScoreCalculator.Calculate(parsed.Rounds, rosterSteamIds);
-
-		return new DerivedFromDemo(parsed.MapName?.ToString(), score);
+		return imported;
 	}
-
-	/// <summary>Loads every roster member who has told us their SteamID64 — the set the demo's rounds are matched against.</summary>
-	private async Task<IReadOnlySet<long>> ResolveRosterSteamIdsAsync(CancellationToken cancellationToken)
-	{
-		// Steam IDs are stored as strings (see User.SteamId64) because they exceed Number.MAX_SAFE_INTEGER on the way
-		// to the browser; the roster is small enough to pull whole and convert here rather than filter by the demo.
-		var steamIds = await dbContext.Users
-			.Where(u => u.SteamId64 != null)
-			.Select(u => u.SteamId64!)
-			.ToListAsync(cancellationToken);
-
-		return steamIds
-			.Select(id => long.TryParse(id, out var parsed) ? parsed : (long?)null)
-			.Where(id => id.HasValue)
-			.Select(id => id!.Value)
-			.ToHashSet();
-	}
-
-	#endregion
-
-	#region Private Types
-
-	/// <summary>What a parsed demo could contribute to the result — either part may be null when the demo didn't say.</summary>
-	private record DerivedFromDemo(string? MapName, (int OurScore, int OpponentScore)? Score);
 
 	#endregion
 }

@@ -1,5 +1,6 @@
 using HarnasHub.Application.Abstractions;
 using HarnasHub.Application.Features.Results.AddResult;
+using HarnasHub.Application.Features.Results.Shared;
 using HarnasHub.Core.Entities;
 using HarnasHub.Core.Enums;
 using HarnasHub.Tests.Common;
@@ -83,7 +84,7 @@ public class AddResultHandlerTests
 	}
 
 	[Fact]
-	public async Task Should_require_a_score_when_there_is_neither_a_demo_nor_a_manual_value()
+	public async Task Should_require_a_score_when_none_was_entered()
 	{
 		await using var dbContext = TestApplicationDbContext.Create();
 		var handler = Handler(dbContext);
@@ -96,103 +97,53 @@ public class AddResultHandlerTests
 	}
 
 	[Fact]
-	public async Task Should_reject_a_demo_the_parser_cannot_read()
+	public async Task Should_import_a_stat_line_for_every_roster_member_matched_in_an_analysed_demo()
 	{
 		await using var dbContext = TestApplicationDbContext.Create();
-		var handler = Handler(dbContext, new TestDemoParser(throwOnParse: new InvalidDataException("corrupt")));
+		var matched = await AddRosterMemberAsync(dbContext, "76561198012345678");
 
-		var result = await handler.Handle(Command(demoStream: Stream.Null), CancellationToken.None);
-
-		Assert.True(result.IsError);
-		Assert.Equal("Results.InvalidDemoFile", result.FirstError.Code);
-		Assert.Empty(dbContext.MatchResults);
-	}
-
-	[Fact]
-	public async Task Should_compute_the_score_and_map_from_an_attached_demo()
-	{
-		await using var dbContext = TestApplicationDbContext.Create();
-		await AddRosterMemberAsync(dbContext, "76561198012345678");
-
-		// Three rounds on T, then the same roster on CT after the swap — two wins in each half.
-		var parsed = ParseResult(MapName.Mirage,
-		[
-			Round(MapSide.T, [76561198012345678], [999]),
-			Round(MapSide.T, [76561198012345678], [999]),
-			Round(MapSide.CT, [76561198012345678], [999]),
-			Round(MapSide.CT, [999], [76561198012345678]),
-			Round(MapSide.CT, [999], [76561198012345678]),
-			Round(MapSide.T, [999], [76561198012345678])
-		]);
-		var handler = Handler(dbContext, new TestDemoParser(parsed));
+		var demoPlayers = new[]
+		{
+			Player("76561198012345678", "shadow", kills: 20, deaths: 10, assists: 5, headshots: 8, damage: 1500, kastRounds: 1),
+			Player("999", "unmatched-opponent", kills: 10, deaths: 20)
+		};
+		var handler = Handler(dbContext);
 
 		var result = await handler.Handle(
-			Command(ourScore: null, opponentScore: null, mapName: null, demoStream: Stream.Null),
+			Command(demoRoundsPlayed: 1, demoPlayers: demoPlayers),
 			CancellationToken.None);
 
 		Assert.False(result.IsError);
-		Assert.Equal(4, result.Value.OurScore);
-		Assert.Equal(2, result.Value.OpponentScore);
-		Assert.Equal("Mirage", result.Value.MapName);
+
+		var stat = Assert.Single(dbContext.PlayerMatchStats);
+		Assert.Equal(matched.Id, stat.UserId);
+		Assert.Equal(result.Value.Id, stat.MatchResultId);
+		Assert.Equal(20, stat.Kills);
+		Assert.Equal(10, stat.Deaths);
+		Assert.NotNull(stat.KastPercentage);
 	}
 
 	[Fact]
-	public async Task Should_let_the_demo_override_a_manually_entered_score()
+	public async Task Should_not_import_any_stats_when_nobody_in_the_analysed_demo_matches_the_roster()
 	{
 		await using var dbContext = TestApplicationDbContext.Create();
-		await AddRosterMemberAsync(dbContext, "76561198012345678");
-
-		var parsed = ParseResult(MapName.Inferno, [Round(MapSide.T, [76561198012345678], [999])]);
-		var handler = Handler(dbContext, new TestDemoParser(parsed));
+		var demoPlayers = new[] { Player("999", "opponent", kills: 10, deaths: 5) };
+		var handler = Handler(dbContext);
 
 		var result = await handler.Handle(
-			Command(ourScore: 13, opponentScore: 7, mapName: "Mirage", demoStream: Stream.Null),
+			Command(ourScore: 13, opponentScore: 7, demoRoundsPlayed: 1, demoPlayers: demoPlayers),
 			CancellationToken.None);
 
 		Assert.False(result.IsError);
-		Assert.Equal(1, result.Value.OurScore);
-		Assert.Equal(0, result.Value.OpponentScore);
-		Assert.Equal("Inferno", result.Value.MapName);
-	}
-
-	[Fact]
-	public async Task Should_fall_back_to_the_manual_score_when_no_roster_member_plays_in_the_demo()
-	{
-		await using var dbContext = TestApplicationDbContext.Create();
-		var parsed = ParseResult(null, [Round(MapSide.T, [998], [999])]);
-		var handler = Handler(dbContext, new TestDemoParser(parsed));
-
-		var result = await handler.Handle(
-			Command(ourScore: 13, opponentScore: 7, mapName: "Mirage", demoStream: Stream.Null),
-			CancellationToken.None);
-
-		Assert.False(result.IsError);
-		Assert.Equal(13, result.Value.OurScore);
-		Assert.Equal(7, result.Value.OpponentScore);
-		Assert.Equal("Mirage", result.Value.MapName);
-	}
-
-	[Fact]
-	public async Task Should_require_a_score_when_the_demo_cannot_be_attributed_and_none_was_entered()
-	{
-		await using var dbContext = TestApplicationDbContext.Create();
-		var parsed = ParseResult(null, [Round(MapSide.T, [998], [999])]);
-		var handler = Handler(dbContext, new TestDemoParser(parsed));
-
-		var result = await handler.Handle(
-			Command(ourScore: null, opponentScore: null, demoStream: Stream.Null),
-			CancellationToken.None);
-
-		Assert.True(result.IsError);
-		Assert.Equal("Results.ScoreRequired", result.FirstError.Code);
+		Assert.Empty(dbContext.PlayerMatchStats);
 	}
 
 	#endregion
 
 	#region Private Methods
 
-	private AddResultHandler Handler(IApplicationDbContext dbContext, TestDemoParser? demoParser = null) =>
-		new(dbContext, new TestCurrentUserService(_userId), new TestRealtimeNotifier(), demoParser ?? new TestDemoParser());
+	private AddResultHandler Handler(IApplicationDbContext dbContext) =>
+		new(dbContext, new TestCurrentUserService(_userId), new TestRealtimeNotifier());
 
 	private static AddResultCommand Command(
 		MatchCategory category = MatchCategory.Scrimmage,
@@ -201,18 +152,13 @@ public class AddResultHandlerTests
 		int? ourScore = 16,
 		int? opponentScore = 10,
 		string? mapName = "Mirage",
-		Stream? demoStream = null) =>
-		new("Team X", ourScore, opponentScore, mapName, null, null, DateTime.UtcNow, category, tournamentId, leagueId, demoStream);
+		int? demoRoundsPlayed = null,
+		IReadOnlyList<AnalyzedDemoPlayerDto>? demoPlayers = null) =>
+		new("Team X", ourScore, opponentScore, mapName, null, null, DateTime.UtcNow, category, tournamentId, leagueId, demoRoundsPlayed, demoPlayers);
 
-	private static DemoParseResult ParseResult(MapName? mapName, IReadOnlyList<DemoRoundResult> rounds) =>
-		new(rounds.Count, mapName, [], rounds);
-
-	private static DemoRoundResult Round(MapSide winnerSide, IReadOnlyList<long> terrorists, IReadOnlyList<long> counterTerrorists) =>
-		new(winnerSide, terrorists, counterTerrorists);
-
-	private static async Task AddRosterMemberAsync(IApplicationDbContext dbContext, string steamId64)
+	private static async Task<User> AddRosterMemberAsync(IApplicationDbContext dbContext, string steamId64)
 	{
-		dbContext.Users.Add(new User
+		var user = new User
 		{
 			Id = Guid.NewGuid(),
 			DiscordId = "1",
@@ -220,9 +166,26 @@ public class AddResultHandlerTests
 			AccessLevel = AccessLevel.Player,
 			SteamId64 = steamId64,
 			CreatedAtUtc = DateTime.UtcNow
-		});
+		};
+		dbContext.Users.Add(user);
 		await dbContext.SaveChangesAsync(CancellationToken.None);
+		return user;
 	}
+
+	private static AnalyzedDemoPlayerDto Player(
+		string steamId64,
+		string name,
+		int kills = 0,
+		int deaths = 0,
+		int assists = 0,
+		int headshots = 0,
+		int damage = 0,
+		int entryKills = 0,
+		int entryDeaths = 0,
+		int kastRounds = 0,
+		int utilityDamage = 0,
+		int flashAssists = 0) =>
+		new(steamId64, name, kills, deaths, assists, headshots, damage, entryKills, entryDeaths, kastRounds, utilityDamage, flashAssists, 0, 0, 0, 0);
 
 	#endregion
 }
