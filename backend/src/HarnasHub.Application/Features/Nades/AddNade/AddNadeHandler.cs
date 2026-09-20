@@ -31,7 +31,8 @@ public class AddNadeHandler(IApplicationDbContext dbContext, ICurrentUserService
 		await realtimeNotifier.NotifyAsync("nades", cancellationToken);
 
 		return new NadeEntryDto(
-			entry.Id, entry.MapName, entry.Type.ToString(), entry.Title, entry.Description, entry.YoutubeUrl, entry.CreatedByUserId);
+			entry.Id, entry.MapName, entry.Type.ToString(), entry.Title, entry.Description, entry.YoutubeUrl,
+			entry.LandingX, entry.LandingY, entry.CreatedByUserId);
 	}
 
 	#endregion

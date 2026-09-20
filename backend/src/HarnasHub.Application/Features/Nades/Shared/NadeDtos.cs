@@ -10,4 +10,6 @@ public record NadeEntryDto(
 	string Title,
 	string? Description,
 	string? YoutubeUrl,
+	float? LandingX,
+	float? LandingY,
 	Guid CreatedByUserId);

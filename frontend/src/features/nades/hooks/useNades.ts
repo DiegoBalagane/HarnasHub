@@ -1,5 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { nadesApi, type AddNadePayload, type GrenadeType, type MapName } from '../../../services/nadesApi'
+import {
+  nadesApi,
+  type AddNadePayload,
+  type GrenadeType,
+  type MapName,
+  type UpdateNadePositionPayload,
+} from '../../../services/nadesApi'
 
 /** Fetches nade entries, optionally filtered by map and/or grenade type. */
 export function useNades(filters: { mapName?: MapName; type?: GrenadeType }) {
@@ -27,6 +33,18 @@ export function useDeleteNade() {
 
   return useMutation({
     mutationFn: (nadeId: string) => nadesApi.deleteNade(nadeId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['nades'] })
+    },
+  })
+}
+
+/** Sets or clears a nade entry's landing-spot pin on its map radar. */
+export function useUpdateNadePosition() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (payload: UpdateNadePositionPayload) => nadesApi.updateNadePosition(payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['nades'] })
     },
