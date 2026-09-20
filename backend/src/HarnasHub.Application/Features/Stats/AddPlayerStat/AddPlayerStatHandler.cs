@@ -69,7 +69,7 @@ public class AddPlayerStatHandler(IApplicationDbContext dbContext, IRealtimeNoti
 		return new PlayerMatchStatDto(
 			stat.Id, player.Id, player.DisplayName, stat.Kills, stat.Deaths, stat.Assists, stat.Adr, stat.HeadshotPercentage, stat.Rating,
 			stat.EntryKills, stat.EntryDeaths, stat.KastPercentage, stat.MultiKill2K, stat.MultiKill3K, stat.MultiKill4K, stat.MultiKill5K,
-			stat.UtilityDamage, stat.FlashAssists);
+			stat.UtilityDamage, stat.FlashAssists, []);
 	}
 
 	#endregion
