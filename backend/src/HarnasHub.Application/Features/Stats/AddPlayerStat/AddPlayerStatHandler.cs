@@ -48,6 +48,15 @@ public class AddPlayerStatHandler(IApplicationDbContext dbContext, IRealtimeNoti
 			Adr = request.Adr,
 			HeadshotPercentage = request.HeadshotPercentage,
 			Rating = request.Rating,
+			EntryKills = request.EntryKills,
+			EntryDeaths = request.EntryDeaths,
+			KastPercentage = request.KastPercentage,
+			MultiKill2K = request.MultiKill2K,
+			MultiKill3K = request.MultiKill3K,
+			MultiKill4K = request.MultiKill4K,
+			MultiKill5K = request.MultiKill5K,
+			UtilityDamage = request.UtilityDamage,
+			FlashAssists = request.FlashAssists,
 			CreatedAtUtc = DateTime.UtcNow
 		};
 
@@ -58,7 +67,9 @@ public class AddPlayerStatHandler(IApplicationDbContext dbContext, IRealtimeNoti
 		await realtimeNotifier.NotifyAsync("stats", cancellationToken);
 
 		return new PlayerMatchStatDto(
-			stat.Id, player.Id, player.DisplayName, stat.Kills, stat.Deaths, stat.Assists, stat.Adr, stat.HeadshotPercentage, stat.Rating);
+			stat.Id, player.Id, player.DisplayName, stat.Kills, stat.Deaths, stat.Assists, stat.Adr, stat.HeadshotPercentage, stat.Rating,
+			stat.EntryKills, stat.EntryDeaths, stat.KastPercentage, stat.MultiKill2K, stat.MultiKill3K, stat.MultiKill4K, stat.MultiKill5K,
+			stat.UtilityDamage, stat.FlashAssists);
 	}
 
 	#endregion

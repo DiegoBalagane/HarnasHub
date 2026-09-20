@@ -14,7 +14,7 @@ public class TestDemoParser(DemoParseResult? result = null, Exception? throwOnPa
 			throw throwOnParse;
 		}
 
-		return Task.FromResult(result ?? new DemoParseResult(0, []));
+		return Task.FromResult(result ?? new DemoParseResult(0, null, [], []));
 	}
 
 	#endregion

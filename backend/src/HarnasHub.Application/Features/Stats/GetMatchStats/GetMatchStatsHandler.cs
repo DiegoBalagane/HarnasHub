@@ -31,7 +31,16 @@ public class GetMatchStatsHandler(IApplicationDbContext dbContext)
 				stat.Assists,
 				stat.Adr,
 				stat.HeadshotPercentage,
-				stat.Rating))
+				stat.Rating,
+				stat.EntryKills,
+				stat.EntryDeaths,
+				stat.KastPercentage,
+				stat.MultiKill2K,
+				stat.MultiKill3K,
+				stat.MultiKill4K,
+				stat.MultiKill5K,
+				stat.UtilityDamage,
+				stat.FlashAssists))
 			.ToListAsync(cancellationToken);
 	}
 

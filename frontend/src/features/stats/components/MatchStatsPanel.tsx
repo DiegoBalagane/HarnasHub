@@ -55,32 +55,54 @@ export function MatchStatsPanel({ matchResultId }: { matchResultId: string }) {
       ) : stats?.length === 0 ? (
         <p className="text-xs text-neutral-500">Brak wpisanych statystyk.</p>
       ) : (
-        <table className="w-full text-left text-xs">
-          <thead className="text-neutral-500">
-            <tr>
-              <th className="pb-1 font-normal">Gracz</th>
-              <th className="pb-1 font-normal">K</th>
-              <th className="pb-1 font-normal">D</th>
-              <th className="pb-1 font-normal">A</th>
-              <th className="pb-1 font-normal">ADR</th>
-              <th className="pb-1 font-normal">HS%</th>
-              <th className="pb-1 font-normal">Rating</th>
-            </tr>
-          </thead>
-          <tbody>
-            {stats?.map((stat) => (
-              <tr key={stat.id} className="text-neutral-300">
-                <td className="py-0.5">{stat.displayName}</td>
-                <td>{stat.kills}</td>
-                <td>{stat.deaths}</td>
-                <td>{stat.assists}</td>
-                <td>{stat.adr.toFixed(0)}</td>
-                <td>{stat.headshotPercentage.toFixed(0)}</td>
-                <td>{stat.rating.toFixed(2)}</td>
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-xs">
+            <thead className="text-neutral-500">
+              <tr>
+                <th className="pb-1 pr-2 font-normal">Gracz</th>
+                <th className="pb-1 font-normal">K</th>
+                <th className="pb-1 font-normal">D</th>
+                <th className="pb-1 font-normal">A</th>
+                <th className="pb-1 font-normal">ADR</th>
+                <th className="pb-1 font-normal">HS%</th>
+                <th className="pb-1 font-normal">Rating</th>
+                <th className="pb-1 pl-2 font-normal text-neutral-600">Entry K/D</th>
+                <th className="pb-1 font-normal text-neutral-600">KAST%</th>
+                <th className="pb-1 font-normal text-neutral-600" title="Rundy z 2/3/4/5 killami">
+                  Multi
+                </th>
+                <th className="pb-1 font-normal text-neutral-600">UtilDmg</th>
+                <th className="pb-1 font-normal text-neutral-600">FlashA</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {stats?.map((stat) => (
+                <tr key={stat.id} className="text-neutral-300">
+                  <td className="py-0.5 pr-2">{stat.displayName}</td>
+                  <td>{stat.kills}</td>
+                  <td>{stat.deaths}</td>
+                  <td>{stat.assists}</td>
+                  <td>{stat.adr.toFixed(0)}</td>
+                  <td>{stat.headshotPercentage.toFixed(0)}</td>
+                  <td>{stat.rating.toFixed(2)}</td>
+                  <td className="pl-2 text-neutral-500">
+                    {stat.entryKills !== null ? `${stat.entryKills}/${stat.entryDeaths}` : '—'}
+                  </td>
+                  <td className="text-neutral-500">
+                    {stat.kastPercentage !== null ? `${stat.kastPercentage.toFixed(0)}%` : '—'}
+                  </td>
+                  <td className="text-neutral-500">
+                    {stat.multiKill2K !== null
+                      ? `${stat.multiKill2K}/${stat.multiKill3K}/${stat.multiKill4K}/${stat.multiKill5K}`
+                      : '—'}
+                  </td>
+                  <td className="text-neutral-500">{stat.utilityDamage ?? '—'}</td>
+                  <td className="text-neutral-500">{stat.flashAssists ?? '—'}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
 
       {canAddStats && availablePlayers && availablePlayers.length > 0 && (

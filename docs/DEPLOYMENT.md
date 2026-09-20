@@ -71,6 +71,40 @@ Aplikację Discord (Client ID/Secret) już masz założoną z testów lokalnych 
 6. Sprawdź **live-update**: otwórz appkę na dwóch urządzeniach (albo telefon + laptop) zalogowaną jako różni gracze, zmień dostępność na jednym — drugie powinno zaktualizować się samo, bez odświeżania.
 7. Sprawdź **Discorda**: dodaj wydarzenie albo zadanie — wiadomość powinna przyjść na skonfigurowany kanał w ciągu kilku sekund.
 
+## Środowisko testowe (staging) — osobne od produkcji
+
+Zanim coś z brancha `develop` wyląduje na `main` (czyli na produkcji, którą widzą gracze), warto przetestować to na osobnym, izolowanym środowisku. Railway ma to wbudowane jako **Environments** w ramach tego samego projektu — nie trzeba zakładać drugiego projektu ani konta.
+
+### Jednorazowa konfiguracja
+
+1. W projekcie Railway (dashboard projektu) → dropdown środowiska obok nazwy projektu → **New Environment** → nazwij `develop`. Nowe środowisko startuje **puste** — serwisy się nie kopiują automatycznie.
+2. W pustym środowisku `develop` kliknij **„+ New"** → **GitHub Repository** → wskaż repo `HarnasHub`. Railway zdeployuje domyślny branch (`main`) — od razu potem wejdź w ten serwis → **Settings** → sekcja **Source** → zmień **Branch** na `develop`. Od tej pory każdy push/merge do `develop` odpala deploy tylko tutaj, produkcji nie rusza.
+3. Tam samo „+ New" → **Database** → **PostgreSQL** — osobna, pusta baza tylko dla stagingu. **Nigdy nie współdziel bazy z produkcją.**
+4. W serwisie backendu → **Settings** → **Networking** → **Generate Domain** — Railway nada osobny publiczny URL (np. `harnashub-develop-xxxx.up.railway.app`), inny niż produkcyjny.
+5. W serwisie backendu → zakładka **Variables** → **Raw Editor** (wklejanie wielu zmiennych naraz) — te same klucze co w tabeli produkcyjnej wyżej, ale z dwiema różnicami:
+   - `ConnectionStrings__Database` odwołuje się do **stagingowego** Postgresa przez składnię referencji Railway (samo podstawia wartość, nie trzeba kopiować ręcznie):
+     ```
+     Host=${{<nazwa-serwisu-postgres>.PGHOST}};Port=${{<nazwa-serwisu-postgres>.PGPORT}};Database=${{<nazwa-serwisu-postgres>.PGDATABASE}};Username=${{<nazwa-serwisu-postgres>.PGUSER}};Password=${{<nazwa-serwisu-postgres>.PGPASSWORD}}
+     ```
+   - `Jwt__Secret` — **inny, osobny sekret niż produkcyjny** (żeby token ze stagingu nie działał na produkcji i odwrotnie), np. `openssl rand -base64 32` lokalnie.
+   - `DiscordOAuth__RedirectUri` wskazuje na domenę z kroku 4, nie na produkcyjną.
+   - `ASPNETCORE_ENVIRONMENT` = `Staging` (zamiast `Production`) — czysto informacyjne, ułatwia odróżnienie w logach.
+   - Resztę (`DiscordOAuth__ClientId`/`ClientSecret`/`RequiredGuildId`, `Discord__WebhookUrl`) można zostawić takie same jak na produkcji, **ale rozważ osobny kanał/webhook na Discordzie dla powiadomień testowych** — inaczej każdy test zaśmieca prawdziwy kanał drużyny. Osobna aplikacja Discord (inny Client ID/Secret) też jest opcją, jeśli wolisz pełną izolację.
+6. **Discord Developer Portal → Twoja aplikacja → OAuth2 → Redirects** → dodaj **trzeci** redirect (obok `localhost` i produkcji):
+   ```
+   https://<domena-stagingu>/api/auth/discord/callback
+   ```
+7. Deploy. Migracje aplikują się automatycznie na starcie, tak samo jak na produkcji — nowa baza dostaje pełen, aktualny schemat.
+8. Pierwsze logowanie na stagingu ląduje jako Gość (nowa, pusta baza) — trzeba ręcznie nadać sobie Managera w **stagingowym** Postgresie, dokładnie tak samo jak w kroku 5 sekcji „Jak Ty (i gracze) to przetestujecie" wyżej, ale w nowej bazie.
+
+### Workflow docelowy
+
+Feature branch → merge do `develop` → auto-deploy na staging → testujesz sam na domenie stagingu → jak OK, merge `develop` → `main` → auto-deploy na produkcję.
+
+### Koszt
+
+Drugi komplet serwisów (backend + Postgres) działający równolegle liczy się do tego samego miesięcznego limitu Hobby planu Railway — realnie ~2× koszt przy stałym działaniu obu środowisk. Jeśli to problem, serwis stagingu można ręcznie zatrzymywać między sesjami testowymi (Railway → serwis → „Sleep"/pauza), zamiast trzymać go włączonego cały czas.
+
 ## Czego świadomie nie ma (i dlaczego)
 
 - **Prawdziwe powiadomienia push** (natywny prompt o zgodę na telefonie) — wymagają VAPID + custom service workera; odłożone do momentu, gdy appka będzie realnie wdrożona i będzie na czym testować prawdziwe zezwolenia przeglądarki na urządzeniu.
