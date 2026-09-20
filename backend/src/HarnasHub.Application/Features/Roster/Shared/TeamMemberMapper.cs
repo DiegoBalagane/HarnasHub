@@ -19,6 +19,7 @@ public static class TeamMemberMapper
 		user.PinColor?.ToString(),
 		user.PinMark,
 		user.InGameNickname,
+		user.SteamId64,
 		secondaryTeamRoles?.ToList() ?? []);
 
 	#endregion

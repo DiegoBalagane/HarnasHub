@@ -1,6 +1,7 @@
 import { NicknameSettings } from '../../features/roster/components/NicknameSettings'
 import { PinColorSettings } from '../../features/roster/components/PinColorSettings'
 import { PinMarkSettings } from '../../features/roster/components/PinMarkSettings'
+import { SteamIdSettings } from '../../features/roster/components/SteamIdSettings'
 
 export function SettingsPage() {
   return (
@@ -9,6 +10,7 @@ export function SettingsPage() {
       <NicknameSettings />
       <PinColorSettings />
       <PinMarkSettings />
+      <SteamIdSettings />
     </>
   )
 }

@@ -26,6 +26,9 @@ export interface TeamMember {
   /** Self-chosen single character shown on the member's map-radar pin, settable by anyone; falls back to their initials when unset. */
   pinMark: string | null
   inGameNickname: string | null
+  /** Self-reported SteamID64, used to match this player to a CS2 demo's participants when importing stats.
+   * A string, not a number — it exceeds Number.MAX_SAFE_INTEGER and would lose precision as a JS number. */
+  steamId64: string | null
   /** Backup in-game roles alongside the primary one, e.g. "second AWPer". */
   secondaryTeamRoles: TeamRole[]
 }
@@ -56,6 +59,9 @@ export const rosterApi = {
   /** Open to every roster member; a null/blank value clears it back to auto-generated initials. */
   updateMyPinMark: (pinMark: string | null) =>
     apiClient.patch<TeamMember>(API_ENDPOINTS.roster.myPinMark, { pinMark }),
+  /** A null/blank value clears it. */
+  updateMySteamId64: (steamId64: string | null) =>
+    apiClient.patch<TeamMember>(API_ENDPOINTS.roster.mySteamId64, { steamId64 }),
   /** Manager only; permanently deletes the account and its personal data. Team artifacts they created are kept. */
   deleteMember: (userId: string) => apiClient.delete<void>(API_ENDPOINTS.roster.byId(userId)),
 }

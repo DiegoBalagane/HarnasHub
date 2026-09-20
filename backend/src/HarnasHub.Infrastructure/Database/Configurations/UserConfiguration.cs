@@ -26,6 +26,7 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
 		builder.Property(u => u.PinColor).HasConversion<string>().HasMaxLength(20);
 		builder.Property(u => u.PinMark).HasMaxLength(4);
 		builder.Property(u => u.InGameNickname).HasMaxLength(50);
+		builder.Property(u => u.SteamId64).HasMaxLength(17);
 	}
 
 	#endregion
