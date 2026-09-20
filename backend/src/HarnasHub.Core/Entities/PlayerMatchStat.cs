@@ -30,6 +30,10 @@ public class PlayerMatchStat
 	public int? MultiKill5K { get; set; }
 	public int? UtilityDamage { get; set; }
 	public int? FlashAssists { get; set; }
+	/// <summary>This player's death locations for the match, JSON-serialized (radar-relative [0,1] fractions plus side) —
+	/// only ever set on a row that came from a demo import, for the death-map view. Stored as a single JSON column rather
+	/// than a child table since it's always read/written whole, never queried by individual point.</summary>
+	public string? DeathPositionsJson { get; set; }
 	public DateTime CreatedAtUtc { get; set; }
 
 	#endregion

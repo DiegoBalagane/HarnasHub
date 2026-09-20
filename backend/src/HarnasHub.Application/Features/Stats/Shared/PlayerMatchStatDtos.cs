@@ -22,7 +22,8 @@ public record PlayerMatchStatDto(
 	int? MultiKill4K,
 	int? MultiKill5K,
 	int? UtilityDamage,
-	int? FlashAssists);
+	int? FlashAssists,
+	IReadOnlyList<DeathPositionDto> DeathPositions);
 
 /// <summary>One player's death, as a radar-relative fraction in [0,1] (see <c>MapPositionAssignment.X/Y</c>) plus which side they were on.</summary>
 public record DeathPositionDto(float X, float Y, string Side);

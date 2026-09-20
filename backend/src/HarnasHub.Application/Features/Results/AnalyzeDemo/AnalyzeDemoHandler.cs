@@ -1,6 +1,7 @@
 using ErrorOr;
 using HarnasHub.Application.Abstractions;
 using HarnasHub.Application.Features.Results.Shared;
+using HarnasHub.Application.Features.Stats.Shared;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
@@ -67,7 +68,8 @@ public class AnalyzeDemoHandler(IDemoParser demoParser, IApplicationDbContext db
 				p.MultiKillRounds.GetValueOrDefault(2),
 				p.MultiKillRounds.GetValueOrDefault(3),
 				p.MultiKillRounds.GetValueOrDefault(4),
-				p.MultiKillRounds.GetValueOrDefault(5)))
+				p.MultiKillRounds.GetValueOrDefault(5),
+				p.DeathPositions.Select(d => new DeathPositionDto(d.X, d.Y, d.Side.ToString())).ToList()))
 			.ToList();
 
 		return new AnalyzeDemoResultDto(parsed.RoundsPlayed, parsed.MapName?.ToString(), teamA, teamB, suggestedTeam, players);
