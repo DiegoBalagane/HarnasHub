@@ -63,8 +63,53 @@ Uwaga: każdy z serwera Discord drużyny może się zalogować, ale dostaje kont
 - [x] Manager może trwale usunąć konto gracza z `/roster` — kasuje tylko jego prywatne dane (dostępność, urlopy, pozycja na radarze, dodatkowe role, zadania mu przypisane); wyniki meczów, granaty, taktyki i zadania które przydzielił innym zostają, bez utraty dorobku drużyny
 - [x] Panel staty meczu pokazuje wiersz usuniętego gracza jako „Usunięty zawodnik" zamiast po cichu go ukrywać
 
-## Rozważane później
-- Automatyczne parsowanie demek CS2 (`.dem`) z własnego serwera scrimów jako źródło statystyk — jedyna realna droga do automatycznego importu, bo sparingi idą przez własny serwer/serwer rywala, nie przez FACEIT (FACEIT/Steam API nic by tam nie zobaczyły)
+## Faza 10 — Mapa granatów, wideo, statystyki meczowe
+- [x] Pinezki granatów na radarze mapy (10.1)
+- [x] Bogatszy embed wideo lineupów, facade + `youtube-nocookie.com` (10.2)
+- [x] Sparing/Liga/Turniej z grupowaniem wyników (10.3)
+- [x] Automatyczny import staty z demek `.dem` (10.4)
+
+### 10.1 Pinezki granatów na radarze mapy — ✅ zaimplementowane
+`NadeEntry` ma teraz `LandingX`/`LandingY` (float?, [0,1], migracja `AddNadeLandingPosition`, nullable więc stare wpisy bez pozycji nadal działają — pokazują się tylko na liście). Nowy slice `Features/Nades/UpdateNadePosition` (`PATCH /api/nades/{id}/position`, `X`/`Y` oboje null lub oboje w [0,1] — pilnuje `UpdateNadePositionCommandValidator`), autoryzacja jak przy usuwaniu: autor wpisu lub Coach/Manager (`UpdateNadePositionHandler`), 5 testów jednostkowych.
+
+Frontend: `/nades` ma teraz przełącznik Lista/Mapa (`NadesPage`). Widok mapy (`NadeMapView`) — wybór mapy z listy, radar z pinezkami kolorowanymi i oznaczonymi literą po `GrenadeType` (D/F/M/G — dymna/flasha/molotov/granat, `NadePin`), filtrowalny checkboxami po typie. Klik w pinezkę otwiera kartę ze szczegółami i wideo (patrz 10.2), przeciągnięcie zmienia pozycję (ten sam wzorzec pointer-capture co `MapRadar`/`TacticEditor`, zapis raz na `pointerup`). Wpisy bez pozycji trafiają do listy "Bez pozycji na mapie" z przyciskiem "Ustaw pozycję" — uzbraja tryb umieszczenia, kolejny klik na radarze zapisuje pinezkę (ten sam "klik pusty radar" wzorzec co `TacticEditor.handleRadarClick`, tylko uzbrajany per wpis zamiast zawsze aktywny). Druga pinezka "stąd rzucasz" (`ThrowFromX`/`Y`) świadomie pominięta na starcie — jeden punkt lądowania wystarcza do znalezienia wpisu na mapie, dwupunktowy tryb rzutu można dodać później bez migracji łamiącej istniejące dane.
+
+### 10.2 Wideo lineupów — format i osadzanie — ✅ zaimplementowane
+Zbadane pod kątem konwencji branżowej (csnades.gg, scope.gg, cs2nades.gg): standardem są **krótkie (10–20 s) klipy bez montażu**, pokazujące tylko rzut i efekt. Zdecydowano zostać przy YouTube jako głównym źródle (bez kosztu hostingu, dobrze znane graczom) — Streamable/Medal.tv nadal działają, bo pole akceptuje dowolny link, po prostu bez podglądu dla nierozpoznanego formatu.
+
+Zaimplementowane w `components/YoutubeEmbed.tsx` (współdzielony, używany przez `NadeLibrary` i `NadeMapView`):
+- Parser (`parseYoutubeUrl`) wyciąga ID wideo z `watch?v=`, `youtu.be/`, `embed/`, `shorts/`, z opcjonalnym `?t=`/`&start=`. Nierozpoznany link → fallback "Otwórz wideo ↗" zamiast błędu.
+- Embed przez **`youtube-nocookie.com`** (privacy-enhanced) zamiast `youtube.com`.
+- Facade: miniaturka (`img.youtube.com/vi/ID/hqdefault.jpg`) z przyciskiem play zamiast żywego `<iframe>` — sam iframe (z `loading="lazy"`, `autoplay=1`) montuje się dopiero po kliknięciu, więc lista kilkudziesięciu granatów na mapie nie ładuje tylu playerów naraz.
+- Nieużyte pod `MatchResult.DemoUrl` na razie (to link do demki `.dem`, nie VOD-a) — gdyby ktoś zaczął tam wklejać linki do nagrań, komponent jest gotowy do reużycia bez zmian.
+
+### 10.3 Statystyki i wyniki: sparing / liga / turniej, z grupowaniem — ✅ zaimplementowane (bez filtra na `/stats`)
+`MatchResult` ma teraz `Category` (`MatchCategory`: Scrimmage/League/Tournament, string w bazie), `TournamentId`/`LeagueId` (loose linki, jak `TacticPoint.NadeEntryId` — bez FK). Migracja `AddTournamentsAndLeagues`; istniejące wiersze sprzed tej funkcji dostały `Category = Scrimmage` jako wartość domyślną (nie pusty string — `HasConversion<string>()` nie potrafiłby go odczytać z powrotem jako enum).
+
+- **`Tournament`** (`Id`, `Name`, `CreatedByUserId`, `CreatedAtUtc`) — realna encja zamiast wolnego tekstu, żeby literówka nie rozbijała grupowania. Slice `Features/Tournaments/{CreateTournament,GetTournaments}`.
+- **`League`** (`Id`, `Name`, `Season`, `Type`: `LeagueType` enum Online/Lan/Division1/Division2/Other) — slice `Features/Leagues/{CreateLeague,GetLeagues}`.
+- `AddResultCommand`/`AddResultCommandValidator` — `TournamentId` wymagany tylko dla `Category == Tournament`, `LeagueId` tylko dla `Category == League`, w obie strony pilnowane (ustawienie złego pola dla złej kategorii to błąd walidacji). **Uwaga wyniesiona z testu**: `.When()` w FluentValidation domyślnie działa wstecz na cały łańcuch reguł w danym `RuleFor` (`ApplyConditionTo.AllValidators`), więc dwa `.When()` na tym samym `RuleFor` bez jawnego `ApplyConditionTo.CurrentValidator` nadpisywały sobie nawzajem warunek — złapane przez `AddResultCommandValidatorTests`, nie ręcznie.
+- `GetResultsHandler` dołącza nazwę turnieju / nazwę+sezon+typ ligi podwójnym `GroupJoin` (wzór z `GetMyTasksHandler`) zamiast osobnych zapytań per wynik.
+- Frontend: `AddResultForm` ma select kategorii + warunkowy picker turnieju/ligi z inline tworzeniem nowego wpisu (bez opuszczania formularza). `ResultList` grupuje wyniki: sparingi płasko, turnieje i ligi w sekcjach nazwanych turniejem / sezonem+typem ligi.
+- **Pominięte na razie**: filtr kategorii na `/stats` i wykresie trendu drużynowego (`GetTeamTrendQuery`) — nadal liczy wszystko razem. Nie jest to trudne do dodania (analogiczny `MatchCategory?` filtr jak w `GetNadesQuery`), ale to osobna zmiana w innym slice'u niż grupowanie wyników, więc świadomie zostawione poza tym zakresem.
+
+### 10.4 Automatyczny import staty z demek `.dem` — ✅ zaimplementowane
+Punkt z "Rozważane później" w poprzednich fazach, teraz zbudowany:
+
+- Biblioteka: **`DemoFile`/`DemoFile.Game.Cs`** (github.com/saul/demofile-net, MIT, v0.44.1 — pakiet **`demofile-net` nie istnieje na NuGet**, właściwa nazwa to `DemoFile`/`DemoFile.Game.Cs`; poprawka względem wcześniejszej wersji tego dokumentu). API zweryfikowane kompilacją, nie tylko dokumentacją — `CCSPlayerController.SteamID`/`PlayerName`, `Source1GameEvents.PlayerDeath/PlayerHurt/RoundEnd`, `DemoFileReader.Create(...).ReadAllAsync(...)` zgadzają się z README za pierwszym razem.
+- **Inwersja zależności**: `IDemoParser`/`DemoParseResult`/`DemoPlayerStats` żyją w `Application/Abstractions` (bez referencji do biblioteki), implementacja `DemoFileParser` w `Infrastructure/Demos/` — ten sam wzorzec co `IDiscordNotifier`/`IRealtimeNotifier`. Dzięki temu handler ma testy jednostkowe **bez** prawdziwego pliku `.dem` (fake `IDemoParser` w `TestDemoParser`, 5 testów: liczenie ADR/HS%, dopasowanie po SteamID64, błąd dla uszkodzonej demki, błąd dla 0 rund).
+- Endpoint `POST /api/stats/import-demo` (Coach/Manager) — multipart upload, limit 320 MB podniesiony na tym jednym endpoincie przez `IHttpMaxRequestBodySizeFeature` (Kestrel domyślnie ma 30 MB), plik streamowany bezpośrednio do parsera przez `IFormFile.OpenReadStream()` — **nigdy nie trafia do trwałego storage**, parsujemy i odrzucamy bajty, zostają tylko wyliczone staty. To odrębna decyzja od "prawdziwego uploadu do R2" niżej.
+- `Features/Stats/ImportStatsFromDemo` — nic nie zapisuje bezpośrednio; zwraca listę `ParsedPlayerStatDto` (K/D/A/ADR/HS%/przybliżony `Rating`), Coach/Manager przegląda i edytuje każdy wiersz w `DemoImportPanel` (frontend), zapis per-wiersz przez **już istniejący** `AddPlayerStat` — żadnego nowego endpointu do zapisu.
+- `Rating` to jawnie oznaczone **przybliżenie** (kille/śmierci/asysty na rundę + składowa obrażeń, bez KAST/impact jak w prawdziwym HLTV Rating 2.0) — zawsze edytowalne przed zapisem.
+- **`User.SteamId64` jako `string`, nie `long`** — złapane przed frontendem, nie po: SteamID64 (~7,66×10¹⁶) przekracza `Number.MAX_SAFE_INTEGER` (~9×10¹⁵), więc jako JSON-owa liczba tracił(by) precyzję w przeglądarce dokładnie tak samo jak `DiscordId` (dlatego ten też jest stringiem). Ustawiane raz przez gracza w `/settings` (`SteamIdSettings`, ten sam wzorzec co `InGameNickname`/`PinMark` — edytuje wyłącznie właściciel), walidacja: dokładnie 17 cyfr i wartość ≥ najniższego kiedykolwiek wydanego SteamID64. Gracz bez ustawionego SteamID64 pojawia się w podglądzie importu jako "Niedopasowany", Coach ręcznie przypisuje z dropdowna zamiast tracić jego wiersz.
+
+## Propozycje UX (do rozważenia, nie tylko dla powyższego)
+- **Zablokowana pierwsza kolumna kalendarza** — `WeeklyCalendar` przewija się w poziomie (`overflow-x-auto`) na wąskich ekranach, a kolumna z nickiem gracza ucieka razem z resztą tabeli, więc po przewinięciu nie widać, czyj to wiersz. `position: sticky; left: 0` na komórce z nickiem (z tłem, żeby nie prześwitywały komórki pod spodem) rozwiązuje to bez zmiany layoutu.
+- **Widok kartowy na telefonie** zamiast tabeli 7 kolumn poniżej ok. 640px — dziś `min-w-[900px]` wymusza poziomy scroll na każdym telefonie; dzień-po-dniu lista kart (jak już częściowo robi dashboard) czytałoby się wygodniej niż przewijanie tabeli kciukiem.
+- **Baner "nie zadeklarowałeś dostępności"** na dashboardzie, jeśli najbliższe wydarzenie jest za <48h a gracz nie kliknął jeszcze statusu — dziś trzeba wejść w kalendarz, żeby to zauważyć.
+- Reszta (ranking/ELO, prawdziwe push, upload demek do R2) — patrz niżej, bez zmian względem poprzednich faz.
+
+## Rozważane później (bez zmian priorytetu)
 - Wewnętrzny ranking/ELO na bazie sparingów — liczony z już istniejących `MatchResult`/`PlayerMatchStat`, niezależny od źródła danych
 - Prawdziwe powiadomienia push (VAPID + custom service worker) — po realnym wdrożeniu
-- Upload plików (demek) do własnego storage (Cloudflare R2) zamiast linków
+- Upload plików (demek) do własnego storage (Cloudflare R2) zamiast linków — częściowo pokrywa się z 10.4, ale to osobna decyzja (trwałe przechowywanie demki do pobrania, nie tylko jednorazowy parsing)
