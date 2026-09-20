@@ -2,8 +2,9 @@ namespace HarnasHub.Application.Features.Results.Shared;
 
 /// <summary>One of the two groups a demo's round-1 sides split into, with the match score it would produce if this
 /// is the coach's own team — computed the same way whichever group ends up picked, so switching the pick in the UI
-/// is just switching which of these two the form displays.</summary>
-public record DemoTeamPreviewDto(IReadOnlyList<string> PlayerNames, int OurScore, int OpponentScore);
+/// is just switching which of these two the form displays. <paramref name="SteamIds"/> travels back on <c>AddResultCommand</c>
+/// so the server knows exactly which analysed players to import a stat line for once this group is picked.</summary>
+public record DemoTeamPreviewDto(IReadOnlyList<string> PlayerNames, IReadOnlyList<string> SteamIds, int OurScore, int OpponentScore);
 
 /// <summary>One demo participant's raw totals, carried back to the client so a later <c>AddResult</c> call can save a
 /// stat line for them without re-uploading the (possibly 100-300MB) demo file a second time.</summary>
