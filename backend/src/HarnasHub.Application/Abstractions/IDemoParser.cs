@@ -10,8 +10,19 @@ public interface IDemoParser
 }
 
 /// <summary>Everything extracted from one demo: how many rounds were played, which map (null if the demo didn't say,
-/// or said a map outside the current pool), and each participant's raw totals.</summary>
-public record DemoParseResult(int RoundsPlayed, MapName? MapName, IReadOnlyList<DemoPlayerStats> Players);
+/// or said a map outside the current pool), each participant's raw totals, and the per-round winner/side breakdown.</summary>
+public record DemoParseResult(
+	int RoundsPlayed,
+	MapName? MapName,
+	IReadOnlyList<DemoPlayerStats> Players,
+	IReadOnlyList<DemoRoundResult> Rounds);
+
+/// <summary>Who won one round and which SteamID64s stood on each side of it — the raw material for working out the
+/// match score, since a demo never labels either team as "ours" and both swap sides at halftime.</summary>
+public record DemoRoundResult(
+	MapSide WinnerSide,
+	IReadOnlyList<long> TerroristSteamIds,
+	IReadOnlyList<long> CounterTerroristSteamIds);
 
 /// <summary>One player's raw totals from a parsed demo — not yet turned into ADR/HS%/rating/KAST%, that's the caller's job.
 /// <paramref name="KastRounds"/> is how many rounds this player got a Kill/Assist, Survived, or was Traded.

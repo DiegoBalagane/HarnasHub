@@ -14,8 +14,13 @@ public class AddResultCommandValidator : AbstractValidator<AddResultCommand>
 			.NotEmpty().WithMessage("Nazwa przeciwnika jest wymagana.")
 			.MaximumLength(100).WithMessage("Nazwa przeciwnika może mieć maksymalnie 100 znaków.");
 
-		RuleFor(x => x.OurScore).GreaterThanOrEqualTo(0).WithMessage("Wynik nie może być ujemny.");
-		RuleFor(x => x.OpponentScore).GreaterThanOrEqualTo(0).WithMessage("Wynik nie może być ujemny.");
+		// Both scores are optional here: a result logged with a demo attached has them computed from its rounds,
+		// and a missing score with no usable demo is rejected by the handler (ResultErrors.ScoreRequired), not here.
+		// CurrentValidator for the same reason spelled out above the Tournament/League rules below.
+		RuleFor(x => x.OurScore)
+			.GreaterThanOrEqualTo(0).WithMessage("Wynik nie może być ujemny.").When(x => x.OurScore.HasValue, ApplyConditionTo.CurrentValidator);
+		RuleFor(x => x.OpponentScore)
+			.GreaterThanOrEqualTo(0).WithMessage("Wynik nie może być ujemny.").When(x => x.OpponentScore.HasValue, ApplyConditionTo.CurrentValidator);
 
 		RuleFor(x => x.DemoUrl)
 			.Must(url => string.IsNullOrWhiteSpace(url) || Uri.IsWellFormedUriString(url, UriKind.Absolute))

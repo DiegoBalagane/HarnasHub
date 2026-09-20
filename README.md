@@ -20,7 +20,7 @@ It doubles as a hands-on playground for practicing AI-assisted software developm
 - **Team dashboard** — upcoming events, open tasks, and recent results at a glance.
 - **Calendar & availability** — matches, tournaments, trainings, and pickup games; players mark their availability and see the roster's at a glance.
 - **Coach-assigned tasks** — coach/manager assigns action items to players, with status tracking.
-- **Match results & demos** — scrim/match/tournament results, grouped by tournament or league season, with post-match notes and a demo link.
+- **Match results & demos** — scrim/match/tournament results, grouped by tournament or league season, with post-match notes and a demo link. Attach the `.dem` itself and the score and map are read straight out of it, round by round, so halftime and overtime side swaps are handled on their own.
 - **Per-map nade library** — organized smoke/flash/molotov lineups with embedded video clips, plus an optional pin on the map radar for each lineup.
 - **Map starting positions** — a per-map radar board where the coach drags each player's pin onto their CT/T spot, and the team reads the setup at a glance.
 - **Training materials** — a categorized library of learning resources.

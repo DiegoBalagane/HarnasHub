@@ -36,6 +36,26 @@ public class AddResultCommandValidatorTests
 	}
 
 	[Fact]
+	public void Should_not_have_errors_when_the_score_is_left_for_a_demo_to_fill_in()
+	{
+		var command = Command(ourScore: null, opponentScore: null);
+
+		var result = _validator.TestValidate(command);
+
+		result.ShouldNotHaveAnyValidationErrors();
+	}
+
+	[Fact]
+	public void Should_have_error_when_a_manually_entered_score_is_negative()
+	{
+		var command = Command(ourScore: -1);
+
+		var result = _validator.TestValidate(command);
+
+		result.ShouldHaveValidationErrorFor(x => x.OurScore);
+	}
+
+	[Fact]
 	public void Should_not_have_errors_for_a_valid_scrimmage()
 	{
 		var command = Command();
@@ -114,8 +134,10 @@ public class AddResultCommandValidatorTests
 		string? demoUrl = "https://drive.example.com/demo.dem",
 		MatchCategory category = MatchCategory.Scrimmage,
 		Guid? tournamentId = null,
-		Guid? leagueId = null) =>
-		new(opponent, 16, 10, "Mirage", demoUrl, "Dobry mecz", DateTime.UtcNow, category, tournamentId, leagueId);
+		Guid? leagueId = null,
+		int? ourScore = 16,
+		int? opponentScore = 10) =>
+		new(opponent, ourScore, opponentScore, "Mirage", demoUrl, "Dobry mecz", DateTime.UtcNow, category, tournamentId, leagueId);
 
 	#endregion
 }
