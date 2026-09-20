@@ -5,16 +5,15 @@ import { useAuthStore } from '../../auth/stores/useAuthStore'
 import { useUpcomingEvents } from '../../calendar/hooks/useCalendar'
 import { computeDaySummary } from '../daySummary'
 import { useWeekAvailability } from '../hooks/useAvailability'
-import { weekdayLabels } from '../labels'
 import { sectionOf, compareSections } from '../rosterSections'
 import {
   addDaysIso,
   buildWeekDates,
   entryFor,
-  getWeekStartIso,
   parseIsoDate,
   toInitials,
   toIsoDate,
+  weekdayLabelFor,
 } from '../weekDates'
 import { DayAvailabilityEditor } from './DayAvailabilityEditor'
 import { DayStatusBadge } from './DayStatusBadge'
@@ -27,7 +26,9 @@ const navButtonClass =
 /** Weekly availability grid: one row per team member, one column per day, own cells are editable. */
 export function WeeklyCalendar() {
   const currentUserId = useAuthStore((state) => state.userId)
-  const currentWeekStart = useMemo(() => getWeekStartIso(new Date()), [])
+  // A rolling window starting today, not the Monday of the calendar week — otherwise "Upcoming" on a
+  // Sunday would show mostly days that already passed instead of what's actually coming up.
+  const currentWeekStart = useMemo(() => toIsoDate(new Date()), [])
   const [activeTab, setActiveTab] = useState<'upcoming' | 'history'>('upcoming')
   const [weekStart, setWeekStart] = useState(currentWeekStart)
   const [editingDate, setEditingDate] = useState<string | null>(null)
@@ -154,7 +155,7 @@ export function WeeklyCalendar() {
         <div className="overflow-x-auto overflow-y-visible">
           <div className="grid min-w-[900px] grid-cols-[minmax(150px,180px)_repeat(7,minmax(0,1fr))] gap-1">
             <div />
-            {weekDates.map((date, index) => {
+            {weekDates.map((date) => {
               const summary = computeDaySummary(members, date)
 
               return (
@@ -164,7 +165,7 @@ export function WeeklyCalendar() {
                     date === todayIso ? 'border-blue-500' : 'border-neutral-800'
                   }`}
                 >
-                  <p className="text-xs font-medium text-neutral-200">{weekdayLabels[index]}</p>
+                  <p className="text-xs font-medium text-neutral-200">{weekdayLabelFor(date)}</p>
                   <p className="text-[11px] text-neutral-500">
                     {dayNumberFormatter.format(parseIsoDate(date))}
                   </p>

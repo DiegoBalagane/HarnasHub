@@ -38,7 +38,15 @@ async function request<TResponse>(path: string, init?: RequestInit): Promise<TRe
     }
 
     const problem = await response.json().catch(() => null)
-    throw new ApiError(response.status, problem?.detail ?? problem?.title ?? 'Wystąpił błąd zapytania.')
+    // A ValidationProblemDetails carries the domain's own (Polish) message under errors[code][0] and leaves detail
+    // empty — without this, every validation failure would surface as ASP.NET's generic English title instead.
+    const validationMessage = problem?.errors
+      ? Object.values(problem.errors as Record<string, string[]>)[0]?.[0]
+      : undefined
+    throw new ApiError(
+      response.status,
+      validationMessage ?? problem?.detail ?? problem?.title ?? 'Wystąpił błąd zapytania.',
+    )
   }
 
   if (response.status === 204) {
