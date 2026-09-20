@@ -13,11 +13,14 @@ export class ApiError extends Error {
 /** Thin fetch wrapper: adds the base URL, JWT header, and JSON parsing/error handling shared by every API module. */
 async function request<TResponse>(path: string, init?: RequestInit): Promise<TResponse> {
   const token = localStorage.getItem(STORAGE_KEYS.accessToken)
+  // A FormData body needs the browser to set its own multipart boundary — an explicit
+  // Content-Type here would break that, so it's only added for JSON bodies.
+  const isFormData = init?.body instanceof FormData
 
   const response = await fetch(`${API_SETTINGS.baseUrl}${path}`, {
     ...init,
     headers: {
-      'Content-Type': 'application/json',
+      ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...init?.headers,
     },
@@ -49,6 +52,7 @@ export const apiClient = {
   get: <TResponse>(path: string) => request<TResponse>(path, { method: 'GET' }),
   post: <TResponse>(path: string, body: unknown) =>
     request<TResponse>(path, { method: 'POST', body: JSON.stringify(body) }),
+  postForm: <TResponse>(path: string, formData: FormData) => request<TResponse>(path, { method: 'POST', body: formData }),
   patch: <TResponse>(path: string, body: unknown) =>
     request<TResponse>(path, { method: 'PATCH', body: JSON.stringify(body) }),
   put: <TResponse>(path: string, body: unknown) =>

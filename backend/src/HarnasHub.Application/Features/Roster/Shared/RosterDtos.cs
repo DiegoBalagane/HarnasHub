@@ -12,4 +12,5 @@ public record TeamMemberDto(
 	string? PinColor,
 	string? PinMark,
 	string? InGameNickname,
+	string? SteamId64,
 	List<string> SecondaryTeamRoles);

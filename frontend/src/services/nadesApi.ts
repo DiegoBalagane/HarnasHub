@@ -13,6 +13,10 @@ export interface NadeEntry {
   title: string
   description: string | null
   youtubeUrl: string | null
+  /** Radar-relative fraction in [0,1], measured from the left edge; null until a pin is placed on the map. */
+  landingX: number | null
+  /** Radar-relative fraction in [0,1], measured from the top edge; null until a pin is placed on the map. */
+  landingY: number | null
   createdByUserId: string
 }
 
@@ -22,6 +26,13 @@ export interface AddNadePayload {
   title: string
   description?: string
   youtubeUrl?: string
+}
+
+export interface UpdateNadePositionPayload {
+  nadeId: string
+  /** Both null clears the pin. */
+  x: number | null
+  y: number | null
 }
 
 export const nadesApi = {
@@ -34,4 +45,6 @@ export const nadesApi = {
   },
   addNade: (payload: AddNadePayload) => apiClient.post<NadeEntry>(API_ENDPOINTS.nades, payload),
   deleteNade: (nadeId: string) => apiClient.delete<void>(API_ENDPOINTS.nadeById(nadeId)),
+  updateNadePosition: ({ nadeId, x, y }: UpdateNadePositionPayload) =>
+    apiClient.patch<NadeEntry>(API_ENDPOINTS.nadePosition(nadeId), { x, y }),
 }

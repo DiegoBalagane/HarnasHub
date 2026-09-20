@@ -95,6 +95,38 @@ namespace HarnasHub.Infrastructure.Database.Migrations
                     b.ToTable("Events", (string)null);
                 });
 
+            modelBuilder.Entity("HarnasHub.Core.Entities.League", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("CreatedByUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("Season")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Leagues", (string)null);
+                });
+
             modelBuilder.Entity("HarnasHub.Core.Entities.MapPositionAssignment", b =>
                 {
                     b.Property<Guid>("Id")
@@ -145,6 +177,11 @@ namespace HarnasHub.Infrastructure.Database.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<string>("Category")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
                     b.Property<DateTime>("CreatedAtUtc")
                         .HasColumnType("timestamp with time zone");
 
@@ -154,6 +191,9 @@ namespace HarnasHub.Infrastructure.Database.Migrations
                     b.Property<string>("DemoUrl")
                         .HasMaxLength(500)
                         .HasColumnType("character varying(500)");
+
+                    b.Property<Guid?>("LeagueId")
+                        .HasColumnType("uuid");
 
                     b.Property<string>("MapName")
                         .HasMaxLength(50)
@@ -176,9 +216,16 @@ namespace HarnasHub.Infrastructure.Database.Migrations
                     b.Property<DateTime>("PlayedAtUtc")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<Guid?>("TournamentId")
+                        .HasColumnType("uuid");
+
                     b.HasKey("Id");
 
+                    b.HasIndex("LeagueId");
+
                     b.HasIndex("PlayedAtUtc");
+
+                    b.HasIndex("TournamentId");
 
                     b.ToTable("MatchResults", (string)null);
                 });
@@ -197,6 +244,12 @@ namespace HarnasHub.Infrastructure.Database.Migrations
 
                     b.Property<string>("Description")
                         .HasColumnType("text");
+
+                    b.Property<float?>("LandingX")
+                        .HasColumnType("real");
+
+                    b.Property<float?>("LandingY")
+                        .HasColumnType("real");
 
                     b.Property<string>("MapName")
                         .IsRequired()
@@ -451,6 +504,28 @@ namespace HarnasHub.Infrastructure.Database.Migrations
                     b.ToTable("Tasks", (string)null);
                 });
 
+            modelBuilder.Entity("HarnasHub.Core.Entities.Tournament", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("CreatedByUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Tournaments", (string)null);
+                });
+
             modelBuilder.Entity("HarnasHub.Core.Entities.TrainingMaterial", b =>
                 {
                     b.Property<Guid>("Id")
@@ -533,6 +608,10 @@ namespace HarnasHub.Infrastructure.Database.Migrations
                     b.Property<string>("RosterSlot")
                         .HasMaxLength(20)
                         .HasColumnType("character varying(20)");
+
+                    b.Property<string>("SteamId64")
+                        .HasMaxLength(17)
+                        .HasColumnType("character varying(17)");
 
                     b.Property<string>("TeamRole")
                         .HasMaxLength(20)

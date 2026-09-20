@@ -15,9 +15,27 @@ public class GetResultsHandler(IApplicationDbContext dbContext)
 	public async Task<ErrorOr<List<MatchResultDto>>> Handle(GetResultsQuery request, CancellationToken cancellationToken)
 	{
 		return await dbContext.MatchResults
-			.OrderByDescending(m => m.PlayedAtUtc)
-			.Select(m => new MatchResultDto(
-				m.Id, m.Opponent, m.OurScore, m.OpponentScore, m.MapName, m.DemoUrl, m.Notes, m.PlayedAtUtc))
+			.GroupJoin(dbContext.Tournaments, m => m.TournamentId, t => t.Id, (m, tournaments) => new { m, tournaments })
+			.SelectMany(x => x.tournaments.DefaultIfEmpty(), (x, tournament) => new { x.m, tournament })
+			.GroupJoin(dbContext.Leagues, x => x.m.LeagueId, l => l.Id, (x, leagues) => new { x.m, x.tournament, leagues })
+			.SelectMany(x => x.leagues.DefaultIfEmpty(), (x, league) => new { x.m, x.tournament, league })
+			.OrderByDescending(x => x.m.PlayedAtUtc)
+			.Select(x => new MatchResultDto(
+				x.m.Id,
+				x.m.Opponent,
+				x.m.OurScore,
+				x.m.OpponentScore,
+				x.m.MapName,
+				x.m.DemoUrl,
+				x.m.Notes,
+				x.m.PlayedAtUtc,
+				x.m.Category,
+				x.tournament == null ? null : x.tournament.Id,
+				x.tournament == null ? null : x.tournament.Name,
+				x.league == null ? null : x.league.Id,
+				x.league == null ? null : x.league.Name,
+				x.league == null ? null : x.league.Season,
+				x.league == null ? null : x.league.Type))
 			.ToListAsync(cancellationToken);
 	}
 

@@ -1,9 +1,9 @@
 import { useState } from 'react'
+import { YoutubeEmbed } from '../../../components/YoutubeEmbed'
 import { useAuthStore } from '../../auth/stores/useAuthStore'
 import type { GrenadeType, MapName } from '../../../services/nadesApi'
 import { useDeleteNade, useNades } from '../hooks/useNades'
 import { grenadeTypeLabels, mapNames } from '../labels'
-import { getYoutubeEmbedUrl } from '../youtube'
 
 const grenadeTypes: GrenadeType[] = ['Smoke', 'Flash', 'Molotov', 'Frag']
 const coachRoles = new Set(['Coach', 'Manager'])
@@ -57,7 +57,6 @@ export function NadeLibrary() {
 
       <ul className="flex flex-col gap-3">
         {nades?.map((nade) => {
-          const embedUrl = nade.youtubeUrl ? getYoutubeEmbedUrl(nade.youtubeUrl) : null
           const canDelete = canModerate || nade.createdByUserId === userId
 
           return (
@@ -82,14 +81,7 @@ export function NadeLibrary() {
 
               {nade.description && <p className="mt-2 text-sm text-neutral-400">{nade.description}</p>}
 
-              {embedUrl && (
-                <iframe
-                  className="mt-3 aspect-video w-full rounded-md"
-                  src={embedUrl}
-                  title={nade.title}
-                  allowFullScreen
-                />
-              )}
+              {nade.youtubeUrl && <YoutubeEmbed url={nade.youtubeUrl} title={nade.title} className="mt-3" />}
             </li>
           )
         })}
