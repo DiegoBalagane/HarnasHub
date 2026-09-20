@@ -1,6 +1,7 @@
 using HarnasHub.Api.Common;
 using HarnasHub.Application.Features.Results.AddResult;
 using HarnasHub.Application.Features.Results.AnalyzeDemo;
+using HarnasHub.Application.Features.Results.DeleteResult;
 using HarnasHub.Application.Features.Results.GetResults;
 using HarnasHub.Application.Features.Results.Shared;
 using HarnasHub.Core.Enums;
@@ -29,9 +30,15 @@ public class MatchResultsEndpoints : IEndpoint
 			var command = new AddResultCommand(
 				request.Opponent, request.OurScore, request.OpponentScore, request.MapName, request.DemoUrl, request.Notes,
 				request.PlayedAtUtc, request.Category, request.TournamentId, request.LeagueId,
-				request.DemoRoundsPlayed, request.DemoPlayers);
+				request.DemoRoundsPlayed, request.DemoPlayers, request.OurTeamSteamIds);
 			var result = await sender.Send(command, cancellationToken);
 			return result.Match(success => Results.Ok(success), errors => errors.ToProblemResult());
+		}).RequireAuthorization(policy => policy.RequireRole("Coach", "Manager"));
+
+		group.MapDelete("/{matchResultId:guid}", async (Guid matchResultId, ISender sender, CancellationToken cancellationToken) =>
+		{
+			var result = await sender.Send(new DeleteResultCommand(matchResultId), cancellationToken);
+			return result.Match(_ => Results.NoContent(), errors => errors.ToProblemResult());
 		}).RequireAuthorization(policy => policy.RequireRole("Coach", "Manager"));
 
 		// A separate step from creating the result: parses the demo and previews the map/score/roster-suggested team
@@ -85,4 +92,5 @@ public record AddResultRequest(
 	Guid? TournamentId,
 	Guid? LeagueId,
 	int? DemoRoundsPlayed,
-	IReadOnlyList<AnalyzedDemoPlayerDto>? DemoPlayers);
+	IReadOnlyList<AnalyzedDemoPlayerDto>? DemoPlayers,
+	IReadOnlyList<string>? OurTeamSteamIds);

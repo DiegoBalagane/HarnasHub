@@ -7,7 +7,12 @@ public class PlayerMatchStat
 
 	public Guid Id { get; set; }
 	public Guid MatchResultId { get; set; }
-	public Guid UserId { get; set; }
+	/// <summary>Null when this row came from a demo-imported player nobody on the roster has claimed with a matching
+	/// SteamID64 yet — <see cref="DemoPlayerName"/> is the only identity available for it in that case.</summary>
+	public Guid? UserId { get; set; }
+	/// <summary>The demo's own name for this player — set only alongside a null <see cref="UserId"/>, so the row still
+	/// displays as someone instead of silently vanishing until a coach connects it to a roster account.</summary>
+	public string? DemoPlayerName { get; set; }
 	public int Kills { get; set; }
 	public int Deaths { get; set; }
 	public int Assists { get; set; }

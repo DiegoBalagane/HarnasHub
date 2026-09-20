@@ -8,6 +8,7 @@ using HarnasHub.Application.Features.Roster.UpdateOwnSteamId64;
 using HarnasHub.Application.Features.Roster.SetIsCoach;
 using HarnasHub.Application.Features.Roster.SetPinColor;
 using HarnasHub.Application.Features.Roster.SetSecondaryTeamRoles;
+using HarnasHub.Application.Features.Roster.SetSteamId64;
 using HarnasHub.Application.Features.Roster.UpdateAccessLevel;
 using HarnasHub.Application.Features.Roster.UpdateRosterSlot;
 using HarnasHub.Application.Features.Roster.UpdateTeamRole;
@@ -136,6 +137,19 @@ public class RosterEndpoints : IEndpoint
 				errors => errors.ToProblemResult());
 		}).RequireAuthorization(policy => policy.RequireRole("Manager"));
 
+		group.MapPatch("/{userId:guid}/steam-id", async (
+			Guid userId,
+			SetSteamId64Request request,
+			ISender sender,
+			CancellationToken cancellationToken) =>
+		{
+			var result = await sender.Send(new SetSteamId64Command(userId, request.SteamId64), cancellationToken);
+
+			return result.Match(
+				success => Results.Ok(success),
+				errors => errors.ToProblemResult());
+		}).RequireAuthorization(policy => policy.RequireRole("Manager"));
+
 		group.MapPatch("/{userId:guid}/role", async (
 			Guid userId,
 			UpdateAccessLevelRequest request,
@@ -201,6 +215,9 @@ public record UpdateOwnSteamId64Request(string? SteamId64);
 
 /// <summary>Request body for PATCH /api/roster/{userId}/pin-color; a null value clears it.</summary>
 public record SetPinColorRequest(PinColor? PinColor);
+
+/// <summary>Request body for PATCH /api/roster/{userId}/steam-id; a null/blank value clears it.</summary>
+public record SetSteamId64Request(string? SteamId64);
 
 /// <summary>Request body for PATCH /api/roster/{userId}/secondary-team-roles; replaces the full set.</summary>
 public record SetSecondaryTeamRolesRequest(List<TeamRole> TeamRoles);
