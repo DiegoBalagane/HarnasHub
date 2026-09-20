@@ -1,7 +1,8 @@
 import { useMemo, useState } from 'react'
 import type { MatchResult } from '../../../services/resultsApi'
+import { useIsCoachOrManager } from '../../auth/hooks/useIsCoachOrManager'
 import { MatchStatsPanel } from '../../stats/components/MatchStatsPanel'
-import { useResults } from '../hooks/useResults'
+import { useDeleteResult, useResults } from '../hooks/useResults'
 import { leagueTypeLabels, matchCategoryLabels } from '../labels'
 
 const dateFormatter = new Intl.DateTimeFormat('pl-PL', { dateStyle: 'medium' })
@@ -93,30 +94,42 @@ interface ResultCardProps {
 
 function ResultCard({ result, isExpanded, onToggle }: ResultCardProps) {
   const won = result.ourScore > result.opponentScore
+  const canManage = useIsCoachOrManager()
+  const deleteResult = useDeleteResult()
+
+  function handleDelete(event: React.MouseEvent) {
+    event.stopPropagation()
+    if (window.confirm(`Usunąć wynik meczu vs ${result.opponent}? Tej operacji nie można cofnąć.`)) {
+      deleteResult.mutate(result.id)
+    }
+  }
 
   return (
     <li className="rounded-md border border-neutral-800 p-4">
-      <button className="flex w-full items-center justify-between text-left" onClick={onToggle}>
-        <p className="font-medium">
-          vs {result.opponent}{' '}
-          <span className={won ? 'text-green-400' : 'text-red-400'}>
-            {result.ourScore}:{result.opponentScore}
-          </span>
-        </p>
-        <span className="text-sm text-neutral-500">{dateFormatter.format(new Date(result.playedAtUtc))}</span>
-      </button>
+      <div className="flex w-full items-center justify-between gap-2">
+        <button className="flex flex-1 items-center justify-between text-left" onClick={onToggle}>
+          <p className="font-medium">
+            vs {result.opponent}{' '}
+            <span className={won ? 'text-green-400' : 'text-red-400'}>
+              {result.ourScore}:{result.opponentScore}
+            </span>
+          </p>
+          <span className="text-sm text-neutral-500">{dateFormatter.format(new Date(result.playedAtUtc))}</span>
+        </button>
+        {canManage && (
+          <button
+            type="button"
+            title="Usuń wynik"
+            onClick={handleDelete}
+            disabled={deleteResult.isPending}
+            className="shrink-0 rounded-md px-2 py-1 text-sm text-neutral-500 transition hover:bg-red-950/40 hover:text-red-400 disabled:opacity-50"
+          >
+            ✕
+          </button>
+        )}
+      </div>
       {result.mapName && <p className="text-sm text-neutral-400">Mapa: {result.mapName}</p>}
       {result.notes && <p className="mt-1 text-sm text-neutral-400">{result.notes}</p>}
-      {result.demoUrl && (
-        <a
-          href={result.demoUrl}
-          target="_blank"
-          rel="noreferrer"
-          className="mt-1 inline-block text-sm text-red-400 hover:underline"
-        >
-          Demka
-        </a>
-      )}
 
       {isExpanded && (
         <div className="mt-3">
