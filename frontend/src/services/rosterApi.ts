@@ -62,6 +62,9 @@ export const rosterApi = {
   /** A null/blank value clears it. */
   updateMySteamId64: (steamId64: string | null) =>
     apiClient.patch<TeamMember>(API_ENDPOINTS.roster.mySteamId64, { steamId64 }),
+  /** Manager only — sets a team member's SteamID64 on their behalf; a null/blank value clears it. */
+  updateSteamId64: (userId: string, steamId64: string | null) =>
+    apiClient.patch<TeamMember>(API_ENDPOINTS.roster.steamId64(userId), { steamId64 }),
   /** Manager only; permanently deletes the account and its personal data. Team artifacts they created are kept. */
   deleteMember: (userId: string) => apiClient.delete<void>(API_ENDPOINTS.roster.byId(userId)),
 }
