@@ -11,5 +11,5 @@ public static class ResultErrors
 
 	public static Error ScoreRequired => Error.Validation(
 		"Results.ScoreRequired",
-		"Podaj wynik ręcznie albo dołącz demkę, z której da się go wyliczyć.");
+		"Podaj wynik ręcznie albo przeanalizuj demkę i wybierz, która drużyna jest Waszą.");
 }

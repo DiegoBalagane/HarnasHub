@@ -20,3 +20,10 @@ export function useAddResult() {
     },
   })
 }
+
+/** Parses an uploaded demo into a map/score/team-split preview — nothing is saved until addResult is submitted. */
+export function useAnalyzeDemo() {
+  return useMutation({
+    mutationFn: (demoFile: File) => resultsApi.analyzeDemo(demoFile),
+  })
+}

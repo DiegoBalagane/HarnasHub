@@ -43,6 +43,7 @@ export const API_ENDPOINTS = {
     complete: (taskId: string) => `/api/tasks/${taskId}/complete`,
   },
   results: '/api/results',
+  analyzeResultDemo: '/api/results/analyze-demo',
   tournaments: '/api/tournaments',
   leagues: '/api/leagues',
   nades: '/api/nades',

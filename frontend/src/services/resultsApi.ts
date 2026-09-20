@@ -22,45 +22,67 @@ export interface MatchResult {
   leagueType: LeagueType | null
 }
 
+/** One demo participant's raw totals, as returned by analyzeDemo — round-tripped back on addResult so a stat line
+ * can be saved without re-uploading the (possibly 100-300MB) demo file a second time. */
+export interface AnalyzedDemoPlayer {
+  steamId64: string
+  demoPlayerName: string
+  kills: number
+  deaths: number
+  assists: number
+  headshots: number
+  damageDealt: number
+  entryKills: number
+  entryDeaths: number
+  kastRounds: number
+  utilityDamage: number
+  flashAssists: number
+  multiKill2K: number
+  multiKill3K: number
+  multiKill4K: number
+  multiKill5K: number
+}
+
+/** One of the two groups a demo's round-1 sides split into, with the score it would produce if this is "our" team. */
+export interface DemoTeamPreview {
+  playerNames: string[]
+  ourScore: number
+  opponentScore: number
+}
+
+export interface AnalyzeDemoResult {
+  roundsPlayed: number
+  mapName: string | null
+  teamA: DemoTeamPreview
+  teamB: DemoTeamPreview
+  /** 'A' | 'B' when the roster's SteamID64s overlap one of the two groups — null when nobody matched. */
+  suggestedTeam: 'A' | 'B' | null
+  players: AnalyzedDemoPlayer[]
+}
+
 export interface AddResultPayload {
   opponent: string
-  /** Optional: computed from the attached demo, and only needed manually when there's no demo (or none of its rounds match our roster). */
   ourScore?: number
   opponentScore?: number
-  /** Optional: overwritten by the demo's own map when one is attached. */
   mapName?: string
-  /** An external link to the demo for download — unrelated to demoFile, which is parsed server-side and never stored. */
+  /** An external link to the demo for download — a separate, optional thing from the file analyzeDemo already parsed. */
   demoUrl?: string
   notes?: string
   playedAtUtc: string
   category: MatchCategory
   tournamentId?: string | null
   leagueId?: string | null
-  /** Parsed in memory on the server to derive the score and map; the file itself is never persisted. */
-  demoFile?: File | null
-}
-
-/** Serialises the payload as multipart/form-data so an optional .dem can ride along with the manual fields. */
-function toFormData(payload: AddResultPayload): FormData {
-  const formData = new FormData()
-  formData.append('opponent', payload.opponent)
-  formData.append('playedAtUtc', payload.playedAtUtc)
-  formData.append('category', payload.category)
-
-  if (payload.ourScore !== undefined) formData.append('ourScore', String(payload.ourScore))
-  if (payload.opponentScore !== undefined) formData.append('opponentScore', String(payload.opponentScore))
-  if (payload.mapName) formData.append('mapName', payload.mapName)
-  if (payload.demoUrl) formData.append('demoUrl', payload.demoUrl)
-  if (payload.notes) formData.append('notes', payload.notes)
-  if (payload.tournamentId) formData.append('tournamentId', payload.tournamentId)
-  if (payload.leagueId) formData.append('leagueId', payload.leagueId)
-  if (payload.demoFile) formData.append('demo', payload.demoFile)
-
-  return formData
+  /** Present only when the coach analysed a demo first — lets the server import a stat line per matched roster member. */
+  demoRoundsPlayed?: number
+  demoPlayers?: AnalyzedDemoPlayer[]
 }
 
 export const resultsApi = {
   getResults: () => apiClient.get<MatchResult[]>(API_ENDPOINTS.results),
-  addResult: (payload: AddResultPayload) =>
-    apiClient.postForm<MatchResult>(API_ENDPOINTS.results, toFormData(payload)),
+  addResult: (payload: AddResultPayload) => apiClient.post<MatchResult>(API_ENDPOINTS.results, payload),
+  analyzeDemo: (demoFile: File) => {
+    const formData = new FormData()
+    formData.append('demo', demoFile)
+    return apiClient.postForm<AnalyzeDemoResult>(API_ENDPOINTS.analyzeResultDemo, formData)
+  },
 }
