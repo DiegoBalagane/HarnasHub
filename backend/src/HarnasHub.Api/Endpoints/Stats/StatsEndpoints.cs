@@ -3,7 +3,9 @@ using HarnasHub.Application.Features.Stats.AddPlayerStat;
 using HarnasHub.Application.Features.Stats.GetMatchStats;
 using HarnasHub.Application.Features.Stats.GetMyStatsHistory;
 using HarnasHub.Application.Features.Stats.GetTeamTrend;
+using HarnasHub.Application.Features.Stats.ImportStatsFromDemo;
 using MediatR;
+using Microsoft.AspNetCore.Http.Features;
 
 namespace HarnasHub.Api.Endpoints.Stats;
 
@@ -49,6 +51,34 @@ public class StatsEndpoints : IEndpoint
 			var result = await sender.Send(new GetTeamTrendQuery(), cancellationToken);
 			return result.Match(success => Results.Ok(success), errors => errors.ToProblemResult());
 		});
+
+		// CS2 demos routinely run 100-300MB — raise Kestrel's per-request cap (default 30MB) for this endpoint only,
+		// and stream straight from the multipart body into the parser instead of buffering into a byte[].
+		stats.MapPost("/import-demo", async (HttpRequest request, ISender sender, CancellationToken cancellationToken) =>
+		{
+			var sizeFeature = request.HttpContext.Features.Get<IHttpMaxRequestBodySizeFeature>();
+			if (sizeFeature is { IsReadOnly: false })
+			{
+				sizeFeature.MaxRequestBodySize = 320_000_000;
+			}
+
+			if (!request.HasFormContentType)
+			{
+				return Results.BadRequest("Oczekiwano pliku demki jako multipart/form-data.");
+			}
+
+			var form = await request.ReadFormAsync(cancellationToken);
+			var file = form.Files.GetFile("demo");
+
+			if (file is null || file.Length == 0)
+			{
+				return Results.BadRequest("Brak pliku demki.");
+			}
+
+			await using var demoStream = file.OpenReadStream();
+			var result = await sender.Send(new ImportStatsFromDemoCommand(demoStream), cancellationToken);
+			return result.Match(success => Results.Ok(success), errors => errors.ToProblemResult());
+		}).RequireAuthorization(policy => policy.RequireRole("Coach", "Manager"));
 	}
 
 	#endregion
