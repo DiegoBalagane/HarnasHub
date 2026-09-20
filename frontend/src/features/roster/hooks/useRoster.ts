@@ -134,6 +134,19 @@ export function useUpdateOwnSteamId64() {
   })
 }
 
+/** Manager-only: saves (or clears) any team member's SteamID64 on their behalf, and refreshes the roster. */
+export function useUpdateSteamId64() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ userId, steamId64 }: { userId: string; steamId64: string | null }) =>
+      rosterApi.updateSteamId64(userId, steamId64),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['roster'] })
+    },
+  })
+}
+
 /** Permanently deletes a team member's account and personal data (Manager only); refreshes every view that could lose a row. */
 export function useDeleteMember() {
   const queryClient = useQueryClient()
