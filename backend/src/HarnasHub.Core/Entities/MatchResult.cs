@@ -1,3 +1,5 @@
+using HarnasHub.Core.Enums;
+
 namespace HarnasHub.Core.Entities;
 
 /// <summary>The outcome of a scrim, match, or tournament game, with an optional link to the demo file.</summary>
@@ -15,6 +17,11 @@ public class MatchResult
 	public DateTime PlayedAtUtc { get; set; }
 	public Guid CreatedByUserId { get; set; }
 	public DateTime CreatedAtUtc { get; set; }
+	public MatchCategory Category { get; set; }
+	/// <summary>Set only when <see cref="Category"/> is <see cref="MatchCategory.Tournament"/>; loose link (no FK), like <see cref="TacticPoint.NadeEntryId"/>.</summary>
+	public Guid? TournamentId { get; set; }
+	/// <summary>Set only when <see cref="Category"/> is <see cref="MatchCategory.League"/>; loose link (no FK), like <see cref="TacticPoint.NadeEntryId"/>.</summary>
+	public Guid? LeagueId { get; set; }
 
 	#endregion
 }

@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useIsCoachOrManager } from '../../auth/hooks/useIsCoachOrManager'
 import { useRoster } from '../../roster/hooks/useRoster'
 import { useAddPlayerStat, useMatchStats } from '../hooks/useStats'
+import { DemoImportPanel } from './DemoImportPanel'
 
 /** Expandable panel showing per-player stats for a match, with a Coach/Manager form to add a line. */
 export function MatchStatsPanel({ matchResultId }: { matchResultId: string }) {
@@ -161,6 +162,10 @@ export function MatchStatsPanel({ matchResultId }: { matchResultId: string }) {
             Dodaj
           </button>
         </form>
+      )}
+
+      {canAddStats && availablePlayers && availablePlayers.length > 0 && (
+        <DemoImportPanel matchResultId={matchResultId} availablePlayers={availablePlayers} />
       )}
     </div>
   )

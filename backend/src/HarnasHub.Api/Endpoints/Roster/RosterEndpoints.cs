@@ -4,6 +4,7 @@ using HarnasHub.Application.Features.Roster.GetRoster;
 using HarnasHub.Application.Features.Roster.UpdateOwnNickname;
 using HarnasHub.Application.Features.Roster.UpdateOwnPinColor;
 using HarnasHub.Application.Features.Roster.UpdateOwnPinMark;
+using HarnasHub.Application.Features.Roster.UpdateOwnSteamId64;
 using HarnasHub.Application.Features.Roster.SetIsCoach;
 using HarnasHub.Application.Features.Roster.SetPinColor;
 using HarnasHub.Application.Features.Roster.SetSecondaryTeamRoles;
@@ -65,6 +66,18 @@ public class RosterEndpoints : IEndpoint
 			CancellationToken cancellationToken) =>
 		{
 			var result = await sender.Send(new UpdateOwnPinMarkCommand(request.PinMark), cancellationToken);
+
+			return result.Match(
+				success => Results.Ok(success),
+				errors => errors.ToProblemResult());
+		});
+
+		group.MapPatch("/me/steam-id", async (
+			UpdateOwnSteamId64Request request,
+			ISender sender,
+			CancellationToken cancellationToken) =>
+		{
+			var result = await sender.Send(new UpdateOwnSteamId64Command(request.SteamId64), cancellationToken);
 
 			return result.Match(
 				success => Results.Ok(success),
@@ -182,6 +195,9 @@ public record UpdateOwnPinColorRequest(PinColor? PinColor);
 
 /// <summary>Request body for PATCH /api/roster/me/pin-mark; a null/blank value clears it.</summary>
 public record UpdateOwnPinMarkRequest(string? PinMark);
+
+/// <summary>Request body for PATCH /api/roster/me/steam-id; a null/blank value clears it.</summary>
+public record UpdateOwnSteamId64Request(string? SteamId64);
 
 /// <summary>Request body for PATCH /api/roster/{userId}/pin-color; a null value clears it.</summary>
 public record SetPinColorRequest(PinColor? PinColor);

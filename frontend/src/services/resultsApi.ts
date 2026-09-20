@@ -1,5 +1,8 @@
 import { API_ENDPOINTS } from '../constants'
 import { apiClient } from './apiClient'
+import type { LeagueType } from './leaguesApi'
+
+export type MatchCategory = 'Scrimmage' | 'League' | 'Tournament'
 
 export interface MatchResult {
   id: string
@@ -10,6 +13,13 @@ export interface MatchResult {
   demoUrl: string | null
   notes: string | null
   playedAtUtc: string
+  category: MatchCategory
+  tournamentId: string | null
+  tournamentName: string | null
+  leagueId: string | null
+  leagueName: string | null
+  leagueSeason: string | null
+  leagueType: LeagueType | null
 }
 
 export interface AddResultPayload {
@@ -20,6 +30,9 @@ export interface AddResultPayload {
   demoUrl?: string
   notes?: string
   playedAtUtc: string
+  category: MatchCategory
+  tournamentId?: string | null
+  leagueId?: string | null
 }
 
 export const resultsApi = {

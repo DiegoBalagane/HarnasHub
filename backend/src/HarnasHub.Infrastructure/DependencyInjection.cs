@@ -3,6 +3,7 @@ using HarnasHub.Core.Options;
 using HarnasHub.Infrastructure.Auth;
 using HarnasHub.Infrastructure.BackgroundServices;
 using HarnasHub.Infrastructure.Database;
+using HarnasHub.Infrastructure.Demos;
 using HarnasHub.Infrastructure.Notifications;
 using HarnasHub.Infrastructure.Security;
 using Microsoft.EntityFrameworkCore;
@@ -33,6 +34,8 @@ public static class DependencyInjection
 
 		services.AddHttpClient<IDiscordNotifier, DiscordWebhookNotifier>();
 		services.AddHostedService<EventReminderService>();
+
+		services.AddScoped<IDemoParser, DemoFileParser>();
 
 		return services;
 	}

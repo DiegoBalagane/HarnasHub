@@ -25,6 +25,8 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
 	public DbSet<UserSecondaryTeamRole> UserSecondaryTeamRoles => Set<UserSecondaryTeamRole>();
 	public DbSet<Tactic> Tactics => Set<Tactic>();
 	public DbSet<TacticPoint> TacticPoints => Set<TacticPoint>();
+	public DbSet<Tournament> Tournaments => Set<Tournament>();
+	public DbSet<League> Leagues => Set<League>();
 
 	#endregion
 

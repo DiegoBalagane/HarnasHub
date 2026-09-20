@@ -18,6 +18,9 @@ public class User
 	public PinColor? PinColor { get; set; }
 	public string? PinMark { get; set; }
 	public string? InGameNickname { get; set; }
+	/// <summary>Self-reported SteamID64, used to match this player to a CS2 demo's participants when importing stats.
+	/// A string, not a number — like <see cref="DiscordId"/>, it exceeds Number.MAX_SAFE_INTEGER and would lose precision in JS/JSON.</summary>
+	public string? SteamId64 { get; set; }
 	public DateTime CreatedAtUtc { get; set; }
 
 	#endregion

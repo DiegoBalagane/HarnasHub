@@ -122,6 +122,18 @@ export function useUpdateOwnPinMark() {
   })
 }
 
+/** Saves (or clears) the caller's own SteamID64, used to match them in demo-import stats. */
+export function useUpdateOwnSteamId64() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (steamId64: string | null) => rosterApi.updateMySteamId64(steamId64),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['roster'] })
+    },
+  })
+}
+
 /** Permanently deletes a team member's account and personal data (Manager only); refreshes every view that could lose a row. */
 export function useDeleteMember() {
   const queryClient = useQueryClient()
