@@ -206,7 +206,7 @@ public class AddResultHandlerTests
 		int kastRounds = 0,
 		int utilityDamage = 0,
 		int flashAssists = 0) =>
-		new(steamId64, name, kills, deaths, assists, headshots, damage, entryKills, entryDeaths, kastRounds, utilityDamage, flashAssists, 0, 0, 0, 0);
+		new(steamId64, name, kills, deaths, assists, headshots, damage, entryKills, entryDeaths, kastRounds, utilityDamage, flashAssists, 0, 0, 0, 0, []);
 
 	#endregion
 }

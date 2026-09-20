@@ -1,3 +1,4 @@
+using System.Text.Json;
 using ErrorOr;
 using HarnasHub.Application.Abstractions;
 using HarnasHub.Application.Features.Results.Shared;
@@ -154,6 +155,7 @@ public class AddResultHandler(IApplicationDbContext dbContext, ICurrentUserServi
 				MultiKill5K = player.MultiKill5K,
 				UtilityDamage = player.UtilityDamage,
 				FlashAssists = player.FlashAssists,
+				DeathPositionsJson = player.DeathPositions.Count == 0 ? null : JsonSerializer.Serialize(player.DeathPositions),
 				CreatedAtUtc = DateTime.UtcNow
 			});
 

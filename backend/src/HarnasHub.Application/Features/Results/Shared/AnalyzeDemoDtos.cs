@@ -1,3 +1,5 @@
+using HarnasHub.Application.Features.Stats.Shared;
+
 namespace HarnasHub.Application.Features.Results.Shared;
 
 /// <summary>One of the two groups a demo's round-1 sides split into, with the match score it would produce if this
@@ -24,7 +26,8 @@ public record AnalyzedDemoPlayerDto(
 	int MultiKill2K,
 	int MultiKill3K,
 	int MultiKill4K,
-	int MultiKill5K);
+	int MultiKill5K,
+	IReadOnlyList<DeathPositionDto> DeathPositions);
 
 /// <summary>What analysing an uploaded demo could tell the coach before they commit to logging the result — the map,
 /// both possible team splits with their would-be score, which split (if any) the current roster's SteamID64s suggest
