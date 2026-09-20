@@ -151,7 +151,7 @@ export function WeeklyCalendar() {
       )}
 
       {!isLoading && !isError && members.length > 0 && (
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto overflow-y-visible">
           <div className="grid min-w-[900px] grid-cols-[minmax(150px,180px)_repeat(7,minmax(0,1fr))] gap-1">
             <div />
             {weekDates.map((date, index) => {
