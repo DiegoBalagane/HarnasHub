@@ -27,3 +27,15 @@ export function useAnalyzeDemo() {
     mutationFn: (demoFile: File) => resultsApi.analyzeDemo(demoFile),
   })
 }
+
+/** Deletes a logged result (and its stat lines) and refreshes the results list. */
+export function useDeleteResult() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (matchResultId: string) => resultsApi.deleteResult(matchResultId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['results'] })
+    },
+  })
+}
