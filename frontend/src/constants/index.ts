@@ -23,6 +23,7 @@ export const API_ENDPOINTS = {
     myNickname: '/api/roster/me/nickname',
     myPinColor: '/api/roster/me/pin-color',
     myPinMark: '/api/roster/me/pin-mark',
+    mySteamId64: '/api/roster/me/steam-id',
   },
   dashboard: '/api/dashboard',
   calendar: {
@@ -42,8 +43,11 @@ export const API_ENDPOINTS = {
     complete: (taskId: string) => `/api/tasks/${taskId}/complete`,
   },
   results: '/api/results',
+  tournaments: '/api/tournaments',
+  leagues: '/api/leagues',
   nades: '/api/nades',
   nadeById: (nadeId: string) => `/api/nades/${nadeId}`,
+  nadePosition: (nadeId: string) => `/api/nades/${nadeId}/position`,
   mapStrategy: {
     positions: (mapName: string, side: string) => `/api/map-strategy/${mapName}/${side}`,
     set: '/api/map-strategy',
@@ -56,6 +60,7 @@ export const API_ENDPOINTS = {
   trainingMaterials: '/api/training-materials',
   matchStats: (matchResultId: string) => `/api/matches/${matchResultId}/stats`,
   statsMine: '/api/stats/mine',
+  importStatsFromDemo: '/api/stats/import-demo',
   teamTrend: '/api/stats/team-trend',
   opponents: '/api/opponents',
 } as const

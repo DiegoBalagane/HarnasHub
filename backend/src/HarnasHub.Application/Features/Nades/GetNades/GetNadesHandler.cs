@@ -28,7 +28,8 @@ public class GetNadesHandler(IApplicationDbContext dbContext)
 
 		return await query
 			.OrderBy(n => n.MapName).ThenBy(n => n.Type).ThenBy(n => n.Title)
-			.Select(n => new NadeEntryDto(n.Id, n.MapName, n.Type.ToString(), n.Title, n.Description, n.YoutubeUrl, n.CreatedByUserId))
+			.Select(n => new NadeEntryDto(
+				n.Id, n.MapName, n.Type.ToString(), n.Title, n.Description, n.YoutubeUrl, n.LandingX, n.LandingY, n.CreatedByUserId))
 			.ToListAsync(cancellationToken);
 	}
 
