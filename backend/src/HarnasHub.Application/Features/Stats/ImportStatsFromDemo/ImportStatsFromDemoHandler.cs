@@ -47,7 +47,8 @@ public class ImportStatsFromDemoHandler(IDemoParser demoParser, IApplicationDbCo
 
 				var adr = Math.Round((double)player.DamageDealt / parsed.RoundsPlayed, 1);
 				var headshotPercentage = player.Kills == 0 ? 0 : Math.Round((double)player.Headshots / player.Kills * 100, 1);
-				var rating = ApproximateRating(player, parsed.RoundsPlayed, adr);
+				var kastPercentage = Math.Round((double)player.KastRounds / parsed.RoundsPlayed * 100, 1);
+				var rating = ApproximateRating(player, parsed.RoundsPlayed, adr, kastPercentage);
 
 				return new ParsedPlayerStatDto(
 					player.SteamId64.ToString(),
@@ -59,28 +60,38 @@ public class ImportStatsFromDemoHandler(IDemoParser demoParser, IApplicationDbCo
 					player.Assists,
 					adr,
 					headshotPercentage,
-					rating);
+					rating,
+					player.EntryKills,
+					player.EntryDeaths,
+					kastPercentage,
+					player.MultiKillRounds.GetValueOrDefault(2),
+					player.MultiKillRounds.GetValueOrDefault(3),
+					player.MultiKillRounds.GetValueOrDefault(4),
+					player.MultiKillRounds.GetValueOrDefault(5),
+					player.UtilityDamage,
+					player.FlashAssists,
+					player.DeathPositions.Select(d => new DeathPositionDto(d.X, d.Y, d.Side.ToString())).ToList());
 			})
 			.OrderByDescending(p => p.Rating)
 			.ToList();
 
-		return new ImportStatsFromDemoResultDto(parsed.RoundsPlayed, players);
+		return new ImportStatsFromDemoResultDto(parsed.RoundsPlayed, parsed.MapName?.ToString(), players);
 	}
 
 	#endregion
 
 	#region Private Methods
 
-	/// <summary>A deliberately simple stand-in for HLTV's Rating 2.0 (which needs KAST and an impact term we don't
-	/// track here) — kills/deaths/assists per round plus a damage term, clamped at 0. Coach/Manager edits this
-	/// before saving, so it only needs to be a reasonable starting point, not exact.</summary>
-	private static double ApproximateRating(DemoPlayerStats player, int roundsPlayed, double adr)
+	/// <summary>A deliberately simple stand-in for HLTV's Rating 2.0 — kills/deaths/assists per round, a damage term,
+	/// and (now that KAST is tracked) a small KAST bonus, clamped at 0. Coach/Manager edits this before saving, so it
+	/// only needs to be a reasonable starting point, not exact.</summary>
+	private static double ApproximateRating(DemoPlayerStats player, int roundsPlayed, double adr, double kastPercentage)
 	{
 		var killsPerRound = (double)player.Kills / roundsPlayed;
 		var deathsPerRound = (double)player.Deaths / roundsPlayed;
 		var assistsPerRound = (double)player.Assists / roundsPlayed;
 
-		var rating = killsPerRound * 0.5 + assistsPerRound * 0.2 - deathsPerRound * 0.3 + adr / 100 * 0.3;
+		var rating = killsPerRound * 0.45 + assistsPerRound * 0.15 - deathsPerRound * 0.3 + adr / 100 * 0.25 + kastPercentage / 100 * 0.15;
 
 		return Math.Round(Math.Max(rating, 0), 2);
 	}

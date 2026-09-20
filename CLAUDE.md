@@ -20,7 +20,7 @@
 
 ## Tech Stack & Architecture
 - Backend: ASP.NET Core (.NET 10), Vertical Slice Architecture, MediatR (CQRS), ErrorOr for result handling, FluentValidation.
-- Frontend: React 18, TypeScript, Vite, TailwindCSS, TanStack Query, Zustand, React Router.
+- Frontend: React 19, TypeScript, Vite, TailwindCSS, TanStack Query, Zustand, React Router.
 - Database: PostgreSQL (EF Core).
 - Real-time: SignalR (live dashboard/availability updates).
 - File storage: S3-compatible (demo files, training materials) — never in the database or the repo.

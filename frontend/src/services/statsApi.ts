@@ -1,6 +1,7 @@
 import { API_ENDPOINTS } from '../constants'
 import { apiClient } from './apiClient'
 
+/** Everything from entryKills onward is only ever set on a row that came from a demo import — null on a manually entered row. */
 export interface PlayerMatchStat {
   id: string
   userId: string
@@ -11,6 +12,15 @@ export interface PlayerMatchStat {
   adr: number
   headshotPercentage: number
   rating: number
+  entryKills: number | null
+  entryDeaths: number | null
+  kastPercentage: number | null
+  multiKill2K: number | null
+  multiKill3K: number | null
+  multiKill4K: number | null
+  multiKill5K: number | null
+  utilityDamage: number | null
+  flashAssists: number | null
 }
 
 export interface AddPlayerStatPayload {
@@ -21,6 +31,15 @@ export interface AddPlayerStatPayload {
   adr: number
   headshotPercentage: number
   rating: number
+  entryKills?: number
+  entryDeaths?: number
+  kastPercentage?: number
+  multiKill2K?: number
+  multiKill3K?: number
+  multiKill4K?: number
+  multiKill5K?: number
+  utilityDamage?: number
+  flashAssists?: number
 }
 
 export interface PlayerStatHistoryEntry {
@@ -43,6 +62,15 @@ export interface TeamTrendPoint {
   winRatePercentage: number
 }
 
+export type MapSide = 'CT' | 'T'
+
+/** A death location as a radar-relative fraction in [0,1] — same convention as map-strategy/nades pins. */
+export interface DeathPosition {
+  x: number
+  y: number
+  side: MapSide
+}
+
 export interface ParsedPlayerStat {
   /** String, not a number — a SteamID64 exceeds Number.MAX_SAFE_INTEGER. */
   steamId64: string
@@ -55,12 +83,24 @@ export interface ParsedPlayerStat {
   assists: number
   adr: number
   headshotPercentage: number
-  /** A rough approximation (kills/deaths/assists per round plus a damage term) — always worth reviewing before saving. */
+  /** A rough approximation (kills/deaths/assists per round, a damage term, and KAST%) — always worth reviewing before saving. */
   rating: number
+  entryKills: number
+  entryDeaths: number
+  kastPercentage: number
+  multiKill2K: number
+  multiKill3K: number
+  multiKill4K: number
+  multiKill5K: number
+  utilityDamage: number
+  flashAssists: number
+  deathPositions: DeathPosition[]
 }
 
 export interface ImportStatsFromDemoResult {
   roundsPlayed: number
+  /** Null when the demo's map isn't in the current pool — the death-map view has nothing to draw on in that case. */
+  mapName: string | null
   players: ParsedPlayerStat[]
 }
 
