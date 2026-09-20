@@ -21,7 +21,6 @@ export function AddResultForm() {
   const [ourScore, setOurScore] = useState('')
   const [opponentScore, setOpponentScore] = useState('')
   const [mapName, setMapName] = useState<MapName | ''>('')
-  const [demoUrl, setDemoUrl] = useState('')
   const [notes, setNotes] = useState('')
   const [playedAt, setPlayedAt] = useState('')
   const [category, setCategory] = useState<MatchCategory>('Scrimmage')
@@ -84,7 +83,6 @@ export function AddResultForm() {
         ourScore: ourScore === '' ? undefined : Number(ourScore),
         opponentScore: opponentScore === '' ? undefined : Number(opponentScore),
         mapName: mapName || undefined,
-        demoUrl: demoUrl || undefined,
         notes: notes || undefined,
         playedAtUtc: new Date(playedAt || Date.now()).toISOString(),
         category,
@@ -92,6 +90,7 @@ export function AddResultForm() {
         leagueId: category === 'League' ? leagueId || undefined : undefined,
         demoRoundsPlayed: analysis?.roundsPlayed,
         demoPlayers: analysis?.players,
+        ourTeamSteamIds: selectedTeam && analysis ? (selectedTeam === 'A' ? analysis.teamA : analysis.teamB).steamIds : undefined,
       },
       {
         onSuccess: (result) => {
@@ -99,7 +98,6 @@ export function AddResultForm() {
           setOurScore('')
           setOpponentScore('')
           setMapName('')
-          setDemoUrl('')
           setNotes('')
           setPlayedAt('')
           setAnalysis(null)
@@ -257,13 +255,6 @@ export function AddResultForm() {
           </p>
         </div>
       )}
-
-      <input
-        placeholder="Link do demki (opcjonalnie)"
-        value={demoUrl}
-        onChange={(event) => setDemoUrl(event.target.value)}
-        className="rounded-md border border-neutral-800 bg-neutral-900 px-3 py-2 text-sm outline-none focus:border-neutral-500"
-      />
 
       <textarea
         placeholder="Notatki pomeczowe (opcjonalnie)"

@@ -1,10 +1,12 @@
 namespace HarnasHub.Application.Features.Stats.Shared;
 
 /// <summary>One player's stat line for one match, with their display name for the UI.
+/// <paramref name="UserId"/> is null for a demo-imported player nobody on the roster has claimed with a matching SteamID64 yet —
+/// <paramref name="DisplayName"/> still resolves to something showable (the demo's own name for them) in that case.
 /// Everything from <paramref name="EntryKills"/> onward is only ever set on a row that came from a demo import — null on a manually entered row.</summary>
 public record PlayerMatchStatDto(
 	Guid Id,
-	Guid UserId,
+	Guid? UserId,
 	string DisplayName,
 	int Kills,
 	int Deaths,

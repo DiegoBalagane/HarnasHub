@@ -365,6 +365,9 @@ namespace HarnasHub.Infrastructure.Database.Migrations
                     b.Property<int>("Deaths")
                         .HasColumnType("integer");
 
+                    b.Property<string>("DemoPlayerName")
+                        .HasColumnType("text");
+
                     b.Property<int?>("EntryDeaths")
                         .HasColumnType("integer");
 
@@ -401,7 +404,7 @@ namespace HarnasHub.Infrastructure.Database.Migrations
                     b.Property<double>("Rating")
                         .HasColumnType("double precision");
 
-                    b.Property<Guid>("UserId")
+                    b.Property<Guid?>("UserId")
                         .HasColumnType("uuid");
 
                     b.Property<int?>("UtilityDamage")

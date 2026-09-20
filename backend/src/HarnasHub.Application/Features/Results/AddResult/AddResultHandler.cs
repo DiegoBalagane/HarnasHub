@@ -42,9 +42,12 @@ public class AddResultHandler(IApplicationDbContext dbContext, ICurrentUserServi
 		dbContext.MatchResults.Add(result);
 
 		var importedStatCount = 0;
-		if (request.DemoPlayers is { Count: > 0 } demoPlayers && request.DemoRoundsPlayed is { } roundsPlayed and > 0)
+		if (request.DemoPlayers is { Count: > 0 } demoPlayers
+			&& request.DemoRoundsPlayed is { } roundsPlayed and > 0
+			&& request.OurTeamSteamIds is { Count: > 0 } ourTeamSteamIds)
 		{
-			importedStatCount = await ImportMatchedPlayerStatsAsync(result.Id, demoPlayers, roundsPlayed, cancellationToken);
+			var ourPlayers = demoPlayers.Where(p => ourTeamSteamIds.Contains(p.SteamId64)).ToList();
+			importedStatCount = await ImportTeamStatsAsync(result.Id, ourPlayers, roundsPlayed, cancellationToken);
 		}
 
 		await dbContext.SaveChangesAsync(cancellationToken);
@@ -86,33 +89,32 @@ public class AddResultHandler(IApplicationDbContext dbContext, ICurrentUserServi
 
 	#region Private Methods
 
-	/// <summary>Saves a stat line for every analysed demo participant who matches a roster member's SteamID64 —
-	/// anyone else (the opposition, bots, an unmatched teammate) has nowhere to be saved against and is skipped.
-	/// Returns how many rows were queued so the caller knows whether a per-match realtime notify is worth sending.</summary>
-	private async Task<int> ImportMatchedPlayerStatsAsync(
+	/// <summary>Saves a stat line for every player on the coach-picked team — connected to a roster account when their
+	/// SteamID64 matches one, and left unconnected (identified only by <see cref="PlayerMatchStat.DemoPlayerName"/>)
+	/// otherwise, since a real teammate without their SteamID64 on file yet still deserves a stat line rather than
+	/// being silently skipped. Returns how many rows were queued so the caller knows whether a per-match realtime
+	/// notify is worth sending.</summary>
+	private async Task<int> ImportTeamStatsAsync(
 		Guid matchResultId,
 		IReadOnlyList<AnalyzedDemoPlayerDto> players,
 		int roundsPlayed,
 		CancellationToken cancellationToken)
 	{
+		if (players.Count == 0)
+		{
+			return 0;
+		}
+
 		var steamIds = players.Select(p => p.SteamId64).ToList();
 		var matchedUsers = await dbContext.Users
 			.Where(u => u.SteamId64 != null && steamIds.Contains(u.SteamId64))
 			.ToDictionaryAsync(u => u.SteamId64!, cancellationToken);
 
-		if (matchedUsers.Count == 0)
-		{
-			return 0;
-		}
-
 		var imported = 0;
 
 		foreach (var player in players)
 		{
-			if (!matchedUsers.TryGetValue(player.SteamId64, out var user))
-			{
-				continue;
-			}
+			matchedUsers.TryGetValue(player.SteamId64, out var user);
 
 			var demoPlayer = new DemoPlayerStats(
 				long.Parse(player.SteamId64),
@@ -135,7 +137,8 @@ public class AddResultHandler(IApplicationDbContext dbContext, ICurrentUserServi
 			{
 				Id = Guid.NewGuid(),
 				MatchResultId = matchResultId,
-				UserId = user.Id,
+				UserId = user?.Id,
+				DemoPlayerName = user is null ? player.DemoPlayerName : null,
 				Kills = player.Kills,
 				Deaths = player.Deaths,
 				Assists = player.Assists,

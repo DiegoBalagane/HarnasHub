@@ -46,6 +46,7 @@ export interface AnalyzedDemoPlayer {
 /** One of the two groups a demo's round-1 sides split into, with the score it would produce if this is "our" team. */
 export interface DemoTeamPreview {
   playerNames: string[]
+  steamIds: string[]
   ourScore: number
   opponentScore: number
 }
@@ -65,21 +66,22 @@ export interface AddResultPayload {
   ourScore?: number
   opponentScore?: number
   mapName?: string
-  /** An external link to the demo for download — a separate, optional thing from the file analyzeDemo already parsed. */
-  demoUrl?: string
   notes?: string
   playedAtUtc: string
   category: MatchCategory
   tournamentId?: string | null
   leagueId?: string | null
-  /** Present only when the coach analysed a demo first — lets the server import a stat line per matched roster member. */
+  /** Present only when the coach analysed a demo first and picked a team — lets the server import a stat line for
+   * every one of that team's players (connected to a roster account when their SteamID64 matches, unconnected otherwise). */
   demoRoundsPlayed?: number
   demoPlayers?: AnalyzedDemoPlayer[]
+  ourTeamSteamIds?: string[]
 }
 
 export const resultsApi = {
   getResults: () => apiClient.get<MatchResult[]>(API_ENDPOINTS.results),
   addResult: (payload: AddResultPayload) => apiClient.post<MatchResult>(API_ENDPOINTS.results, payload),
+  deleteResult: (matchResultId: string) => apiClient.delete<void>(API_ENDPOINTS.resultById(matchResultId)),
   analyzeDemo: (demoFile: File) => {
     const formData = new FormData()
     formData.append('demo', demoFile)

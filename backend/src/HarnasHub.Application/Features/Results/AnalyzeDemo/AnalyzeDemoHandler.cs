@@ -86,7 +86,11 @@ public class AnalyzeDemoHandler(IDemoParser demoParser, IApplicationDbContext db
 		Func<long, string> nameOrId)
 	{
 		var score = DemoScoreCalculator.Calculate(rounds, roundOneSteamIds.ToHashSet()) ?? (0, 0);
-		return new DemoTeamPreviewDto(roundOneSteamIds.Select(nameOrId).ToList(), score.OurScore, score.OpponentScore);
+		return new DemoTeamPreviewDto(
+			roundOneSteamIds.Select(nameOrId).ToList(),
+			roundOneSteamIds.Select(id => id.ToString()).ToList(),
+			score.OurScore,
+			score.OpponentScore);
 	}
 
 	/// <summary>Loads every roster member who has told us their SteamID64 — used only to suggest which team split is
