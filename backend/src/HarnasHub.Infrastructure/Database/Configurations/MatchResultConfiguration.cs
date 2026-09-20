@@ -17,8 +17,11 @@ public class MatchResultConfiguration : IEntityTypeConfiguration<MatchResult>
 		builder.Property(m => m.Opponent).IsRequired().HasMaxLength(100);
 		builder.Property(m => m.MapName).HasMaxLength(50);
 		builder.Property(m => m.DemoUrl).HasMaxLength(500);
+		builder.Property(m => m.Category).HasConversion<string>().HasMaxLength(20);
 
 		builder.HasIndex(m => m.PlayedAtUtc);
+		builder.HasIndex(m => m.TournamentId);
+		builder.HasIndex(m => m.LeagueId);
 	}
 
 	#endregion

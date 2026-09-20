@@ -1,6 +1,7 @@
 using HarnasHub.Api.Common;
 using HarnasHub.Application.Features.Results.AddResult;
 using HarnasHub.Application.Features.Results.GetResults;
+using HarnasHub.Core.Enums;
 using MediatR;
 
 namespace HarnasHub.Api.Endpoints.MatchResults;
@@ -23,7 +24,8 @@ public class MatchResultsEndpoints : IEndpoint
 		group.MapPost("/", async (AddResultRequest request, ISender sender, CancellationToken cancellationToken) =>
 		{
 			var command = new AddResultCommand(
-				request.Opponent, request.OurScore, request.OpponentScore, request.MapName, request.DemoUrl, request.Notes, request.PlayedAtUtc);
+				request.Opponent, request.OurScore, request.OpponentScore, request.MapName, request.DemoUrl, request.Notes,
+				request.PlayedAtUtc, request.Category, request.TournamentId, request.LeagueId);
 			var result = await sender.Send(command, cancellationToken);
 			return result.Match(success => Results.Ok(success), errors => errors.ToProblemResult());
 		}).RequireAuthorization(policy => policy.RequireRole("Coach", "Manager"));
@@ -40,4 +42,7 @@ public record AddResultRequest(
 	string? MapName,
 	string? DemoUrl,
 	string? Notes,
-	DateTime PlayedAtUtc);
+	DateTime PlayedAtUtc,
+	MatchCategory Category,
+	Guid? TournamentId,
+	Guid? LeagueId);
