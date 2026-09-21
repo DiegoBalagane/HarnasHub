@@ -1,6 +1,7 @@
 import { API_ENDPOINTS } from '../constants'
 import { apiClient } from './apiClient'
 import type { LeagueType } from './leaguesApi'
+import type { DeathPosition } from './statsApi'
 
 export type MatchCategory = 'Scrimmage' | 'League' | 'Tournament'
 
@@ -41,6 +42,7 @@ export interface AnalyzedDemoPlayer {
   multiKill3K: number
   multiKill4K: number
   multiKill5K: number
+  deathPositions: DeathPosition[]
 }
 
 /** One of the two groups a demo's round-1 sides split into, with the score it would produce if this is "our" team. */

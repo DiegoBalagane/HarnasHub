@@ -133,7 +133,7 @@ function ResultCard({ result, isExpanded, onToggle }: ResultCardProps) {
 
       {isExpanded && (
         <div className="mt-3">
-          <MatchStatsPanel matchResultId={result.id} />
+          <MatchStatsPanel matchResultId={result.id} mapName={result.mapName} />
         </div>
       )}
     </li>

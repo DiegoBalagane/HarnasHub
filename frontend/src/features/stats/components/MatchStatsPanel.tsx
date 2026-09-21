@@ -2,9 +2,16 @@ import { useState } from 'react'
 import { useIsCoachOrManager } from '../../auth/hooks/useIsCoachOrManager'
 import { useRoster } from '../../roster/hooks/useRoster'
 import { useAddPlayerStat, useMatchStats } from '../hooks/useStats'
+import { DeathMapView } from './DeathMapView'
+
+interface MatchStatsPanelProps {
+  matchResultId: string
+  /** Needed to draw the death-map radar image — omitted (or a map outside the current pool) just hides that section. */
+  mapName?: string | null
+}
 
 /** Expandable panel showing per-player stats for a match, with a Coach/Manager form to add a line. */
-export function MatchStatsPanel({ matchResultId }: { matchResultId: string }) {
+export function MatchStatsPanel({ matchResultId, mapName }: MatchStatsPanelProps) {
   const { data: stats, isLoading } = useMatchStats(matchResultId, true)
   const { data: roster } = useRoster()
   const canAddStats = useIsCoachOrManager()
@@ -59,19 +66,45 @@ export function MatchStatsPanel({ matchResultId }: { matchResultId: string }) {
             <thead className="text-neutral-500">
               <tr>
                 <th className="pb-1 pr-2 font-normal">Gracz</th>
-                <th className="pb-1 font-normal">K</th>
-                <th className="pb-1 font-normal">D</th>
-                <th className="pb-1 font-normal">A</th>
-                <th className="pb-1 font-normal">ADR</th>
-                <th className="pb-1 font-normal">HS%</th>
-                <th className="pb-1 font-normal">Rating</th>
-                <th className="pb-1 pl-2 font-normal text-neutral-600">Entry K/D</th>
-                <th className="pb-1 font-normal text-neutral-600">KAST%</th>
-                <th className="pb-1 font-normal text-neutral-600" title="Rundy z 2/3/4/5 killami">
+                <th className="pb-1 font-normal" title="Zabójstwa">
+                  K
+                </th>
+                <th className="pb-1 font-normal" title="Śmierci">
+                  D
+                </th>
+                <th className="pb-1 font-normal" title="Asysty">
+                  A
+                </th>
+                <th className="pb-1 font-normal" title="Średnie obrażenia na rundę (Average Damage per Round)">
+                  ADR
+                </th>
+                <th className="pb-1 font-normal" title="Procent zabójstw w głowę">
+                  HS%
+                </th>
+                <th className="pb-1 font-normal" title="Ogólna ocena skuteczności (przybliżenie HLTV Rating) — im wyżej, tym lepiej; 1.00 to mniej więcej poziom przeciętny">
+                  Rating
+                </th>
+                <th
+                  className="pb-1 pl-2 font-normal text-neutral-600"
+                  title="Entry kille/deathy — ile razy ten gracz zdobył pierwsze zabójstwo rundy (wejście) vs ile razy zginął jako pierwszy"
+                >
+                  Entry K/D
+                </th>
+                <th
+                  className="pb-1 font-normal text-neutral-600"
+                  title="KAST% — procent rund, w których gracz zdobył Kill/Assist, przeżył (Survived) albo został stradowany (Traded) — mierzy zaangażowanie w rundę lepiej niż samo K/D"
+                >
+                  KAST%
+                </th>
+                <th className="pb-1 font-normal text-neutral-600" title="Rundy z 2/3/4/5 killami (multi-kille, ostatnia liczba to ace'y)">
                   Multi
                 </th>
-                <th className="pb-1 font-normal text-neutral-600">UtilDmg</th>
-                <th className="pb-1 font-normal text-neutral-600">FlashA</th>
+                <th className="pb-1 font-normal text-neutral-600" title="Obrażenia zadane granatami/ogniem (Utility Damage)">
+                  UtilDmg
+                </th>
+                <th className="pb-1 font-normal text-neutral-600" title="Asysty za oślepienie (Flash Assist) — oślepił wroga, który zginął od kogoś z drużyny">
+                  FlashA
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -109,6 +142,13 @@ export function MatchStatsPanel({ matchResultId }: { matchResultId: string }) {
             </tbody>
           </table>
         </div>
+      )}
+
+      {mapName && stats && stats.length > 0 && (
+        <DeathMapView
+          mapName={mapName}
+          players={stats.map((stat) => ({ key: stat.id, name: stat.displayName, deathPositions: stat.deathPositions }))}
+        />
       )}
 
       {canAddStats && availablePlayers && availablePlayers.length > 0 && (
