@@ -4,6 +4,7 @@ using HarnasHub.Application.Features.Results.Shared;
 using HarnasHub.Application.Features.Stats.Shared;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace HarnasHub.Application.Features.Results.AnalyzeDemo;
 
@@ -11,7 +12,7 @@ namespace HarnasHub.Application.Features.Results.AnalyzeDemo;
 /// candidate "our team" groups — whichever the roster's SteamID64s overlap with (if either) is suggested, but the
 /// coach picks the final one client-side, so this never has to guess wrong the way pure SteamID matching can when
 /// nobody's SteamID64 is on file yet.</summary>
-public class AnalyzeDemoHandler(IDemoParser demoParser, IApplicationDbContext dbContext)
+public class AnalyzeDemoHandler(IDemoParser demoParser, IApplicationDbContext dbContext, ILogger<AnalyzeDemoHandler> logger)
 	: IRequestHandler<AnalyzeDemoCommand, ErrorOr<AnalyzeDemoResultDto>>
 {
 	#region Public Methods
@@ -24,15 +25,20 @@ public class AnalyzeDemoHandler(IDemoParser demoParser, IApplicationDbContext db
 		{
 			parsed = await demoParser.ParseAsync(request.DemoStream, cancellationToken);
 		}
-		catch (Exception)
+		catch (Exception ex)
 		{
 			// Any parser failure (corrupt file, unsupported build, wrong file type) is a validation problem for the
-			// caller, not a server error — the demo bytes themselves are untrusted input.
+			// caller, not a server error — the demo bytes themselves are untrusted input. Logged in full here since
+			// the client only ever sees a generic "couldn't read this as a CS2 demo" message.
+			logger.LogWarning(ex, "Nie udało się sparsować demki");
 			return ResultErrors.InvalidDemoFile;
 		}
 
 		if (parsed.RoundsPlayed == 0 || parsed.Rounds.Count == 0 || parsed.Players.Count == 0)
 		{
+			logger.LogWarning(
+				"Demka sparsowana bez błędu, ale bez rozgrywki do zapisania: RoundsPlayed={RoundsPlayed}, Rounds={Rounds}, Players={Players}",
+				parsed.RoundsPlayed, parsed.Rounds.Count, parsed.Players.Count);
 			return ResultErrors.InvalidDemoFile;
 		}
 
