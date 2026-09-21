@@ -1,6 +1,15 @@
 import { API_ENDPOINTS } from '../constants'
 import { apiClient } from './apiClient'
 
+export type MapSide = 'CT' | 'T'
+
+/** A death location as a radar-relative fraction in [0,1] — same convention as map-strategy/nades pins. */
+export interface DeathPosition {
+  x: number
+  y: number
+  side: MapSide
+}
+
 /** Everything from entryKills onward is only ever set on a row that came from a demo import — null on a manually entered row.
  * userId is null for a demo-imported player nobody on the roster has claimed with a matching SteamID64 yet. */
 export interface PlayerMatchStat {
@@ -22,6 +31,7 @@ export interface PlayerMatchStat {
   multiKill5K: number | null
   utilityDamage: number | null
   flashAssists: number | null
+  deathPositions: DeathPosition[]
 }
 
 export interface AddPlayerStatPayload {
