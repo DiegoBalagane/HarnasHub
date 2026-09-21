@@ -3,6 +3,7 @@ using HarnasHub.Application.Features.Results.AnalyzeDemo;
 using HarnasHub.Core.Entities;
 using HarnasHub.Core.Enums;
 using HarnasHub.Tests.Common;
+using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
 
 namespace HarnasHub.Tests.Application.Features.Results.AnalyzeDemo;
@@ -112,7 +113,8 @@ public class AnalyzeDemoHandlerTests
 
 	#region Private Methods
 
-	private static AnalyzeDemoHandler Handler(IApplicationDbContext dbContext, TestDemoParser demoParser) => new(demoParser, dbContext);
+	private static AnalyzeDemoHandler Handler(IApplicationDbContext dbContext, TestDemoParser demoParser) =>
+		new(demoParser, dbContext, NullLogger<AnalyzeDemoHandler>.Instance);
 
 	private static DemoParseResult ParseResult(MapName? mapName, params object[] playersAndRounds)
 	{

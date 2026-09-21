@@ -2,6 +2,7 @@ using ErrorOr;
 using HarnasHub.Application.Features.Results.AnalyzeDemoFromStorage;
 using HarnasHub.Application.Features.Results.Shared;
 using HarnasHub.Tests.Common;
+using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
 
 namespace HarnasHub.Tests.Application.Features.Results.AnalyzeDemoFromStorage;
@@ -19,7 +20,8 @@ public class AnalyzeDemoFromStorageHandlerTests
 			new DemoTeamPreviewDto(["b"], ["2"], 10, 16),
 			null, []);
 		var storage = new TestFileStorage(isConfigured: true, streamToReturn: new MemoryStream());
-		var handler = new AnalyzeDemoFromStorageHandler(storage, new TestSender<ErrorOr<AnalyzeDemoResultDto>>(expected));
+		var handler = new AnalyzeDemoFromStorageHandler(
+			storage, new TestSender<ErrorOr<AnalyzeDemoResultDto>>(expected), NullLogger<AnalyzeDemoFromStorageHandler>.Instance);
 
 		var result = await handler.Handle(new AnalyzeDemoFromStorageCommand("demos/abc"), CancellationToken.None);
 
@@ -32,7 +34,8 @@ public class AnalyzeDemoFromStorageHandlerTests
 	public async Task Should_fail_when_storage_is_not_configured()
 	{
 		var storage = new TestFileStorage(isConfigured: false);
-		var handler = new AnalyzeDemoFromStorageHandler(storage, new TestSender<ErrorOr<AnalyzeDemoResultDto>>(default!));
+		var handler = new AnalyzeDemoFromStorageHandler(
+			storage, new TestSender<ErrorOr<AnalyzeDemoResultDto>>(default!), NullLogger<AnalyzeDemoFromStorageHandler>.Instance);
 
 		var result = await handler.Handle(new AnalyzeDemoFromStorageCommand("demos/abc"), CancellationToken.None);
 
@@ -44,7 +47,8 @@ public class AnalyzeDemoFromStorageHandlerTests
 	public async Task Should_still_delete_the_object_when_opening_it_fails()
 	{
 		var storage = new TestFileStorage(isConfigured: true, throwOnOpenRead: new InvalidOperationException("gone"));
-		var handler = new AnalyzeDemoFromStorageHandler(storage, new TestSender<ErrorOr<AnalyzeDemoResultDto>>(default!));
+		var handler = new AnalyzeDemoFromStorageHandler(
+			storage, new TestSender<ErrorOr<AnalyzeDemoResultDto>>(default!), NullLogger<AnalyzeDemoFromStorageHandler>.Instance);
 
 		var result = await handler.Handle(new AnalyzeDemoFromStorageCommand("demos/abc"), CancellationToken.None);
 
