@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { resultsApi, type AddResultPayload } from '../../../services/resultsApi'
+import { DEMO_DIRECT_UPLOAD_MAX_BYTES } from '../../../constants'
+import { resultsApi, uploadFileToPresignedUrl, type AddResultPayload } from '../../../services/resultsApi'
 
 /** Fetches every logged result, most recent first. */
 export function useResults() {
@@ -21,10 +22,20 @@ export function useAddResult() {
   })
 }
 
-/** Parses an uploaded demo into a map/score/team-split preview — nothing is saved until addResult is submitted. */
+/** Parses an uploaded demo into a map/score/team-split preview — nothing is saved until addResult is submitted.
+ * Demos over DEMO_DIRECT_UPLOAD_MAX_BYTES go through object storage instead of this app's own server, since the
+ * hosting platform's edge proxy rejects large request bodies well before our own (much higher) server-side limit. */
 export function useAnalyzeDemo() {
   return useMutation({
-    mutationFn: (demoFile: File) => resultsApi.analyzeDemo(demoFile),
+    mutationFn: async (demoFile: File) => {
+      if (demoFile.size <= DEMO_DIRECT_UPLOAD_MAX_BYTES) {
+        return resultsApi.analyzeDemo(demoFile)
+      }
+
+      const { uploadUrl, objectKey } = await resultsApi.presignDemoUpload()
+      await uploadFileToPresignedUrl(uploadUrl, demoFile)
+      return resultsApi.analyzeDemoFromStorage(objectKey)
+    },
   })
 }
 

@@ -1,3 +1,8 @@
+// Files at or under this go straight through /api/results/analyze-demo (proven, simple); bigger ones go through
+// the presigned-upload-to-object-storage path instead, since the hosting platform's own edge proxy rejects large
+// request bodies well before this app's own (much higher) Kestrel limit ever comes into play.
+export const DEMO_DIRECT_UPLOAD_MAX_BYTES = 250 * 1024 * 1024
+
 export const API_SETTINGS = {
   // Empty string = same-origin relative requests. That's the production default: the backend
   // serves this built frontend itself (see docs/DEPLOYMENT.md), so there's no separate API host.
@@ -46,6 +51,8 @@ export const API_ENDPOINTS = {
   results: '/api/results',
   resultById: (matchResultId: string) => `/api/results/${matchResultId}`,
   analyzeResultDemo: '/api/results/analyze-demo',
+  presignResultDemo: '/api/results/analyze-demo/presign',
+  analyzeResultDemoFromStorage: '/api/results/analyze-demo/from-storage',
   tournaments: '/api/tournaments',
   leagues: '/api/leagues',
   nades: '/api/nades',
