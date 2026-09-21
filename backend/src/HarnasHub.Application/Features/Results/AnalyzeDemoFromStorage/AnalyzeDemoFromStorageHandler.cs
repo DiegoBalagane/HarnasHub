@@ -23,10 +23,22 @@ public class AnalyzeDemoFromStorageHandler(IFileStorage fileStorage, ISender sen
 			return ResultErrors.StorageNotConfigured;
 		}
 
+		var tempFilePath = Path.GetTempFileName();
+
 		try
 		{
-			await using var demoStream = await fileStorage.OpenReadAsync(request.ObjectKey, cancellationToken);
-			return await sender.Send(new AnalyzeDemoCommand(demoStream), cancellationToken);
+			// The demo parser needs to seek within the stream (it isn't a pure forward read), but an S3/R2 object's
+			// response stream is a live, forward-only network stream — handing it straight to the parser fails
+			// immediately with NotSupportedException. Buffering to a local temp file first gives it something seekable,
+			// the same way ASP.NET Core's own IFormFile already does for a large multipart upload under the direct path.
+			await using (var demoStream = await fileStorage.OpenReadAsync(request.ObjectKey, cancellationToken))
+			await using (var tempFile = new FileStream(tempFilePath, FileMode.Create, FileAccess.Write, FileShare.None))
+			{
+				await demoStream.CopyToAsync(tempFile, cancellationToken);
+			}
+
+			await using var seekableStream = new FileStream(tempFilePath, FileMode.Open, FileAccess.Read, FileShare.Read);
+			return await sender.Send(new AnalyzeDemoCommand(seekableStream), cancellationToken);
 		}
 		catch (Exception ex)
 		{
@@ -38,6 +50,15 @@ public class AnalyzeDemoFromStorageHandler(IFileStorage fileStorage, ISender sen
 		}
 		finally
 		{
+			try
+			{
+				File.Delete(tempFilePath);
+			}
+			catch (Exception)
+			{
+				// Best-effort — a stray temp file in a container that gets recycled on every deploy is harmless.
+			}
+
 			try
 			{
 				await fileStorage.DeleteAsync(request.ObjectKey, cancellationToken);
