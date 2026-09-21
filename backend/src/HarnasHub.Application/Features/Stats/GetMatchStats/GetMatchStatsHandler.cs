@@ -32,7 +32,9 @@ public class GetMatchStatsHandler(IApplicationDbContext dbContext)
 			.Select(row => new PlayerMatchStatDto(
 				row.stat.Id,
 				row.stat.UserId,
-				row.stat.UserId == null ? (row.stat.DemoPlayerName ?? "Niepołączony gracz") : (row.user != null ? row.user.DisplayName : "Usunięty zawodnik"),
+				row.stat.UserId == null
+					? (row.stat.DemoPlayerName ?? "Niepołączony gracz")
+					: (row.user != null ? (row.user.InGameNickname ?? row.user.DisplayName) : "Usunięty zawodnik"),
 				row.stat.Kills,
 				row.stat.Deaths,
 				row.stat.Assists,

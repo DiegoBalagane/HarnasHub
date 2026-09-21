@@ -17,14 +17,25 @@ const sideColor: Record<DeathPosition['side'], string> = {
   T: 'bg-orange-500',
 }
 
-/** Shows where every player died on the match's map, colour-coded by side (CT/T); pick one player to isolate just their deaths. */
+type Filter = '' | 'CT' | 'T' | string
+
+/** Shows where every player died on the match's map, colour-coded by side (CT/T); narrow it down to one side or one
+ * player to isolate a pattern (e.g. repeated bad CT positions, or just one player's deaths). */
 export function DeathMapView({ mapName, players }: DeathMapViewProps) {
-  const [selectedKey, setSelectedKey] = useState('')
+  const [filter, setFilter] = useState<Filter>('')
 
   const playersWithDeaths = players.filter((player) => player.deathPositions.length > 0)
-  const visiblePlayers = selectedKey
-    ? playersWithDeaths.filter((player) => player.key === selectedKey)
-    : playersWithDeaths
+  const isPlayerFilter = filter !== '' && filter !== 'CT' && filter !== 'T'
+
+  const visibleDeaths = playersWithDeaths.flatMap((player) =>
+    player.deathPositions
+      .filter((death) => {
+        if (filter === '') return true
+        if (filter === 'CT' || filter === 'T') return death.side === filter
+        return player.key === filter
+      })
+      .map((death, index) => ({ key: `${player.key}-${index}`, name: player.name, death })),
+  )
 
   if (playersWithDeaths.length === 0) {
     return null
@@ -42,11 +53,13 @@ export function DeathMapView({ mapName, players }: DeathMapViewProps) {
             <span className="h-2 w-2 rounded-full bg-orange-500" /> T
           </span>
           <select
-            value={selectedKey}
-            onChange={(event) => setSelectedKey(event.target.value)}
+            value={filter}
+            onChange={(event) => setFilter(event.target.value)}
             className="rounded-md border border-neutral-800 bg-neutral-900 px-2 py-1 text-xs outline-none focus:border-neutral-500"
           >
             <option value="">Wszyscy gracze</option>
+            <option value="CT">Tylko CT</option>
+            <option value="T">Tylko T</option>
             {playersWithDeaths.map((player) => (
               <option key={player.key} value={player.key}>
                 {player.name} ({player.deathPositions.length})
@@ -63,24 +76,24 @@ export function DeathMapView({ mapName, players }: DeathMapViewProps) {
           draggable={false}
           className="block h-auto w-full"
         />
-        {visiblePlayers.flatMap((player) =>
-          player.deathPositions.map((death, index) => (
-            <div
-              key={`${player.key}-${index}`}
-              title={player.name}
-              className={`absolute h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full border border-black/40 ${sideColor[death.side]} ${
-                selectedKey ? 'opacity-90' : 'opacity-60'
-              }`}
-              style={{ left: `${death.x * 100}%`, top: `${death.y * 100}%` }}
-            />
-          )),
-        )}
+        {visibleDeaths.map(({ key, name, death }) => (
+          <div
+            key={key}
+            title={name}
+            className={`absolute h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full border border-black/40 ${sideColor[death.side]} ${
+              filter ? 'opacity-90' : 'opacity-60'
+            }`}
+            style={{ left: `${death.x * 100}%`, top: `${death.y * 100}%` }}
+          />
+        ))}
       </div>
 
       <p className="text-xs text-neutral-500">
-        {selectedKey
+        {isPlayerFilter
           ? 'Zgony wybranego gracza — pomaga zauważyć powtarzające się złe pozycje.'
-          : 'Zgony wszystkich graczy naraz — wybierz gracza z listy, żeby zobaczyć tylko jego.'}
+          : filter === 'CT' || filter === 'T'
+            ? `Zgony wszystkich graczy po stronie ${filter} — pomaga zauważyć złe pozycje typowe dla tej strony.`
+            : 'Zgony wszystkich graczy naraz — wybierz stronę albo gracza z listy, żeby zawęzić widok.'}
       </p>
     </div>
   )

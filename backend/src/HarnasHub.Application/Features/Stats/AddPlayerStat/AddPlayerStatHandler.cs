@@ -67,7 +67,7 @@ public class AddPlayerStatHandler(IApplicationDbContext dbContext, IRealtimeNoti
 		await realtimeNotifier.NotifyAsync("stats", cancellationToken);
 
 		return new PlayerMatchStatDto(
-			stat.Id, player.Id, player.DisplayName, stat.Kills, stat.Deaths, stat.Assists, stat.Adr, stat.HeadshotPercentage, stat.Rating,
+			stat.Id, player.Id, player.InGameNickname ?? player.DisplayName, stat.Kills, stat.Deaths, stat.Assists, stat.Adr, stat.HeadshotPercentage, stat.Rating,
 			stat.EntryKills, stat.EntryDeaths, stat.KastPercentage, stat.MultiKill2K, stat.MultiKill3K, stat.MultiKill4K, stat.MultiKill5K,
 			stat.UtilityDamage, stat.FlashAssists, []);
 	}
