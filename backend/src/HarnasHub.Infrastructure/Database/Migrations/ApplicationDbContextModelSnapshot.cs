@@ -362,6 +362,9 @@ namespace HarnasHub.Infrastructure.Database.Migrations
                     b.Property<DateTime>("CreatedAtUtc")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<string>("DeathPositionsJson")
+                        .HasColumnType("text");
+
                     b.Property<int>("Deaths")
                         .HasColumnType("integer");
 
