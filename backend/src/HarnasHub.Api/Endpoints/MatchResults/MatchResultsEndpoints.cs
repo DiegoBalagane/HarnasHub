@@ -1,8 +1,10 @@
 using HarnasHub.Api.Common;
 using HarnasHub.Application.Features.Results.AddResult;
 using HarnasHub.Application.Features.Results.AnalyzeDemo;
+using HarnasHub.Application.Features.Results.AnalyzeDemoFromStorage;
 using HarnasHub.Application.Features.Results.DeleteResult;
 using HarnasHub.Application.Features.Results.GetResults;
+using HarnasHub.Application.Features.Results.PresignDemoUpload;
 using HarnasHub.Application.Features.Results.Shared;
 using HarnasHub.Core.Enums;
 using MediatR;
@@ -72,6 +74,23 @@ public class MatchResultsEndpoints : IEndpoint
 			var result = await sender.Send(new AnalyzeDemoCommand(demoStream), cancellationToken);
 			return result.Match(success => Results.Ok(success), errors => errors.ToProblemResult());
 		}).RequireAuthorization(policy => policy.RequireRole("Coach", "Manager"));
+
+		// For demos too large for the above (the hosting platform's own edge proxy has its own size limit that no
+		// setting in this app can raise) — the browser uploads straight to object storage instead of through here.
+		group.MapPost("/analyze-demo/presign", async (ISender sender, CancellationToken cancellationToken) =>
+		{
+			var result = await sender.Send(new PresignDemoUploadCommand(), cancellationToken);
+			return result.Match(success => Results.Ok(success), errors => errors.ToProblemResult());
+		}).RequireAuthorization(policy => policy.RequireRole("Coach", "Manager"));
+
+		group.MapPost("/analyze-demo/from-storage", async (
+			AnalyzeDemoFromStorageRequest request,
+			ISender sender,
+			CancellationToken cancellationToken) =>
+		{
+			var result = await sender.Send(new AnalyzeDemoFromStorageCommand(request.ObjectKey), cancellationToken);
+			return result.Match(success => Results.Ok(success), errors => errors.ToProblemResult());
+		}).RequireAuthorization(policy => policy.RequireRole("Coach", "Manager"));
 	}
 
 	#endregion
@@ -94,3 +113,6 @@ public record AddResultRequest(
 	int? DemoRoundsPlayed,
 	IReadOnlyList<AnalyzedDemoPlayerDto>? DemoPlayers,
 	IReadOnlyList<string>? OurTeamSteamIds);
+
+/// <summary>Request body for POST /api/results/analyze-demo/from-storage.</summary>
+public record AnalyzeDemoFromStorageRequest(string ObjectKey);

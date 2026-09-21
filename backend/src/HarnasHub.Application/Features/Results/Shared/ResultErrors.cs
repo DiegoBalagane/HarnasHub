@@ -16,4 +16,8 @@ public static class ResultErrors
 	public static Error MatchNotFound => Error.NotFound(
 		"Results.MatchNotFound",
 		"Nie znaleziono wyniku.");
+
+	public static Error StorageNotConfigured => Error.Failure(
+		"Results.StorageNotConfigured",
+		"Wgrywanie dużych demek (powyżej limitu serwera) nie jest jeszcze skonfigurowane — poproś osobę zarządzającą wdrożeniem o ustawienie magazynu S3.");
 }
