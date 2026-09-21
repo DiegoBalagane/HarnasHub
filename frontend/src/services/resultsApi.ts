@@ -1,6 +1,7 @@
 import { API_ENDPOINTS } from '../constants'
 import { apiClient } from './apiClient'
 import type { LeagueType } from './leaguesApi'
+import type { DeathPosition } from './statsApi'
 
 export type MatchCategory = 'Scrimmage' | 'League' | 'Tournament'
 
@@ -41,6 +42,7 @@ export interface AnalyzedDemoPlayer {
   multiKill3K: number
   multiKill4K: number
   multiKill5K: number
+  deathPositions: DeathPosition[]
 }
 
 /** One of the two groups a demo's round-1 sides split into, with the score it would produce if this is "our" team. */
@@ -78,6 +80,11 @@ export interface AddResultPayload {
   ourTeamSteamIds?: string[]
 }
 
+export interface PresignedDemoUpload {
+  uploadUrl: string
+  objectKey: string
+}
+
 export const resultsApi = {
   getResults: () => apiClient.get<MatchResult[]>(API_ENDPOINTS.results),
   addResult: (payload: AddResultPayload) => apiClient.post<MatchResult>(API_ENDPOINTS.results, payload),
@@ -87,4 +94,20 @@ export const resultsApi = {
     formData.append('demo', demoFile)
     return apiClient.postForm<AnalyzeDemoResult>(API_ENDPOINTS.analyzeResultDemo, formData)
   },
+  /** For demos too large for analyzeDemo's own request — this asks the server for a time-limited URL, the caller
+   * then PUTs the file straight to it (see uploadFileToPresignedUrl), bypassing this app's own server entirely. */
+  presignDemoUpload: () => apiClient.post<PresignedDemoUpload>(API_ENDPOINTS.presignResultDemo, {}),
+  analyzeDemoFromStorage: (objectKey: string) =>
+    apiClient.post<AnalyzeDemoResult>(API_ENDPOINTS.analyzeResultDemoFromStorage, { objectKey }),
+}
+
+/** Uploads a file directly to a presigned object-storage URL — deliberately not going through apiClient, since this
+ * request goes to a completely different origin (the storage provider's own endpoint) and must carry neither our
+ * Bearer token nor a JSON Content-Type. */
+export async function uploadFileToPresignedUrl(uploadUrl: string, file: File): Promise<void> {
+  const response = await fetch(uploadUrl, { method: 'PUT', body: file })
+
+  if (!response.ok) {
+    throw new Error(`Wgrywanie pliku do magazynu nie powiodło się (status ${response.status}).`)
+  }
 }

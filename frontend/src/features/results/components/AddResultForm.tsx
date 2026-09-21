@@ -216,7 +216,7 @@ export function AddResultForm() {
 
       {analyzeDemo.isError && (
         <p className="text-sm text-red-400">
-          {analyzeDemo.error instanceof ApiError ? analyzeDemo.error.message : 'Nie udało się przeanalizować demki.'}
+          {analyzeDemo.error instanceof Error ? analyzeDemo.error.message : 'Nie udało się przeanalizować demki.'}
         </p>
       )}
 
