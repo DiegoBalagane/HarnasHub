@@ -7,7 +7,23 @@ public record DashboardSummaryDto(
 	EventDto? NextEvent,
 	int OpenTaskCount,
 	DailyTeamStatusDto Today,
-	DailyTeamStatusDto Tomorrow);
+	DailyTeamStatusDto Tomorrow,
+	MyRecentPerformanceDto? MyRecentPerformance,
+	LastMatchResultDto? LastMatch);
+
+/// <summary>The current user's own average rating over their most recent stat lines (manual or demo-imported alike) —
+/// null when they have none yet.</summary>
+public record MyRecentPerformanceDto(double AvgRating, int MatchesCounted);
+
+/// <summary>The team's most recently logged result, for a quick "how did we do last time" glance.</summary>
+public record LastMatchResultDto(
+	Guid MatchResultId,
+	string Opponent,
+	int OurScore,
+	int OpponentScore,
+	bool Won,
+	DateTime PlayedAtUtc,
+	string? MapName);
 
 /// <summary>Who is available on a single day, plus that day's earliest event if there is one.</summary>
 public record DailyTeamStatusDto(DateOnly Date, List<MemberDayStatusDto> Members, EventDto? Event);
