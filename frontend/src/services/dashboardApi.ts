@@ -28,11 +28,30 @@ export interface DailyTeamStatus {
   event: CalendarEvent | null
 }
 
+/** The current user's own average rating over their most recent stat lines — null when they have none yet. */
+export interface MyRecentPerformance {
+  avgRating: number
+  matchesCounted: number
+}
+
+/** The team's most recently logged result, for a quick "how did we do last time" glance. */
+export interface LastMatchResult {
+  matchResultId: string
+  opponent: string
+  ourScore: number
+  opponentScore: number
+  won: boolean
+  playedAtUtc: string
+  mapName: string | null
+}
+
 export interface DashboardSummary {
   nextEvent: CalendarEvent | null
   openTaskCount: number
   today: DailyTeamStatus
   tomorrow: DailyTeamStatus
+  myRecentPerformance: MyRecentPerformance | null
+  lastMatch: LastMatchResult | null
 }
 
 export const dashboardApi = {

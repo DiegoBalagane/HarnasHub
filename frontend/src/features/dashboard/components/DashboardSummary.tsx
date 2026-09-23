@@ -60,7 +60,7 @@ export function DashboardSummary() {
           to="/stats"
           className="rounded-md border border-neutral-800 p-4 transition hover:border-neutral-600"
         >
-          <p className="text-sm text-neutral-400">Skuteczność</p>
+          <p className="text-sm text-neutral-400">Skuteczność drużyny</p>
           {latestTrend ? (
             <>
               <p className="mt-1 text-2xl font-semibold">{latestTrend.winRatePercentage.toFixed(0)}%</p>
@@ -70,6 +70,44 @@ export function DashboardSummary() {
             </>
           ) : (
             <p className="mt-1 text-neutral-500">Brak danych</p>
+          )}
+        </Link>
+
+        <Link
+          to="/stats"
+          className="rounded-md border border-neutral-800 p-4 transition hover:border-neutral-600"
+        >
+          <p className="text-sm text-neutral-400">Moja skuteczność</p>
+          {data?.myRecentPerformance ? (
+            <>
+              <p className="mt-1 text-2xl font-semibold">{data.myRecentPerformance.avgRating.toFixed(2)}</p>
+              <p className="text-sm text-neutral-400">Ostatnie {data.myRecentPerformance.matchesCounted} mecze</p>
+            </>
+          ) : (
+            <p className="mt-1 text-neutral-500">Brak danych</p>
+          )}
+        </Link>
+
+        <Link
+          to="/results"
+          className="rounded-md border border-neutral-800 p-4 transition hover:border-neutral-600"
+        >
+          <p className="text-sm text-neutral-400">Ostatni mecz</p>
+          {data?.lastMatch ? (
+            <>
+              <p className="mt-1 font-medium">
+                vs {data.lastMatch.opponent}{' '}
+                <span className={data.lastMatch.won ? 'text-green-400' : 'text-red-400'}>
+                  {data.lastMatch.ourScore}:{data.lastMatch.opponentScore}
+                </span>
+              </p>
+              <p className="text-sm text-neutral-400">
+                {data.lastMatch.mapName ? `${data.lastMatch.mapName} · ` : ''}
+                {dateFormatter.format(new Date(data.lastMatch.playedAtUtc))}
+              </p>
+            </>
+          ) : (
+            <p className="mt-1 text-neutral-500">Brak wyników</p>
           )}
         </Link>
       </div>
