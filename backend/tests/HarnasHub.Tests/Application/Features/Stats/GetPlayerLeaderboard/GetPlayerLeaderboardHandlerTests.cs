@@ -39,6 +39,10 @@ public class GetPlayerLeaderboardHandlerTests
 			HeadshotPercentage = 40,
 			Rating = 1.20,
 			KastPercentage = 70,
+			EntryKills = 3,
+			EntryDeaths = 1,
+			UtilityDamage = 50,
+			FlashAssists = 2,
 			CreatedAtUtc = DateTime.UtcNow
 		});
 		dbContext.PlayerMatchStats.Add(new PlayerMatchStat
@@ -68,6 +72,10 @@ public class GetPlayerLeaderboardHandlerTests
 		Assert.Equal(15, entry.AvgKills);
 		Assert.Equal(15, entry.AvgDeaths);
 		Assert.Equal(1.00, entry.AvgRating);
+		Assert.Equal(3, entry.AvgEntryKills);
+		Assert.Equal(1, entry.AvgEntryDeaths);
+		Assert.Equal(50, entry.AvgUtilityDamage);
+		Assert.Equal(2, entry.AvgFlashAssists);
 		Assert.Equal(70, entry.AvgKastPercentage);
 	}
 
