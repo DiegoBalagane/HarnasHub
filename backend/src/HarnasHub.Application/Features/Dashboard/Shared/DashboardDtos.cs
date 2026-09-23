@@ -9,7 +9,11 @@ public record DashboardSummaryDto(
 	DailyTeamStatusDto Today,
 	DailyTeamStatusDto Tomorrow,
 	MyRecentPerformanceDto? MyRecentPerformance,
-	LastMatchResultDto? LastMatch);
+	LastMatchResultDto? LastMatch,
+	TeamAttendanceSummaryDto Attendance);
+
+/// <summary>Team-wide lateness/absence totals over the trailing 30 days, for the dashboard tile.</summary>
+public record TeamAttendanceSummaryDto(int LateCount, int AbsentCount);
 
 /// <summary>The current user's own average rating over their most recent stat lines (manual or demo-imported alike) —
 /// null when they have none yet.</summary>

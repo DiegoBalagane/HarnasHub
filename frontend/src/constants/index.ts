@@ -88,6 +88,12 @@ export const API_ENDPOINTS = {
   statsLeaderboard: (category?: string) =>
     category ? `/api/stats/leaderboard?category=${category}` : '/api/stats/leaderboard',
   opponents: '/api/opponents',
+  attendance: {
+    summary: '/api/attendance/summary',
+    incidents: (userId?: string) =>
+      userId ? `/api/attendance/incidents?userId=${userId}` : '/api/attendance/incidents',
+    incidentById: (incidentId: string) => `/api/attendance/incidents/${incidentId}`,
+  },
 } as const
 
 export const STORAGE_KEYS = {

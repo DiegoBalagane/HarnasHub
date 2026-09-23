@@ -94,13 +94,23 @@ public class GetDashboardSummaryHandler(IApplicationDbContext dbContext, ICurren
 				match.Id, match.Opponent, match.OurScore, match.OpponentScore, match.OurScore > match.OpponentScore, match.PlayedAtUtc, match.MapName))
 			.FirstOrDefaultAsync(cancellationToken);
 
+		var attendanceCutoff = today.AddDays(-30);
+		var recentIncidentTypes = await dbContext.AttendanceIncidents
+			.Where(incident => incident.OccurredOn >= attendanceCutoff)
+			.Select(incident => incident.Type)
+			.ToListAsync(cancellationToken);
+		var attendance = new TeamAttendanceSummaryDto(
+			recentIncidentTypes.Count(type => type == AttendanceIncidentType.Late),
+			recentIncidentTypes.Count(type => type == AttendanceIncidentType.Absent));
+
 		return new DashboardSummaryDto(
 			nextEvent,
 			openTaskCount,
 			BuildDay(today, members, declaredByUserAndDate, vacationsByUser, events),
 			BuildDay(tomorrow, members, declaredByUserAndDate, vacationsByUser, events),
 			myRecentPerformance,
-			lastMatch);
+			lastMatch,
+			attendance);
 	}
 
 	#endregion
