@@ -2,8 +2,10 @@ using HarnasHub.Api.Common;
 using HarnasHub.Application.Features.Stats.AddPlayerStat;
 using HarnasHub.Application.Features.Stats.GetMatchStats;
 using HarnasHub.Application.Features.Stats.GetMyStatsHistory;
+using HarnasHub.Application.Features.Stats.GetPlayerLeaderboard;
 using HarnasHub.Application.Features.Stats.GetTeamTrend;
 using HarnasHub.Application.Features.Stats.ImportStatsFromDemo;
+using HarnasHub.Core.Enums;
 using MediatR;
 using Microsoft.AspNetCore.Http.Features;
 
@@ -52,6 +54,12 @@ public class StatsEndpoints : IEndpoint
 		stats.MapGet("/team-trend", async (ISender sender, CancellationToken cancellationToken) =>
 		{
 			var result = await sender.Send(new GetTeamTrendQuery(), cancellationToken);
+			return result.Match(success => Results.Ok(success), errors => errors.ToProblemResult());
+		});
+
+		stats.MapGet("/leaderboard", async (MatchCategory? category, ISender sender, CancellationToken cancellationToken) =>
+		{
+			var result = await sender.Send(new GetPlayerLeaderboardQuery(category), cancellationToken);
 			return result.Match(success => Results.Ok(success), errors => errors.ToProblemResult());
 		});
 
