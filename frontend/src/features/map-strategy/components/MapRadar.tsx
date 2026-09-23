@@ -1,197 +1,168 @@
-import { useCallback, useRef, useState, type PointerEvent } from 'react'
-import type { MapPosition, MapSide } from '../../../services/mapStrategyApi'
+import { useRef, useState, type PointerEvent } from 'react'
+import type { MapPosition, MapSide, MapTextAnnotation } from '../../../services/mapStrategyApi'
 import type { MapName } from '../../../services/nadesApi'
-import { useRemovePlayerPosition, useSetPlayerPosition } from '../hooks/useMapStrategy'
+import { useAnnotationDrag } from '../hooks/useAnnotationDrag'
+import { useMapZoom } from '../hooks/useMapZoom'
+import { usePinDrag } from '../hooks/usePinDrag'
+import { useUndoableNoteDelete } from '../hooks/useUndoableNoteDelete'
+import { useRemovePlayerPosition, useRemoveTextAnnotation, useSetPlayerPosition, useUpdateTextAnnotation } from '../hooks/useMapStrategy'
 import { PlayerPin } from './PlayerPin'
 import { PositionNoteEditor } from './PositionNoteEditor'
+import { TextAnnotationEditor } from './TextAnnotationEditor'
+import { TextAnnotationPin } from './TextAnnotationPin'
 
 interface MapRadarProps {
   mapName: MapName
   side: MapSide
   positions: MapPosition[]
-  /** Only Coach/Manager may drag pins around or delete them. */
+  annotations: MapTextAnnotation[]
+  /** Only Coach/Manager may drag pins/annotations around, edit annotations, or delete either. */
   canEdit: boolean
 }
 
-interface DragDraft {
-  positionId: string
-  x: number
-  y: number
-  /** Distinguishes a real drag from a plain click, so a tap doesn't trigger a pointless save. */
-  moved: boolean
-}
-
-function clampFraction(value: number): number {
-  return Math.min(1, Math.max(0, value))
-}
-
-interface DeletedNote {
-  position: MapPosition
-  previousNote: string
-}
-
-const undoWindowMs = 6000
-
-/** Radar image with the team's pins on top; Coach/Manager can drag a pin and the new spot is saved on pointer-up. */
-export function MapRadar({ mapName, side, positions, canEdit }: MapRadarProps) {
-  const containerRef = useRef<HTMLDivElement>(null)
-  const [draft, setDraft] = useState<DragDraft | null>(null)
+/** Radar image with the team's pins and text annotations on top; Coach/Manager can drag either, zoom/pan the image
+ * with the scroll wheel, and edit or delete annotations. A drag's new spot is saved on pointer-up. */
+export function MapRadar({ mapName, side, positions, annotations, canEdit }: MapRadarProps) {
+  const viewportRef = useRef<HTMLDivElement>(null)
+  const contentRef = useRef<HTMLDivElement>(null)
+  const zoom = useMapZoom(viewportRef)
   const [editingNoteId, setEditingNoteId] = useState<string | null>(null)
-  const [deletedNote, setDeletedNote] = useState<DeletedNote | null>(null)
-  const undoTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const [editingAnnotationId, setEditingAnnotationId] = useState<string | null>(null)
   const setPlayerPosition = useSetPlayerPosition()
   const removePlayerPosition = useRemovePlayerPosition()
+  const updateTextAnnotation = useUpdateTextAnnotation()
+  const removeTextAnnotation = useRemoveTextAnnotation()
+
+  const pin = usePinDrag(positions, mapName, side, contentRef, (id) =>
+    setEditingNoteId((current) => (current === id ? null : id)),
+  )
+  const annotation = useAnnotationDrag(annotations, contentRef, (id) =>
+    setEditingAnnotationId((current) => (current === id ? null : id)),
+  )
+  const { deletedNote, deleteNote, undoDelete } = useUndoableNoteDelete((position, note) =>
+    setPlayerPosition.mutate({ mapName, side, userId: position.userId, label: position.label, x: position.x, y: position.y, note }),
+  )
+
   const editingPosition = positions.find((position) => position.id === editingNoteId) ?? null
+  const editingAnnotation = annotations.find((candidate) => candidate.id === editingAnnotationId) ?? null
 
-  function saveNote(position: MapPosition, note: string | null) {
-    setPlayerPosition.mutate({
-      mapName,
-      side,
-      userId: position.userId,
-      label: position.label,
-      x: position.x,
-      y: position.y,
-      note,
-    })
+  function handlePointerMove(event: PointerEvent<HTMLDivElement>) {
+    pin.move(event)
+    annotation.move(event)
+    zoom.handlePan(event)
   }
 
-  function deleteNote(position: MapPosition) {
-    if (!position.note) return
-
-    if (undoTimeoutRef.current) {
-      clearTimeout(undoTimeoutRef.current)
-    }
-
-    saveNote(position, null)
-    setEditingNoteId(null)
-    setDeletedNote({ position, previousNote: position.note })
-    undoTimeoutRef.current = setTimeout(() => setDeletedNote(null), undoWindowMs)
+  function handlePointerUp(event: PointerEvent<HTMLDivElement>) {
+    pin.end()
+    annotation.end()
+    zoom.endPan(event)
   }
-
-  function undoDelete() {
-    if (!deletedNote) return
-
-    if (undoTimeoutRef.current) {
-      clearTimeout(undoTimeoutRef.current)
-    }
-
-    saveNote(deletedNote.position, deletedNote.previousNote)
-    setDeletedNote(null)
-  }
-
-  const handleDragStart = useCallback(
-    (event: PointerEvent<HTMLDivElement>, positionId: string) => {
-      const position = positions.find((candidate) => candidate.id === positionId)
-
-      if (!position) {
-        return
-      }
-
-      event.preventDefault()
-      // Capturing on the pin keeps move/up events flowing (and bubbling to this container) outside the radar too.
-      event.currentTarget.setPointerCapture(event.pointerId)
-      setDraft({ positionId, x: position.x, y: position.y, moved: false })
-    },
-    [positions],
-  )
-
-  const handlePointerMove = useCallback(
-    (event: PointerEvent<HTMLDivElement>) => {
-      const rect = containerRef.current?.getBoundingClientRect()
-
-      if (!draft || !rect || rect.width === 0 || rect.height === 0) {
-        return
-      }
-
-      setDraft({
-        positionId: draft.positionId,
-        x: clampFraction((event.clientX - rect.left) / rect.width),
-        y: clampFraction((event.clientY - rect.top) / rect.height),
-        moved: true,
-      })
-    },
-    [draft],
-  )
-
-  // Saving happens once, here — not on every pointermove — so a drag costs a single request.
-  const handlePointerUp = useCallback(() => {
-    if (!draft) {
-      return
-    }
-
-    const position = positions.find((candidate) => candidate.id === draft.positionId)
-
-    if (!position) {
-      setDraft(null)
-      return
-    }
-
-    if (!draft.moved) {
-      // A plain tap/click, not a drag — open (or close) the note editor for this pin instead of moving it.
-      if (canEdit) {
-        setEditingNoteId((current) => (current === position.id ? null : position.id))
-      }
-      setDraft(null)
-      return
-    }
-
-    setPlayerPosition.mutate(
-      {
-        mapName,
-        side,
-        userId: position.userId,
-        label: position.label,
-        x: draft.x,
-        y: draft.y,
-        note: position.note,
-      },
-      // Held until the server answers so the pin stays where it was dropped instead of snapping back.
-      { onSettled: () => setDraft(null) },
-    )
-  }, [canEdit, draft, mapName, positions, setPlayerPosition, side])
 
   return (
     <div className="flex flex-col gap-2">
       <div
-        ref={containerRef}
+        ref={viewportRef}
+        onWheel={zoom.handleWheel}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
-        onPointerCancel={() => setDraft(null)}
+        onPointerCancel={handlePointerUp}
         className="relative w-full select-none overflow-hidden rounded-md border border-neutral-800 bg-neutral-950"
       >
-        <img
-          src={`/maps/${mapName.toLowerCase()}.webp`}
-          alt={`Radar mapy ${mapName}`}
-          draggable={false}
-          className="block h-auto w-full"
-        />
+        <div
+          ref={contentRef}
+          style={{ transform: `translate(${zoom.panX}px, ${zoom.panY}px) scale(${zoom.scale})`, transformOrigin: '0 0' }}
+          className="relative w-full"
+        >
+          <img
+            src={`/maps/${mapName.toLowerCase()}.webp`}
+            alt={`Radar mapy ${mapName}`}
+            draggable={false}
+            onPointerDown={zoom.startPan}
+            className={`block h-auto w-full ${zoom.isZoomed ? 'cursor-grab active:cursor-grabbing' : ''}`}
+          />
 
-        {positions.map((position) => {
-          const isDragging = draft?.positionId === position.id
-
-          return (
+          {positions.map((position) => (
             <PlayerPin
               key={position.id}
               position={position}
-              x={isDragging ? draft.x : position.x}
-              y={isDragging ? draft.y : position.y}
+              x={pin.draft?.positionId === position.id ? pin.draft.x : position.x}
+              y={pin.draft?.positionId === position.id ? pin.draft.y : position.y}
               canEdit={canEdit}
-              isDragging={isDragging}
-              onDragStart={handleDragStart}
+              isDragging={pin.draft?.positionId === position.id}
+              onDragStart={pin.dragStart}
               onRemove={removePlayerPosition.mutate}
             />
-          )
-        })}
+          ))}
+
+          {annotations.map((item) => (
+            <TextAnnotationPin
+              key={item.id}
+              annotation={item}
+              x={annotation.draft?.annotationId === item.id ? annotation.draft.x : item.x}
+              y={annotation.draft?.annotationId === item.id ? annotation.draft.y : item.y}
+              canEdit={canEdit}
+              isDragging={annotation.draft?.annotationId === item.id}
+              onDragStart={annotation.dragStart}
+              onRemove={removeTextAnnotation.mutate}
+            />
+          ))}
+        </div>
+
+        {zoom.isZoomed && (
+          <button
+            type="button"
+            onClick={zoom.resetZoom}
+            className="absolute right-2 top-2 rounded-md border border-neutral-700 bg-neutral-950/80 px-2 py-1 text-xs text-neutral-200 hover:border-neutral-500"
+          >
+            Resetuj powiększenie
+          </button>
+        )}
       </div>
 
       {editingPosition && (
         <PositionNoteEditor
           key={editingPosition.id}
           position={editingPosition}
-          onSave={(note) => saveNote(editingPosition, note)}
-          onDelete={() => deleteNote(editingPosition)}
+          onSave={(note) =>
+            setPlayerPosition.mutate({
+              mapName,
+              side,
+              userId: editingPosition.userId,
+              label: editingPosition.label,
+              x: editingPosition.x,
+              y: editingPosition.y,
+              note,
+            })
+          }
+          onDelete={() => {
+            deleteNote(editingPosition)
+            setEditingNoteId(null)
+          }}
           onClose={() => setEditingNoteId(null)}
           isSaving={setPlayerPosition.isPending}
+        />
+      )}
+
+      {editingAnnotation && (
+        <TextAnnotationEditor
+          key={editingAnnotation.id}
+          annotation={editingAnnotation}
+          onSave={(text, color, fontSizePx) =>
+            updateTextAnnotation.mutate({
+              annotationId: editingAnnotation.id,
+              text,
+              color,
+              fontSizePx,
+              x: editingAnnotation.x,
+              y: editingAnnotation.y,
+            })
+          }
+          onDelete={() => {
+            removeTextAnnotation.mutate(editingAnnotation.id)
+            setEditingAnnotationId(null)
+          }}
+          onClose={() => setEditingAnnotationId(null)}
+          isSaving={updateTextAnnotation.isPending}
         />
       )}
 

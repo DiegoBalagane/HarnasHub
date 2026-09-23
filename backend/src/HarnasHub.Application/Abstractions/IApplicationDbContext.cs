@@ -18,6 +18,7 @@ public interface IApplicationDbContext
 	DbSet<PlayerAvailabilityDay> PlayerAvailabilityDays { get; }
 	DbSet<Vacation> Vacations { get; }
 	DbSet<MapPositionAssignment> MapPositionAssignments { get; }
+	DbSet<MapTextAnnotation> MapTextAnnotations { get; }
 	DbSet<UserSecondaryTeamRole> UserSecondaryTeamRoles { get; }
 	DbSet<Tactic> Tactics { get; }
 	DbSet<TacticPoint> TacticPoints { get; }

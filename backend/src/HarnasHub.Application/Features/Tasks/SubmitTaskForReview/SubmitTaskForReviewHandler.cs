@@ -5,15 +5,15 @@ using HarnasHub.Core.Enums;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
-namespace HarnasHub.Application.Features.Tasks.CompleteTask;
+namespace HarnasHub.Application.Features.Tasks.SubmitTaskForReview;
 
-/// <summary>Handles <see cref="CompleteTaskCommand"/>.</summary>
-public class CompleteTaskHandler(IApplicationDbContext dbContext, ICurrentUserService currentUser, IRealtimeNotifier realtimeNotifier)
-	: IRequestHandler<CompleteTaskCommand, ErrorOr<Success>>
+/// <summary>Handles <see cref="SubmitTaskForReviewCommand"/>.</summary>
+public class SubmitTaskForReviewHandler(IApplicationDbContext dbContext, ICurrentUserService currentUser, IRealtimeNotifier realtimeNotifier)
+	: IRequestHandler<SubmitTaskForReviewCommand, ErrorOr<Success>>
 {
 	#region Public Methods
 
-	public async Task<ErrorOr<Success>> Handle(CompleteTaskCommand request, CancellationToken cancellationToken)
+	public async Task<ErrorOr<Success>> Handle(SubmitTaskForReviewCommand request, CancellationToken cancellationToken)
 	{
 		var task = await dbContext.Tasks.FirstOrDefaultAsync(t => t.Id == request.TaskId, cancellationToken);
 
@@ -27,7 +27,12 @@ public class CompleteTaskHandler(IApplicationDbContext dbContext, ICurrentUserSe
 			return TaskErrors.NotYourTask;
 		}
 
-		task.Status = TaskItemStatus.Done;
+		if (task.Status is not (TaskItemStatus.Todo or TaskItemStatus.NeedsRework))
+		{
+			return TaskErrors.NotSubmittable;
+		}
+
+		task.Status = TaskItemStatus.PendingReview;
 		await dbContext.SaveChangesAsync(cancellationToken);
 		await realtimeNotifier.NotifyAsync("tasks", cancellationToken);
 		await realtimeNotifier.NotifyAsync("dashboard", cancellationToken);

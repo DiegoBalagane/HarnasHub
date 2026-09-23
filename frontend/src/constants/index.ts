@@ -45,8 +45,12 @@ export const API_ENDPOINTS = {
   },
   tasks: {
     mine: '/api/tasks/mine',
+    all: '/api/tasks/all',
     assign: '/api/tasks',
-    complete: (taskId: string) => `/api/tasks/${taskId}/complete`,
+    byId: (taskId: string) => `/api/tasks/${taskId}`,
+    submit: (taskId: string) => `/api/tasks/${taskId}/submit`,
+    approve: (taskId: string) => `/api/tasks/${taskId}/approve`,
+    reject: (taskId: string) => `/api/tasks/${taskId}/reject`,
   },
   results: '/api/results',
   resultById: (matchResultId: string) => `/api/results/${matchResultId}`,
@@ -62,6 +66,9 @@ export const API_ENDPOINTS = {
     positions: (mapName: string, side: string) => `/api/map-strategy/${mapName}/${side}`,
     set: '/api/map-strategy',
     remove: (positionId: string) => `/api/map-strategy/${positionId}`,
+    textAnnotations: (mapName: string, side: string) => `/api/map-strategy/${mapName}/${side}/text-annotations`,
+    addTextAnnotation: '/api/map-strategy/text-annotations',
+    textAnnotationById: (annotationId: string) => `/api/map-strategy/text-annotations/${annotationId}`,
   },
   tactics: {
     list: '/api/tactics',

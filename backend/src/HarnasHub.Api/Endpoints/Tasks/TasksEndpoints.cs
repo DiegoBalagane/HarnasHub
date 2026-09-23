@@ -1,7 +1,11 @@
 using HarnasHub.Api.Common;
+using HarnasHub.Application.Features.Tasks.ApproveTask;
 using HarnasHub.Application.Features.Tasks.AssignTask;
-using HarnasHub.Application.Features.Tasks.CompleteTask;
+using HarnasHub.Application.Features.Tasks.DeleteTask;
+using HarnasHub.Application.Features.Tasks.GetAllTasks;
 using HarnasHub.Application.Features.Tasks.GetMyTasks;
+using HarnasHub.Application.Features.Tasks.RejectTask;
+using HarnasHub.Application.Features.Tasks.SubmitTaskForReview;
 using MediatR;
 
 namespace HarnasHub.Api.Endpoints.Tasks;
@@ -21,6 +25,12 @@ public class TasksEndpoints : IEndpoint
 			return result.Match(success => Results.Ok(success), errors => errors.ToProblemResult());
 		});
 
+		group.MapGet("/all", async (ISender sender, CancellationToken cancellationToken) =>
+		{
+			var result = await sender.Send(new GetAllTasksQuery(), cancellationToken);
+			return result.Match(success => Results.Ok(success), errors => errors.ToProblemResult());
+		}).RequireAuthorization(policy => policy.RequireRole("Coach", "Manager"));
+
 		group.MapPost("/", async (AssignTaskRequest request, ISender sender, CancellationToken cancellationToken) =>
 		{
 			var command = new AssignTaskCommand(
@@ -29,11 +39,29 @@ public class TasksEndpoints : IEndpoint
 			return result.Match(success => Results.Ok(success), errors => errors.ToProblemResult());
 		}).RequireAuthorization(policy => policy.RequireRole("Coach", "Manager"));
 
-		group.MapPost("/{taskId:guid}/complete", async (Guid taskId, ISender sender, CancellationToken cancellationToken) =>
+		group.MapDelete("/{taskId:guid}", async (Guid taskId, ISender sender, CancellationToken cancellationToken) =>
 		{
-			var result = await sender.Send(new CompleteTaskCommand(taskId), cancellationToken);
+			var result = await sender.Send(new DeleteTaskCommand(taskId), cancellationToken);
+			return result.Match(success => Results.NoContent(), errors => errors.ToProblemResult());
+		}).RequireAuthorization(policy => policy.RequireRole("Coach", "Manager"));
+
+		group.MapPost("/{taskId:guid}/submit", async (Guid taskId, ISender sender, CancellationToken cancellationToken) =>
+		{
+			var result = await sender.Send(new SubmitTaskForReviewCommand(taskId), cancellationToken);
 			return result.Match(success => Results.NoContent(), errors => errors.ToProblemResult());
 		});
+
+		group.MapPost("/{taskId:guid}/approve", async (Guid taskId, ISender sender, CancellationToken cancellationToken) =>
+		{
+			var result = await sender.Send(new ApproveTaskCommand(taskId), cancellationToken);
+			return result.Match(success => Results.NoContent(), errors => errors.ToProblemResult());
+		}).RequireAuthorization(policy => policy.RequireRole("Coach", "Manager"));
+
+		group.MapPost("/{taskId:guid}/reject", async (Guid taskId, ISender sender, CancellationToken cancellationToken) =>
+		{
+			var result = await sender.Send(new RejectTaskCommand(taskId), cancellationToken);
+			return result.Match(success => Results.NoContent(), errors => errors.ToProblemResult());
+		}).RequireAuthorization(policy => policy.RequireRole("Coach", "Manager"));
 	}
 
 	#endregion

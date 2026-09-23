@@ -34,6 +34,36 @@ export interface SetPlayerPositionPayload {
   note?: string | null
 }
 
+/** A free-floating text label on the radar — not tied to a player, e.g. a callout note. */
+export interface MapTextAnnotation {
+  id: string
+  text: string
+  /** Hex color, e.g. "#ffffff". */
+  color: string
+  fontSizePx: number
+  x: number
+  y: number
+}
+
+export interface AddTextAnnotationPayload {
+  mapName: MapName
+  side: MapSide
+  text: string
+  color: string
+  fontSizePx: number
+  x: number
+  y: number
+}
+
+export interface UpdateTextAnnotationPayload {
+  annotationId: string
+  text: string
+  color: string
+  fontSizePx: number
+  x: number
+  y: number
+}
+
 export const mapStrategyApi = {
   getPositions: (mapName: MapName, side: MapSide) =>
     apiClient.get<MapPosition[]>(API_ENDPOINTS.mapStrategy.positions(mapName, side)),
@@ -41,4 +71,12 @@ export const mapStrategyApi = {
     apiClient.post<MapPosition>(API_ENDPOINTS.mapStrategy.set, payload),
   removePosition: (positionId: string) =>
     apiClient.delete<void>(API_ENDPOINTS.mapStrategy.remove(positionId)),
+  getTextAnnotations: (mapName: MapName, side: MapSide) =>
+    apiClient.get<MapTextAnnotation[]>(API_ENDPOINTS.mapStrategy.textAnnotations(mapName, side)),
+  addTextAnnotation: (payload: AddTextAnnotationPayload) =>
+    apiClient.post<MapTextAnnotation>(API_ENDPOINTS.mapStrategy.addTextAnnotation, payload),
+  updateTextAnnotation: ({ annotationId, ...payload }: UpdateTextAnnotationPayload) =>
+    apiClient.patch<MapTextAnnotation>(API_ENDPOINTS.mapStrategy.textAnnotationById(annotationId), payload),
+  removeTextAnnotation: (annotationId: string) =>
+    apiClient.delete<void>(API_ENDPOINTS.mapStrategy.textAnnotationById(annotationId)),
 }

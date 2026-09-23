@@ -20,4 +20,12 @@ public static class TaskErrors
 	public static Error NotYourTask => Error.Forbidden(
 		"Tasks.NotYourTask",
 		"To zadanie nie jest przypisane do Ciebie.");
+
+	public static Error NotSubmittable => Error.Validation(
+		"Tasks.NotSubmittable",
+		"To zadanie nie oczekuje na zgłoszenie do weryfikacji.");
+
+	public static Error NotPendingReview => Error.Validation(
+		"Tasks.NotPendingReview",
+		"To zadanie nie oczekuje na weryfikację trenera.");
 }

@@ -4,5 +4,7 @@ namespace HarnasHub.Core.Enums;
 public enum TaskItemStatus
 {
 	Todo = 0,
-	Done = 1
+	Done = 1,
+	PendingReview = 2,
+	NeedsRework = 3
 }

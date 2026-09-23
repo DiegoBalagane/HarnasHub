@@ -40,7 +40,9 @@ public class GetDashboardSummaryHandler(IApplicationDbContext dbContext, ICurren
 		var userId = currentUser.UserId;
 
 		var openTaskCount = await dbContext.Tasks
-			.CountAsync(t => t.AssignedToUserId == userId && t.Status == TaskItemStatus.Todo, cancellationToken);
+			.CountAsync(
+				t => t.AssignedToUserId == userId && (t.Status == TaskItemStatus.Todo || t.Status == TaskItemStatus.NeedsRework),
+				cancellationToken);
 
 		var today = DateOnly.FromDateTime(now);
 		var tomorrow = today.AddDays(1);

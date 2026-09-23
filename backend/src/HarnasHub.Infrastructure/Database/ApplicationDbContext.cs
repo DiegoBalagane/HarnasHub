@@ -22,6 +22,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
 	public DbSet<PlayerAvailabilityDay> PlayerAvailabilityDays => Set<PlayerAvailabilityDay>();
 	public DbSet<Vacation> Vacations => Set<Vacation>();
 	public DbSet<MapPositionAssignment> MapPositionAssignments => Set<MapPositionAssignment>();
+	public DbSet<MapTextAnnotation> MapTextAnnotations => Set<MapTextAnnotation>();
 	public DbSet<UserSecondaryTeamRole> UserSecondaryTeamRoles => Set<UserSecondaryTeamRole>();
 	public DbSet<Tactic> Tactics => Set<Tactic>();
 	public DbSet<TacticPoint> TacticPoints => Set<TacticPoint>();

@@ -1,6 +1,7 @@
 using HarnasHub.Api.Common;
 using HarnasHub.Application.Features.TrainingMaterials.AddMaterial;
 using HarnasHub.Application.Features.TrainingMaterials.GetMaterials;
+using HarnasHub.Core.Enums;
 using MediatR;
 
 namespace HarnasHub.Api.Endpoints.TrainingMaterials;
@@ -33,4 +34,4 @@ public class TrainingMaterialsEndpoints : IEndpoint
 }
 
 /// <summary>Request body for POST /api/training-materials.</summary>
-public record AddMaterialRequest(string Title, string Url, string? Category, string? Description);
+public record AddMaterialRequest(string Title, string Url, MaterialCategory? Category, string? Description);

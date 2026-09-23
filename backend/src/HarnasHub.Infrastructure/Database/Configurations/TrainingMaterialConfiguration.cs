@@ -16,7 +16,7 @@ public class TrainingMaterialConfiguration : IEntityTypeConfiguration<TrainingMa
 
 		builder.Property(m => m.Title).IsRequired().HasMaxLength(150);
 		builder.Property(m => m.Url).IsRequired().HasMaxLength(500);
-		builder.Property(m => m.Category).HasMaxLength(50);
+		builder.Property(m => m.Category).HasConversion<string>().HasMaxLength(20);
 	}
 
 	#endregion
