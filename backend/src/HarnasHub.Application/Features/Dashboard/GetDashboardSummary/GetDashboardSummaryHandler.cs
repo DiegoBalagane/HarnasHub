@@ -76,11 +76,31 @@ public class GetDashboardSummaryHandler(IApplicationDbContext dbContext, ICurren
 		var vacationsByUser = vacations.ToLookup(vacation => vacation.UserId);
 		var events = await GetEventsAsync(today, tomorrow, cancellationToken);
 
+		var recentRatings = await dbContext.PlayerMatchStats
+			.Where(stat => stat.UserId == userId)
+			.Join(dbContext.MatchResults, stat => stat.MatchResultId, match => match.Id, (stat, match) => new { stat.Rating, match.PlayedAtUtc })
+			.OrderByDescending(x => x.PlayedAtUtc)
+			.Take(5)
+			.Select(x => x.Rating)
+			.ToListAsync(cancellationToken);
+
+		var myRecentPerformance = recentRatings.Count == 0
+			? null
+			: new MyRecentPerformanceDto(Math.Round(recentRatings.Average(), 2), recentRatings.Count);
+
+		var lastMatch = await dbContext.MatchResults
+			.OrderByDescending(match => match.PlayedAtUtc)
+			.Select(match => new LastMatchResultDto(
+				match.Id, match.Opponent, match.OurScore, match.OpponentScore, match.OurScore > match.OpponentScore, match.PlayedAtUtc, match.MapName))
+			.FirstOrDefaultAsync(cancellationToken);
+
 		return new DashboardSummaryDto(
 			nextEvent,
 			openTaskCount,
 			BuildDay(today, members, declaredByUserAndDate, vacationsByUser, events),
-			BuildDay(tomorrow, members, declaredByUserAndDate, vacationsByUser, events));
+			BuildDay(tomorrow, members, declaredByUserAndDate, vacationsByUser, events),
+			myRecentPerformance,
+			lastMatch);
 	}
 
 	#endregion
