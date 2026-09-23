@@ -70,6 +70,19 @@ public class S3FileStorage : IFileStorage
 		return Task.FromResult(new PresignedUpload(url, objectKey));
 	}
 
+	public Task<string> CreatePresignedDownloadUrlAsync(string objectKey, TimeSpan expiry, CancellationToken cancellationToken)
+	{
+		var request = new GetPreSignedUrlRequest
+		{
+			BucketName = _settings.BucketName,
+			Key = objectKey,
+			Verb = HttpVerb.GET,
+			Expires = DateTime.UtcNow.Add(expiry)
+		};
+
+		return Task.FromResult(_client.Value.GetPreSignedURL(request));
+	}
+
 	public async Task<Stream> OpenReadAsync(string objectKey, CancellationToken cancellationToken)
 	{
 		var response = await _client.Value.GetObjectAsync(_settings.BucketName, objectKey, cancellationToken);

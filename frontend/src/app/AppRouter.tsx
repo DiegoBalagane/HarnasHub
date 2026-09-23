@@ -15,6 +15,7 @@ import { RosterPage } from './routes/RosterPage'
 import { SettingsPage } from './routes/SettingsPage'
 import { StatsPage } from './routes/StatsPage'
 import { TacticsPage } from './routes/TacticsPage'
+import { AnalysisBoardsPage } from './routes/AnalysisBoardsPage'
 import { TasksPage } from './routes/TasksPage'
 
 export function AppRouter() {
@@ -85,6 +86,14 @@ export function AppRouter() {
           element={
             <ProtectedRoute>
               <TacticsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/analysis-boards"
+          element={
+            <ProtectedRoute>
+              <AnalysisBoardsPage />
             </ProtectedRoute>
           }
         />

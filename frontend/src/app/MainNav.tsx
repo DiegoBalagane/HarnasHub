@@ -37,6 +37,7 @@ const navGroups: NavGroup[] = [
       { to: '/nades', label: 'Granaty' },
       { to: '/map-strategy', label: 'Pozycje' },
       { to: '/tactics', label: 'Taktyki' },
+      { to: '/analysis-boards', label: 'Analizy' },
       { to: '/materials', label: 'Materiały' },
     ],
   },
