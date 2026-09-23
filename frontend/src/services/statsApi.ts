@@ -1,5 +1,6 @@
 import { API_ENDPOINTS } from '../constants'
 import { apiClient } from './apiClient'
+import type { MatchCategory } from './resultsApi'
 
 export type MapSide = 'CT' | 'T'
 
@@ -73,6 +74,21 @@ export interface TeamTrendPoint {
   winRatePercentage: number
 }
 
+/** One player's stats averaged across every match counted in the current filter — for comparing the team against itself. */
+export interface PlayerLeaderboardEntry {
+  userId: string
+  displayName: string
+  inGameNickname: string | null
+  matchesPlayed: number
+  avgKills: number
+  avgDeaths: number
+  avgAssists: number
+  avgAdr: number
+  avgRating: number
+  avgHeadshotPercentage: number
+  avgKastPercentage: number | null
+}
+
 export const statsApi = {
   getMatchStats: (matchResultId: string) =>
     apiClient.get<PlayerMatchStat[]>(API_ENDPOINTS.matchStats(matchResultId)),
@@ -80,4 +96,6 @@ export const statsApi = {
     apiClient.post<PlayerMatchStat>(API_ENDPOINTS.matchStats(matchResultId), payload),
   getMyStatsHistory: () => apiClient.get<PlayerStatHistoryEntry[]>(API_ENDPOINTS.statsMine),
   getTeamTrend: () => apiClient.get<TeamTrendPoint[]>(API_ENDPOINTS.teamTrend),
+  getLeaderboard: (category?: MatchCategory) =>
+    apiClient.get<PlayerLeaderboardEntry[]>(API_ENDPOINTS.statsLeaderboard(category)),
 }

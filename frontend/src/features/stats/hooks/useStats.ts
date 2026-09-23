@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import type { MatchCategory } from '../../../services/resultsApi'
 import { statsApi, type AddPlayerStatPayload } from '../../../services/statsApi'
 
 /** Fetches every player's stat line for one match. */
@@ -35,5 +36,13 @@ export function useTeamTrend() {
   return useQuery({
     queryKey: ['stats', 'team-trend'],
     queryFn: statsApi.getTeamTrend,
+  })
+}
+
+/** Fetches every roster player's stats averaged across their matches, optionally narrowed to one match category. */
+export function usePlayerLeaderboard(category?: MatchCategory) {
+  return useQuery({
+    queryKey: ['stats', 'leaderboard', category ?? 'all'],
+    queryFn: () => statsApi.getLeaderboard(category),
   })
 }
