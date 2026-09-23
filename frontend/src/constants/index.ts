@@ -78,6 +78,8 @@ export const API_ENDPOINTS = {
   matchStats: (matchResultId: string) => `/api/matches/${matchResultId}/stats`,
   statsMine: '/api/stats/mine',
   teamTrend: '/api/stats/team-trend',
+  statsLeaderboard: (category?: string) =>
+    category ? `/api/stats/leaderboard?category=${category}` : '/api/stats/leaderboard',
   opponents: '/api/opponents',
 } as const
 

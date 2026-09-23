@@ -1,4 +1,5 @@
 import { MyStatsHistory } from '../../features/stats/components/MyStatsHistory'
+import { PlayerLeaderboard } from '../../features/stats/components/PlayerLeaderboard'
 import { TeamTrendChart } from '../../features/stats/components/TeamTrendChart'
 
 export function StatsPage() {
@@ -6,6 +7,7 @@ export function StatsPage() {
     <>
       <h1 className="text-2xl font-semibold">Rozwój</h1>
       <TeamTrendChart />
+      <PlayerLeaderboard />
       <MyStatsHistory />
     </>
   )
