@@ -85,9 +85,25 @@ export interface PresignedDemoUpload {
   objectKey: string
 }
 
+/** Edits a logged result's metadata — never touches its imported player stat lines. */
+export interface UpdateResultPayload {
+  opponent: string
+  ourScore: number
+  opponentScore: number
+  mapName?: string | null
+  demoUrl?: string | null
+  notes?: string | null
+  playedAtUtc: string
+  category: MatchCategory
+  tournamentId?: string | null
+  leagueId?: string | null
+}
+
 export const resultsApi = {
   getResults: () => apiClient.get<MatchResult[]>(API_ENDPOINTS.results),
   addResult: (payload: AddResultPayload) => apiClient.post<MatchResult>(API_ENDPOINTS.results, payload),
+  updateResult: (matchResultId: string, payload: UpdateResultPayload) =>
+    apiClient.patch<MatchResult>(API_ENDPOINTS.resultById(matchResultId), payload),
   deleteResult: (matchResultId: string) => apiClient.delete<void>(API_ENDPOINTS.resultById(matchResultId)),
   analyzeDemo: (demoFile: File) => {
     const formData = new FormData()
