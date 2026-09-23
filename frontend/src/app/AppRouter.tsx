@@ -16,6 +16,7 @@ import { SettingsPage } from './routes/SettingsPage'
 import { StatsPage } from './routes/StatsPage'
 import { TacticsPage } from './routes/TacticsPage'
 import { AnalysisBoardsPage } from './routes/AnalysisBoardsPage'
+import { AttendancePage } from './routes/AttendancePage'
 import { TasksPage } from './routes/TasksPage'
 
 export function AppRouter() {
@@ -126,6 +127,14 @@ export function AppRouter() {
           element={
             <ProtectedRoute>
               <RosterPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/attendance"
+          element={
+            <ProtectedRoute>
+              <AttendancePage />
             </ProtectedRoute>
           }
         />
