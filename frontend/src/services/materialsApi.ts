@@ -1,18 +1,20 @@
 import { API_ENDPOINTS } from '../constants'
 import { apiClient } from './apiClient'
 
+export type MaterialCategory = 'Grenades' | 'Tactics' | 'Aim' | 'Positioning' | 'VodReview' | 'Communication' | 'Other'
+
 export interface TrainingMaterial {
   id: string
   title: string
   url: string
-  category: string | null
+  category: MaterialCategory | null
   description: string | null
 }
 
 export interface AddMaterialPayload {
   title: string
   url: string
-  category?: string
+  category?: MaterialCategory
   description?: string
 }
 

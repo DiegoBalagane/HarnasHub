@@ -1,5 +1,6 @@
 using ErrorOr;
 using HarnasHub.Application.Features.TrainingMaterials.Shared;
+using HarnasHub.Core.Enums;
 using MediatR;
 
 namespace HarnasHub.Application.Features.TrainingMaterials.AddMaterial;
@@ -8,5 +9,5 @@ namespace HarnasHub.Application.Features.TrainingMaterials.AddMaterial;
 public record AddMaterialCommand(
 	string Title,
 	string Url,
-	string? Category,
+	MaterialCategory? Category,
 	string? Description) : IRequest<ErrorOr<TrainingMaterialDto>>;

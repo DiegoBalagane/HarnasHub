@@ -1,11 +1,12 @@
-import { useMyTasks, useCompleteTask } from '../hooks/useTasks'
+import { taskStatusColors, taskStatusLabels } from '../labels'
+import { useMyTasks, useSubmitTask } from '../hooks/useTasks'
 
 const dateFormatter = new Intl.DateTimeFormat('pl-PL', { dateStyle: 'medium' })
 
-/** Lists the current user's tasks with a button to mark open ones done. */
+/** Lists the current user's own tasks, with a button to submit open/rework ones for the coach's review. */
 export function TaskList() {
   const { data: tasks, isLoading, isError } = useMyTasks()
-  const completeTask = useCompleteTask()
+  const submitTask = useSubmitTask()
 
   if (isLoading) {
     return <p className="text-neutral-400">Ładowanie zadań…</p>
@@ -32,6 +33,7 @@ export function TaskList() {
             >
               {task.title}
             </p>
+            <p className={`text-xs ${taskStatusColors[task.status]}`}>{taskStatusLabels[task.status]}</p>
             {task.description && <p className="text-sm text-neutral-400">{task.description}</p>}
             {task.trainingMaterialUrl && (
               <a
@@ -50,13 +52,13 @@ export function TaskList() {
             )}
           </div>
 
-          {task.status === 'Todo' && (
+          {(task.status === 'Todo' || task.status === 'NeedsRework') && (
             <button
-              onClick={() => completeTask.mutate(task.id)}
-              disabled={completeTask.isPending}
+              onClick={() => submitTask.mutate(task.id)}
+              disabled={submitTask.isPending}
               className="rounded-md border border-neutral-700 px-3 py-1 text-xs hover:border-neutral-500 disabled:opacity-50"
             >
-              Zrobione
+              Zrealizowane
             </button>
           )}
         </li>

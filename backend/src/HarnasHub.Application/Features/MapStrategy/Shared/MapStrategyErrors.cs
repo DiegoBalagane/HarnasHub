@@ -12,4 +12,8 @@ public static class MapStrategyErrors
 	public static Error PositionNotFound => Error.NotFound(
 		"MapStrategy.PositionNotFound",
 		"Nie znaleziono pozycji na mapie.");
+
+	public static Error AnnotationNotFound => Error.NotFound(
+		"MapStrategy.AnnotationNotFound",
+		"Nie znaleziono notatki na mapie.");
 }

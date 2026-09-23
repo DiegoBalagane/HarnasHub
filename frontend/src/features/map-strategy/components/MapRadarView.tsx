@@ -3,10 +3,11 @@ import type { MapPosition, MapSide } from '../../../services/mapStrategyApi'
 import type { MapName } from '../../../services/nadesApi'
 import { useIsCoachOrManager } from '../../auth/hooks/useIsCoachOrManager'
 import { mapNames } from '../../nades/labels'
-import { useMapPositions } from '../hooks/useMapStrategy'
+import { useMapPositions, useMapTextAnnotations } from '../hooks/useMapStrategy'
 import { mapSideLabels, mapSides } from '../labels'
 import { teamRoleLabels } from '../../roster/labels'
 import { AddPositionControl } from './AddPositionControl'
+import { AddTextAnnotationControl } from './AddTextAnnotationControl'
 import { MapRadar } from './MapRadar'
 
 /** Per-map starting-position board: pick a map and side, then read (or, as Coach/Manager, arrange) the team's setup. */
@@ -14,6 +15,7 @@ export function MapRadarView() {
   const [mapName, setMapName] = useState<MapName>('Mirage')
   const [side, setSide] = useState<MapSide>('CT')
   const { data: positions, isLoading, isError } = useMapPositions(mapName, side)
+  const { data: annotations } = useMapTextAnnotations(mapName, side)
   const canEdit = useIsCoachOrManager()
 
   return (
@@ -48,11 +50,14 @@ export function MapRadarView() {
       </div>
 
       {canEdit && (
-        <AddPositionControl
-          mapName={mapName}
-          side={side}
-          placedUserIds={(positions ?? []).map((position) => position.userId)}
-        />
+        <div className="flex flex-wrap items-center gap-2">
+          <AddPositionControl
+            mapName={mapName}
+            side={side}
+            placedUserIds={(positions ?? []).map((position) => position.userId)}
+          />
+          <AddTextAnnotationControl mapName={mapName} side={side} />
+        </div>
       )}
 
       {isLoading && <p className="text-neutral-400">Ładowanie…</p>}
@@ -60,14 +65,20 @@ export function MapRadarView() {
 
       {positions && (
         <>
-          <MapRadar mapName={mapName} side={side} positions={positions} canEdit={canEdit} />
+          <MapRadar
+            mapName={mapName}
+            side={side}
+            positions={positions}
+            annotations={annotations ?? []}
+            canEdit={canEdit}
+          />
 
           <p className="text-xs text-neutral-500">
             {positions.length === 0
               ? 'Nikt nie ma jeszcze przypisanej pozycji na tej mapie i stronie.'
               : canEdit
-                ? 'Przeciągnij pinezkę, aby zmienić pozycję, kliknij, aby edytować notatkę.'
-                : 'Najedź na pinezkę, aby zobaczyć zawodnika i jego rolę.'}
+                ? 'Przeciągnij pinezkę lub notatkę, aby zmienić pozycję, kliknij, aby edytować. Kółkiem myszy przybliżysz mapę.'
+                : 'Najedź na pinezkę, aby zobaczyć zawodnika i jego rolę. Kółkiem myszy przybliżysz mapę.'}
           </p>
 
           <PositionNotesList positions={positions} />

@@ -11,3 +11,17 @@ public record TaskItemDto(
 	Guid? TrainingMaterialId,
 	string? TrainingMaterialTitle,
 	string? TrainingMaterialUrl);
+
+/// <summary>A task with its assignee's name attached, for the coach/manager's all-players overview.</summary>
+public record TaskItemWithAssigneeDto(
+	Guid Id,
+	string Title,
+	string? Description,
+	string Status,
+	DateTime? DueAtUtc,
+	DateTime CreatedAtUtc,
+	Guid? TrainingMaterialId,
+	string? TrainingMaterialTitle,
+	string? TrainingMaterialUrl,
+	Guid AssignedToUserId,
+	string AssignedToDisplayName);

@@ -1,5 +1,6 @@
 using FluentValidation.TestHelper;
 using HarnasHub.Application.Features.TrainingMaterials.AddMaterial;
+using HarnasHub.Core.Enums;
 using Xunit;
 
 namespace HarnasHub.Tests.Application.Features.TrainingMaterials.AddMaterial;
@@ -17,7 +18,7 @@ public class AddMaterialCommandValidatorTests
 	[Fact]
 	public void Should_have_error_when_url_is_malformed()
 	{
-		var command = new AddMaterialCommand("Analiza VOD", "not-a-url", "VOD Review", null);
+		var command = new AddMaterialCommand("Analiza VOD", "not-a-url", MaterialCategory.VodReview, null);
 
 		var result = _validator.TestValidate(command);
 
@@ -27,7 +28,7 @@ public class AddMaterialCommandValidatorTests
 	[Fact]
 	public void Should_not_have_errors_for_a_valid_command()
 	{
-		var command = new AddMaterialCommand("Analiza VOD", "https://youtube.com/watch?v=abc", "VOD Review", "Rozbiór ostatniego meczu");
+		var command = new AddMaterialCommand("Analiza VOD", "https://youtube.com/watch?v=abc", MaterialCategory.VodReview, "Rozbiór ostatniego meczu");
 
 		var result = _validator.TestValidate(command);
 

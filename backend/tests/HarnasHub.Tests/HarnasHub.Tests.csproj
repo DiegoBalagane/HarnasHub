@@ -23,6 +23,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\HarnasHub.Application\HarnasHub.Application.csproj" />
     <ProjectReference Include="..\..\src\HarnasHub.Core\HarnasHub.Core.csproj" />
+    <ProjectReference Include="..\..\src\HarnasHub.Infrastructure\HarnasHub.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>
