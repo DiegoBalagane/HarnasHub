@@ -1,7 +1,7 @@
 import { API_ENDPOINTS } from '../constants'
 import { apiClient } from './apiClient'
 
-export type TaskStatus = 'Todo' | 'Done'
+export type TaskStatus = 'Todo' | 'PendingReview' | 'Done' | 'NeedsRework'
 
 export interface TeamTask {
   id: string
@@ -15,6 +15,12 @@ export interface TeamTask {
   trainingMaterialUrl: string | null
 }
 
+/** A task as seen by a coach/manager, with the assignee's resolved nickname attached. */
+export interface TeamTaskWithAssignee extends TeamTask {
+  assignedToUserId: string
+  assignedToDisplayName: string
+}
+
 export interface AssignTaskPayload {
   title: string
   description?: string
@@ -25,6 +31,13 @@ export interface AssignTaskPayload {
 
 export const tasksApi = {
   getMyTasks: () => apiClient.get<TeamTask[]>(API_ENDPOINTS.tasks.mine),
+  getAllTasks: () => apiClient.get<TeamTaskWithAssignee[]>(API_ENDPOINTS.tasks.all),
   assignTask: (payload: AssignTaskPayload) => apiClient.post<TeamTask>(API_ENDPOINTS.tasks.assign, payload),
-  completeTask: (taskId: string) => apiClient.post<void>(API_ENDPOINTS.tasks.complete(taskId), {}),
+  /** Player marks a task (Todo or NeedsRework) as ready for the coach's review. */
+  submitTask: (taskId: string) => apiClient.post<void>(API_ENDPOINTS.tasks.submit(taskId), {}),
+  /** Coach/Manager confirms a PendingReview task as done. */
+  approveTask: (taskId: string) => apiClient.post<void>(API_ENDPOINTS.tasks.approve(taskId), {}),
+  /** Coach/Manager sends a PendingReview task back for rework. */
+  rejectTask: (taskId: string) => apiClient.post<void>(API_ENDPOINTS.tasks.reject(taskId), {}),
+  deleteTask: (taskId: string) => apiClient.delete<void>(API_ENDPOINTS.tasks.byId(taskId)),
 }

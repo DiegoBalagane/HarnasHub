@@ -1,11 +1,13 @@
 import { useState } from 'react'
+import type { MaterialCategory } from '../../../services/materialsApi'
+import { materialCategories, materialCategoryLabels } from '../labels'
 import { useAddMaterial } from '../hooks/useMaterials'
 
 /** Coach/Manager-only form for adding a training material link. */
 export function AddMaterialForm() {
   const [title, setTitle] = useState('')
   const [url, setUrl] = useState('')
-  const [category, setCategory] = useState('')
+  const [category, setCategory] = useState<MaterialCategory | ''>('')
   const [description, setDescription] = useState('')
   const addMaterial = useAddMaterial()
 
@@ -39,12 +41,18 @@ export function AddMaterialForm() {
           onChange={(event) => setTitle(event.target.value)}
           className="flex-1 rounded-md border border-neutral-800 bg-neutral-900 px-3 py-2 text-sm outline-none focus:border-neutral-500"
         />
-        <input
-          placeholder="Kategoria (opcjonalnie)"
+        <select
           value={category}
-          onChange={(event) => setCategory(event.target.value)}
+          onChange={(event) => setCategory(event.target.value as MaterialCategory | '')}
           className="w-48 rounded-md border border-neutral-800 bg-neutral-900 px-3 py-2 text-sm outline-none focus:border-neutral-500"
-        />
+        >
+          <option value="">Kategoria (opcjonalnie)</option>
+          {materialCategories.map((value) => (
+            <option key={value} value={value}>
+              {materialCategoryLabels[value]}
+            </option>
+          ))}
+        </select>
       </div>
 
       <input

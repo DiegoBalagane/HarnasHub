@@ -1,3 +1,4 @@
+import { materialCategoryLabels } from '../labels'
 import { useMaterials } from '../hooks/useMaterials'
 
 /** Lists training materials as clickable links, grouped visually by category. */
@@ -28,7 +29,9 @@ export function MaterialList() {
           >
             {material.title}
           </a>
-          {material.category && <p className="text-sm text-neutral-500">{material.category}</p>}
+          {material.category && (
+            <p className="text-sm text-neutral-500">{materialCategoryLabels[material.category]}</p>
+          )}
           {material.description && <p className="mt-1 text-sm text-neutral-400">{material.description}</p>}
         </li>
       ))}
