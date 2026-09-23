@@ -76,6 +76,11 @@ export const API_ENDPOINTS = {
     list: '/api/tactics',
     byId: (tacticId: string) => `/api/tactics/${tacticId}`,
   },
+  analysisBoards: {
+    list: (mapName?: string) => (mapName ? `/api/analysis-boards?mapName=${mapName}` : '/api/analysis-boards'),
+    byId: (boardId: string) => `/api/analysis-boards/${boardId}`,
+    presignImageUpload: '/api/analysis-boards/presign-image-upload',
+  },
   trainingMaterials: '/api/training-materials',
   matchStats: (matchResultId: string) => `/api/matches/${matchResultId}/stats`,
   statsMine: '/api/stats/mine',
