@@ -20,3 +20,16 @@ export function useCreateTournament() {
     },
   })
 }
+
+/** Deletes a tournament and refreshes the list and any results grouped under it. */
+export function useDeleteTournament() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (tournamentId: string) => tournamentsApi.deleteTournament(tournamentId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['tournaments'] })
+      queryClient.invalidateQueries({ queryKey: ['results'] })
+    },
+  })
+}

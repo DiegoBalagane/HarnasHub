@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { tasksApi, type AssignTaskPayload } from '../../../services/tasksApi'
+import { tasksApi, type AssignTaskPayload, type UpdateTaskPayload } from '../../../services/tasksApi'
 
 /** Fetches the current user's tasks, open ones first. */
 export function useMyTasks() {
@@ -26,6 +26,19 @@ export function useAssignTask() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tasks'] })
       queryClient.invalidateQueries({ queryKey: ['dashboard'] })
+    },
+  })
+}
+
+/** Coach/Manager: edits a task's content (title/description/due date/material) and refreshes task lists. */
+export function useUpdateTask() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ taskId, payload }: { taskId: string; payload: UpdateTaskPayload }) =>
+      tasksApi.updateTask(taskId, payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['tasks'] })
     },
   })
 }

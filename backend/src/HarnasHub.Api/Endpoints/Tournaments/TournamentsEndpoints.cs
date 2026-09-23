@@ -1,5 +1,6 @@
 using HarnasHub.Api.Common;
 using HarnasHub.Application.Features.Tournaments.CreateTournament;
+using HarnasHub.Application.Features.Tournaments.DeleteTournament;
 using HarnasHub.Application.Features.Tournaments.GetTournaments;
 using MediatR;
 
@@ -24,6 +25,12 @@ public class TournamentsEndpoints : IEndpoint
 		{
 			var result = await sender.Send(new CreateTournamentCommand(request.Name), cancellationToken);
 			return result.Match(success => Results.Ok(success), errors => errors.ToProblemResult());
+		}).RequireAuthorization(policy => policy.RequireRole("Coach", "Manager"));
+
+		group.MapDelete("/{tournamentId:guid}", async (Guid tournamentId, ISender sender, CancellationToken cancellationToken) =>
+		{
+			var result = await sender.Send(new DeleteTournamentCommand(tournamentId), cancellationToken);
+			return result.Match(success => Results.NoContent(), errors => errors.ToProblemResult());
 		}).RequireAuthorization(policy => policy.RequireRole("Coach", "Manager"));
 	}
 

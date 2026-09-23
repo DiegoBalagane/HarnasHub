@@ -20,3 +20,16 @@ export function useCreateLeague() {
     },
   })
 }
+
+/** Deletes a league season and refreshes the list and any results grouped under it. */
+export function useDeleteLeague() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (leagueId: string) => leaguesApi.deleteLeague(leagueId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['leagues'] })
+      queryClient.invalidateQueries({ queryKey: ['results'] })
+    },
+  })
+}

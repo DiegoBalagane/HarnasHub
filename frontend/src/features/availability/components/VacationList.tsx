@@ -7,7 +7,8 @@ const dateFormatter = new Intl.DateTimeFormat('pl-PL', { dateStyle: 'medium' })
 const inputClass =
   'rounded-md border border-neutral-800 bg-neutral-900 px-3 py-2 text-sm outline-none focus:border-neutral-500'
 
-/** Lists the signed-in user's own time-off ranges, with inline edit and delete actions. */
+/** Lists the signed-in user's own upcoming/ongoing time-off ranges (past ones are hidden — nothing to do with
+ * them), with inline edit and delete actions. */
 export function VacationList() {
   const { data: vacations, isLoading, isError } = useVacations()
   const deleteVacation = useDeleteVacation()
@@ -21,13 +22,16 @@ export function VacationList() {
     return <p className="text-red-400">Nie udało się pobrać urlopów.</p>
   }
 
-  if (vacations === undefined || vacations.length === 0) {
+  const today = new Date().toISOString().slice(0, 10)
+  const upcoming = (vacations ?? []).filter((vacation) => vacation.endDate >= today)
+
+  if (upcoming.length === 0) {
     return <p className="text-neutral-400">Brak zaplanowanych urlopów.</p>
   }
 
   return (
     <ul className="flex w-full max-w-xl flex-col gap-2">
-      {vacations.map((vacation) =>
+      {upcoming.map((vacation) =>
         editingId === vacation.id ? (
           <VacationEditRow key={vacation.id} vacation={vacation} onDone={() => setEditingId(null)} />
         ) : (

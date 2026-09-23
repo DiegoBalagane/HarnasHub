@@ -6,11 +6,11 @@ import {
   type UpdateEventPayload,
 } from '../../../services/calendarApi'
 
-/** Fetches every upcoming event, soonest first. */
-export function useUpcomingEvents() {
+/** Fetches every upcoming event, soonest first — or, with includePast, every event ever logged, most recent first. */
+export function useUpcomingEvents(includePast = false) {
   return useQuery({
-    queryKey: ['calendar', 'events'],
-    queryFn: calendarApi.getUpcomingEvents,
+    queryKey: ['calendar', 'events', includePast],
+    queryFn: () => calendarApi.getUpcomingEvents(includePast),
   })
 }
 

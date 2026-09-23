@@ -25,6 +25,7 @@ public class UpdateEventHandler(IApplicationDbContext dbContext, IRealtimeNotifi
 		calendarEvent.Title = request.Title;
 		calendarEvent.Type = request.Type;
 		calendarEvent.StartsAtUtc = request.StartsAtUtc;
+		calendarEvent.EndsAtUtc = request.EndsAtUtc;
 		calendarEvent.Location = request.Location;
 		calendarEvent.Url = request.Url;
 		calendarEvent.Notes = request.Notes;
@@ -39,6 +40,7 @@ public class UpdateEventHandler(IApplicationDbContext dbContext, IRealtimeNotifi
 			calendarEvent.Title,
 			calendarEvent.Type.ToString(),
 			calendarEvent.StartsAtUtc,
+			calendarEvent.EndsAtUtc,
 			calendarEvent.Location,
 			calendarEvent.Url,
 			calendarEvent.Notes);
