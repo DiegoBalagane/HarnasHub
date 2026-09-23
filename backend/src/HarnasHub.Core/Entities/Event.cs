@@ -11,6 +11,8 @@ public class Event
 	public string Title { get; set; } = string.Empty;
 	public EventType Type { get; set; }
 	public DateTime StartsAtUtc { get; set; }
+	/// <summary>Optional end time, for an event with a real duration (e.g. a training block) rather than a single moment.</summary>
+	public DateTime? EndsAtUtc { get; set; }
 	public string? Location { get; set; }
 	public string? Url { get; set; }
 	public string? Notes { get; set; }

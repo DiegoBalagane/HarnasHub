@@ -4,6 +4,7 @@ import { ProtectedRoute } from './ProtectedRoute'
 import { AuthCallbackPage } from './routes/AuthCallbackPage'
 import { CalendarPage } from './routes/CalendarPage'
 import { DashboardPage } from './routes/DashboardPage'
+import { EventsPage } from './routes/EventsPage'
 import { LoginPage } from './routes/LoginPage'
 import { MapStrategyPage } from './routes/MapStrategyPage'
 import { MaterialsPage } from './routes/MaterialsPage'
@@ -36,6 +37,14 @@ export function AppRouter() {
           element={
             <ProtectedRoute>
               <CalendarPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/events"
+          element={
+            <ProtectedRoute>
+              <EventsPage />
             </ProtectedRoute>
           }
         />

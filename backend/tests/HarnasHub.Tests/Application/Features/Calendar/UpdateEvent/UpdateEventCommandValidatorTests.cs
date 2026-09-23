@@ -18,7 +18,7 @@ public class UpdateEventCommandValidatorTests
 	[Fact]
 	public void Should_have_error_when_event_id_is_empty()
 	{
-		var command = new UpdateEventCommand(Guid.Empty, "Trening", EventType.Training, DateTime.UtcNow, null, null, null);
+		var command = new UpdateEventCommand(Guid.Empty, "Trening", EventType.Training, DateTime.UtcNow, null, null, null, null);
 
 		var result = _validator.TestValidate(command);
 
@@ -28,7 +28,7 @@ public class UpdateEventCommandValidatorTests
 	[Fact]
 	public void Should_have_error_when_title_is_empty()
 	{
-		var command = new UpdateEventCommand(Guid.NewGuid(), string.Empty, EventType.Training, DateTime.UtcNow, null, null, null);
+		var command = new UpdateEventCommand(Guid.NewGuid(), string.Empty, EventType.Training, DateTime.UtcNow, null, null, null, null);
 
 		var result = _validator.TestValidate(command);
 
@@ -38,7 +38,7 @@ public class UpdateEventCommandValidatorTests
 	[Fact]
 	public void Should_have_error_when_url_is_not_a_well_formed_uri()
 	{
-		var command = new UpdateEventCommand(Guid.NewGuid(), "Trening", EventType.Training, DateTime.UtcNow, null, "nie-url", null);
+		var command = new UpdateEventCommand(Guid.NewGuid(), "Trening", EventType.Training, DateTime.UtcNow, null, null, "nie-url", null);
 
 		var result = _validator.TestValidate(command);
 
@@ -53,6 +53,7 @@ public class UpdateEventCommandValidatorTests
 			"Trening",
 			EventType.Training,
 			DateTime.UtcNow,
+			null,
 			"Warszawa",
 			"https://pracc.com/matches/3338510",
 			null);

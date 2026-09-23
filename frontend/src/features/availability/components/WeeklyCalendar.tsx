@@ -193,7 +193,7 @@ export function WeeklyCalendar() {
                   {(eventsByDate.get(date) ?? []).map((event) => (
                     <Link
                       key={event.id}
-                      to={`/calendar?event=${event.id}`}
+                      to={`/events?event=${event.id}`}
                       title="Przejdź do szczegółów wydarzenia"
                       className="mt-1 block truncate text-[10px] text-red-400 hover:underline"
                     >

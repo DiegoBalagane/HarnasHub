@@ -17,6 +17,7 @@ export interface EventFormInitialValues {
   title: string
   type: EventType
   startsAtUtc: string
+  endsAtUtc: string | null
   location: string | null
   url: string | null
 }
@@ -37,6 +38,9 @@ export function EventForm({ initialValues, onSubmit, onCancel, isPending, isErro
   const [startsAt, setStartsAt] = useState(
     initialValues ? toLocalInputValue(initialValues.startsAtUtc) : '',
   )
+  const [endsAt, setEndsAt] = useState(
+    initialValues?.endsAtUtc ? toLocalInputValue(initialValues.endsAtUtc) : '',
+  )
   const [location, setLocation] = useState(initialValues?.location ?? '')
   const [url, setUrl] = useState(initialValues?.url ?? '')
 
@@ -46,6 +50,7 @@ export function EventForm({ initialValues, onSubmit, onCancel, isPending, isErro
       title,
       type,
       startsAtUtc: new Date(startsAt).toISOString(),
+      endsAtUtc: endsAt ? new Date(endsAt).toISOString() : null,
       location: location || undefined,
       url: url || undefined,
     })
@@ -70,21 +75,34 @@ export function EventForm({ initialValues, onSubmit, onCancel, isPending, isErro
         </select>
       </div>
 
-      <div className="flex gap-3">
-        <input
-          required
-          type="datetime-local"
-          value={startsAt}
-          onChange={(event) => setStartsAt(event.target.value)}
-          className={`flex-1 ${inputClass}`}
-        />
-        <input
-          placeholder="Lokalizacja (opcjonalnie)"
-          value={location}
-          onChange={(event) => setLocation(event.target.value)}
-          className={`flex-1 ${inputClass}`}
-        />
+      <div className="flex flex-wrap gap-3">
+        <label className="flex flex-1 flex-col gap-1 text-xs text-neutral-500">
+          Początek
+          <input
+            required
+            type="datetime-local"
+            value={startsAt}
+            onChange={(event) => setStartsAt(event.target.value)}
+            className={inputClass}
+          />
+        </label>
+        <label className="flex flex-1 flex-col gap-1 text-xs text-neutral-500">
+          Koniec (opcjonalnie)
+          <input
+            type="datetime-local"
+            value={endsAt}
+            onChange={(event) => setEndsAt(event.target.value)}
+            className={inputClass}
+          />
+        </label>
       </div>
+
+      <input
+        placeholder="Lokalizacja (opcjonalnie)"
+        value={location}
+        onChange={(event) => setLocation(event.target.value)}
+        className={inputClass}
+      />
 
       <input
         type="url"

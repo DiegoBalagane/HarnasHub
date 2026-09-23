@@ -2,15 +2,18 @@ import { useEffect, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useIsCoachOrManager } from '../../auth/hooks/useIsCoachOrManager'
 import { useDeleteEvent, useUpcomingEvents, useUpdateEvent } from '../hooks/useCalendar'
-import { eventTypeLabels } from '../labels'
+import { eventTypeBorderColors, eventTypeColors, eventTypeLabels } from '../labels'
 import { AvailabilityPicker } from './AvailabilityPicker'
 import { EventForm } from './EventForm'
 
 const dateFormatter = new Intl.DateTimeFormat('pl-PL', { dateStyle: 'medium', timeStyle: 'short' })
+const timeFormatter = new Intl.DateTimeFormat('pl-PL', { timeStyle: 'short' })
 
-/** Lists upcoming events; clicking one expands its availability picker. Coach/Manager can also edit or delete an event in place. */
+/** Lists events (upcoming by default, or every one ever logged); clicking one expands its availability picker.
+ * Coach/Manager can also edit or delete an event in place. */
 export function EventList() {
-  const { data: events, isLoading, isError } = useUpcomingEvents()
+  const [includePast, setIncludePast] = useState(false)
+  const { data: events, isLoading, isError } = useUpcomingEvents(includePast)
   const [searchParams, setSearchParams] = useSearchParams()
   const linkedEventId = searchParams.get('event')
   const [expandedEventId, setExpandedEventId] = useState<string | null>(linkedEventId)
@@ -43,20 +46,23 @@ export function EventList() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [linkedEventId, events])
 
-  if (isLoading) {
-    return <p className="text-neutral-400">Ładowanie kalendarza…</p>
-  }
-
-  if (isError) {
-    return <p className="text-red-400">Nie udało się pobrać wydarzeń.</p>
-  }
-
-  if (events?.length === 0) {
-    return <p className="text-neutral-400">Brak nadchodzących wydarzeń.</p>
-  }
-
   return (
-    <ul className="flex w-full max-w-xl flex-col gap-3">
+    <div className="flex w-full max-w-xl flex-col gap-3">
+      <button
+        type="button"
+        onClick={() => setIncludePast((current) => !current)}
+        className="self-start text-xs text-neutral-500 underline-offset-2 hover:text-neutral-300 hover:underline"
+      >
+        {includePast ? 'Pokaż tylko nadchodzące' : 'Pokaż też przeszłe wydarzenia'}
+      </button>
+
+      {isLoading && <p className="text-neutral-400">Ładowanie kalendarza…</p>}
+      {isError && <p className="text-red-400">Nie udało się pobrać wydarzeń.</p>}
+      {events?.length === 0 && (
+        <p className="text-neutral-400">{includePast ? 'Brak wydarzeń.' : 'Brak nadchodzących wydarzeń.'}</p>
+      )}
+
+      <ul className="flex flex-col gap-3">
       {events?.map((event) => (
         <li
           key={event.id}
@@ -67,7 +73,7 @@ export function EventList() {
               itemRefs.current.delete(event.id)
             }
           }}
-          className={`rounded-md border p-4 transition ${
+          className={`rounded-md border border-l-4 p-4 transition ${eventTypeBorderColors[event.type]} ${
             highlightedEventId === event.id ? 'border-red-500 ring-1 ring-red-500/50' : 'border-neutral-800'
           }`}
         >
@@ -77,6 +83,7 @@ export function EventList() {
                 title: event.title,
                 type: event.type,
                 startsAtUtc: event.startsAtUtc,
+                endsAtUtc: event.endsAtUtc,
                 location: event.location,
                 url: event.url,
               }}
@@ -100,7 +107,9 @@ export function EventList() {
                 <div>
                   <p className="font-medium">{event.title}</p>
                   <p className="text-sm text-neutral-400">
-                    {eventTypeLabels[event.type]} · {dateFormatter.format(new Date(event.startsAtUtc))}
+                    <span className={eventTypeColors[event.type]}>{eventTypeLabels[event.type]}</span> ·{' '}
+                    {dateFormatter.format(new Date(event.startsAtUtc))}
+                    {event.endsAtUtc ? ` – ${timeFormatter.format(new Date(event.endsAtUtc))}` : ''}
                     {event.location ? ` · ${event.location}` : ''}
                   </p>
                 </div>
@@ -170,6 +179,7 @@ export function EventList() {
           )}
         </li>
       ))}
-    </ul>
+      </ul>
+    </div>
   )
 }

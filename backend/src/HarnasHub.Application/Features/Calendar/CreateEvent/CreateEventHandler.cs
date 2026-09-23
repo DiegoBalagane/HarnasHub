@@ -24,6 +24,7 @@ public class CreateEventHandler(
 			Title = request.Title,
 			Type = request.Type,
 			StartsAtUtc = request.StartsAtUtc,
+			EndsAtUtc = request.EndsAtUtc,
 			Location = request.Location,
 			Url = request.Url,
 			Notes = request.Notes,
@@ -55,6 +56,7 @@ public class CreateEventHandler(
 			calendarEvent.Title,
 			calendarEvent.Type.ToString(),
 			calendarEvent.StartsAtUtc,
+			calendarEvent.EndsAtUtc,
 			calendarEvent.Location,
 			calendarEvent.Url,
 			calendarEvent.Notes);
