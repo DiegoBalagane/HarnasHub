@@ -171,6 +171,54 @@ namespace HarnasHub.Infrastructure.Database.Migrations
                     b.ToTable("MapPositionAssignments", (string)null);
                 });
 
+            modelBuilder.Entity("HarnasHub.Core.Entities.MapTextAnnotation", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Color")
+                        .IsRequired()
+                        .HasMaxLength(7)
+                        .HasColumnType("character varying(7)");
+
+                    b.Property<Guid>("CreatedByUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("FontSizePx")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("MapName")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<string>("Side")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<string>("Text")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<DateTime>("UpdatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<float>("X")
+                        .HasColumnType("real");
+
+                    b.Property<float>("Y")
+                        .HasColumnType("real");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("MapName", "Side");
+
+                    b.ToTable("MapTextAnnotations", (string)null);
+                });
+
             modelBuilder.Entity("HarnasHub.Core.Entities.MatchResult", b =>
                 {
                     b.Property<Guid>("Id")
@@ -519,8 +567,8 @@ namespace HarnasHub.Infrastructure.Database.Migrations
 
                     b.Property<string>("Status")
                         .IsRequired()
-                        .HasMaxLength(10)
-                        .HasColumnType("character varying(10)");
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
 
                     b.Property<string>("Title")
                         .IsRequired()
@@ -566,8 +614,8 @@ namespace HarnasHub.Infrastructure.Database.Migrations
                         .HasColumnType("uuid");
 
                     b.Property<string>("Category")
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
 
                     b.Property<DateTime>("CreatedAtUtc")
                         .HasColumnType("timestamp with time zone");
