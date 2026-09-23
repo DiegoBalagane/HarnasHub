@@ -9,6 +9,8 @@ export interface CalendarEvent {
   title: string
   type: EventType
   startsAtUtc: string
+  /** Optional end time, for an event with a real duration (e.g. a training block) rather than a single moment. */
+  endsAtUtc: string | null
   location: string | null
   /** Optional link to the match/stream/lobby, shown as a clickable link instead of jammed into location. */
   url: string | null
@@ -26,6 +28,7 @@ export interface CreateEventPayload {
   title: string
   type: EventType
   startsAtUtc: string
+  endsAtUtc?: string | null
   location?: string
   url?: string
   notes?: string
@@ -34,7 +37,8 @@ export interface CreateEventPayload {
 export type UpdateEventPayload = CreateEventPayload
 
 export const calendarApi = {
-  getUpcomingEvents: () => apiClient.get<CalendarEvent[]>(API_ENDPOINTS.calendar.events),
+  getUpcomingEvents: (includePast?: boolean) =>
+    apiClient.get<CalendarEvent[]>(includePast ? `${API_ENDPOINTS.calendar.events}?includePast=true` : API_ENDPOINTS.calendar.events),
   createEvent: (payload: CreateEventPayload) =>
     apiClient.post<CalendarEvent>(API_ENDPOINTS.calendar.events, payload),
   /** Coach/Manager only — e.g. to fix a wrong date/time after the fact. */

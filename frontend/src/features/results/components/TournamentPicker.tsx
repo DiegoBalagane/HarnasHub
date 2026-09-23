@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useCreateTournament } from '../hooks/useTournaments'
+import { useCreateTournament, useDeleteTournament } from '../hooks/useTournaments'
 
 interface TournamentPickerProps {
   tournaments: { id: string; name: string }[]
@@ -7,10 +7,11 @@ interface TournamentPickerProps {
   onChange: (tournamentId: string) => void
 }
 
-/** Selects an existing tournament to group a result under, or creates a new one inline. */
+/** Selects an existing tournament to group a result under, creates a new one inline, or deletes the selected one. */
 export function TournamentPicker({ tournaments, value, onChange }: TournamentPickerProps) {
   const [newName, setNewName] = useState('')
   const createTournament = useCreateTournament()
+  const deleteTournament = useDeleteTournament()
 
   function handleCreate() {
     if (!newName.trim()) return
@@ -20,6 +21,14 @@ export function TournamentPicker({ tournaments, value, onChange }: TournamentPic
         setNewName('')
       },
     })
+  }
+
+  function handleDelete() {
+    if (!value) return
+    const tournament = tournaments.find((candidate) => candidate.id === value)
+    if (!tournament) return
+    if (!window.confirm(`Usunąć turniej „${tournament.name}"? Wyniki w nim zostaną, ale bez grupowania.`)) return
+    deleteTournament.mutate(value, { onSuccess: () => onChange('') })
   }
 
   return (
@@ -37,6 +46,17 @@ export function TournamentPicker({ tournaments, value, onChange }: TournamentPic
           </option>
         ))}
       </select>
+      {value && (
+        <button
+          type="button"
+          title="Usuń wybrany turniej"
+          onClick={handleDelete}
+          disabled={deleteTournament.isPending}
+          className="shrink-0 rounded-md border border-neutral-700 px-2 py-2 text-sm text-neutral-400 transition hover:border-red-500 hover:text-red-400 disabled:opacity-50"
+        >
+          ✕
+        </button>
+      )}
       <input
         placeholder="Nowy turniej"
         value={newName}

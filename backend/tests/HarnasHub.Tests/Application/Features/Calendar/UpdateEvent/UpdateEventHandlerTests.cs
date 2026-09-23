@@ -35,6 +35,7 @@ public class UpdateEventHandlerTests
 			"Sparing (poprawiona godzina)",
 			EventType.Scrim,
 			newStart,
+			null,
 			"Warszawa",
 			"https://pracc.com/matches/3338510",
 			"Notatka");
@@ -60,6 +61,7 @@ public class UpdateEventHandlerTests
 			"Sparing",
 			EventType.Scrim,
 			DateTime.UtcNow,
+			null,
 			null,
 			null,
 			null);
