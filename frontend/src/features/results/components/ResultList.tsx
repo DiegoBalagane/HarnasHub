@@ -28,9 +28,11 @@ function groupResults(results: MatchResult[]): Group[] {
 
     const label =
       result.category === 'Tournament'
-        ? (result.tournamentName ?? 'Turniej')
+        ? (result.tournamentName ?? 'Usunięty turniej')
         : result.category === 'League'
-          ? `${result.leagueName} — ${result.leagueSeason} (${result.leagueType ? leagueTypeLabels[result.leagueType] : ''})`
+          ? result.leagueName
+            ? `${result.leagueName} — ${result.leagueSeason} (${result.leagueType ? leagueTypeLabels[result.leagueType] : ''})`
+            : 'Usunięta liga'
           : matchCategoryLabels.Scrimmage
 
     const existing = groups.get(key)

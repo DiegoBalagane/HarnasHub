@@ -19,4 +19,5 @@ export interface CreateLeaguePayload {
 export const leaguesApi = {
   getLeagues: () => apiClient.get<League[]>(API_ENDPOINTS.leagues),
   createLeague: (payload: CreateLeaguePayload) => apiClient.post<League>(API_ENDPOINTS.leagues, payload),
+  deleteLeague: (leagueId: string) => apiClient.delete<void>(API_ENDPOINTS.leagueById(leagueId)),
 }

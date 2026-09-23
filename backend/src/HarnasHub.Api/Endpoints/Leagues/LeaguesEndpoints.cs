@@ -1,5 +1,6 @@
 using HarnasHub.Api.Common;
 using HarnasHub.Application.Features.Leagues.CreateLeague;
+using HarnasHub.Application.Features.Leagues.DeleteLeague;
 using HarnasHub.Application.Features.Leagues.GetLeagues;
 using HarnasHub.Core.Enums;
 using MediatR;
@@ -25,6 +26,12 @@ public class LeaguesEndpoints : IEndpoint
 		{
 			var result = await sender.Send(new CreateLeagueCommand(request.Name, request.Season, request.Type), cancellationToken);
 			return result.Match(success => Results.Ok(success), errors => errors.ToProblemResult());
+		}).RequireAuthorization(policy => policy.RequireRole("Coach", "Manager"));
+
+		group.MapDelete("/{leagueId:guid}", async (Guid leagueId, ISender sender, CancellationToken cancellationToken) =>
+		{
+			var result = await sender.Send(new DeleteLeagueCommand(leagueId), cancellationToken);
+			return result.Match(success => Results.NoContent(), errors => errors.ToProblemResult());
 		}).RequireAuthorization(policy => policy.RequireRole("Coach", "Manager"));
 	}
 
