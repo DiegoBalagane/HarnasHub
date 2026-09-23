@@ -110,6 +110,17 @@ export function DashboardSummary() {
             <p className="mt-1 text-neutral-500">Brak wyników</p>
           )}
         </Link>
+
+        <Link
+          to="/attendance"
+          className="rounded-md border border-neutral-800 p-4 transition hover:border-neutral-600"
+        >
+          <p className="text-sm text-neutral-400">Spóźnienia i nieobecności</p>
+          <p className="mt-1 text-2xl font-semibold">
+            {data?.attendance.lateCount ?? 0} / {data?.attendance.absentCount ?? 0}
+          </p>
+          <p className="text-sm text-neutral-400">Ostatnie 30 dni</p>
+        </Link>
       </div>
     </div>
   )

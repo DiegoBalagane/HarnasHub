@@ -192,24 +192,49 @@ public class GetDashboardSummaryHandlerTests
 		var (olderMatch, newerMatch) = (Guid.NewGuid(), Guid.NewGuid());
 		dbContext.MatchResults.Add(new MatchResult
 		{
-			Id = olderMatch, Opponent = "Team A", OurScore = 10, OpponentScore = 16, Category = MatchCategory.Scrimmage,
-			PlayedAtUtc = DateTime.UtcNow.AddDays(-2), CreatedAtUtc = DateTime.UtcNow
+			Id = olderMatch,
+			Opponent = "Team A",
+			OurScore = 10,
+			OpponentScore = 16,
+			Category = MatchCategory.Scrimmage,
+			PlayedAtUtc = DateTime.UtcNow.AddDays(-2),
+			CreatedAtUtc = DateTime.UtcNow
 		});
 		dbContext.MatchResults.Add(new MatchResult
 		{
-			Id = newerMatch, Opponent = "Team B", OurScore = 16, OpponentScore = 7, MapName = "Mirage", Category = MatchCategory.Scrimmage,
-			PlayedAtUtc = DateTime.UtcNow.AddDays(-1), CreatedAtUtc = DateTime.UtcNow
-		});
-		dbContext.PlayerMatchStats.Add(new PlayerMatchStat
-		{
-			Id = Guid.NewGuid(), MatchResultId = olderMatch, UserId = userId,
-			Kills = 10, Deaths = 15, Assists = 2, Adr = 60, HeadshotPercentage = 30, Rating = 0.80,
+			Id = newerMatch,
+			Opponent = "Team B",
+			OurScore = 16,
+			OpponentScore = 7,
+			MapName = "Mirage",
+			Category = MatchCategory.Scrimmage,
+			PlayedAtUtc = DateTime.UtcNow.AddDays(-1),
 			CreatedAtUtc = DateTime.UtcNow
 		});
 		dbContext.PlayerMatchStats.Add(new PlayerMatchStat
 		{
-			Id = Guid.NewGuid(), MatchResultId = newerMatch, UserId = userId,
-			Kills = 20, Deaths = 8, Assists = 4, Adr = 90, HeadshotPercentage = 40, Rating = 1.40,
+			Id = Guid.NewGuid(),
+			MatchResultId = olderMatch,
+			UserId = userId,
+			Kills = 10,
+			Deaths = 15,
+			Assists = 2,
+			Adr = 60,
+			HeadshotPercentage = 30,
+			Rating = 0.80,
+			CreatedAtUtc = DateTime.UtcNow
+		});
+		dbContext.PlayerMatchStats.Add(new PlayerMatchStat
+		{
+			Id = Guid.NewGuid(),
+			MatchResultId = newerMatch,
+			UserId = userId,
+			Kills = 20,
+			Deaths = 8,
+			Assists = 4,
+			Adr = 90,
+			HeadshotPercentage = 40,
+			Rating = 1.40,
 			CreatedAtUtc = DateTime.UtcNow
 		});
 		await dbContext.SaveChangesAsync(CancellationToken.None);
@@ -225,6 +250,38 @@ public class GetDashboardSummaryHandlerTests
 		Assert.Equal("Team B", result.Value.LastMatch!.Opponent);
 		Assert.True(result.Value.LastMatch.Won);
 		Assert.Equal("Mirage", result.Value.LastMatch.MapName);
+	}
+
+	[Fact]
+	public async Task Should_count_attendance_incidents_from_the_trailing_30_days_only()
+	{
+		await using var dbContext = TestApplicationDbContext.Create();
+		var userId = Guid.NewGuid();
+		AddUser(dbContext, userId, "Zenek");
+		dbContext.AttendanceIncidents.Add(new AttendanceIncident
+		{
+			Id = Guid.NewGuid(),
+			UserId = userId,
+			Type = AttendanceIncidentType.Late,
+			OccurredOn = Today.AddDays(-5),
+			RecordedByUserId = Guid.NewGuid(),
+			CreatedAtUtc = DateTime.UtcNow
+		});
+		dbContext.AttendanceIncidents.Add(new AttendanceIncident
+		{
+			Id = Guid.NewGuid(),
+			UserId = userId,
+			Type = AttendanceIncidentType.Absent,
+			OccurredOn = Today.AddDays(-40),
+			RecordedByUserId = Guid.NewGuid(),
+			CreatedAtUtc = DateTime.UtcNow
+		});
+		await dbContext.SaveChangesAsync(CancellationToken.None);
+
+		var result = await HandleAsync(dbContext, userId);
+
+		Assert.Equal(1, result.Value.Attendance.LateCount);
+		Assert.Equal(0, result.Value.Attendance.AbsentCount);
 	}
 
 	#endregion

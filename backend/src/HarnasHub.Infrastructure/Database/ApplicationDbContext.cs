@@ -29,6 +29,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
 	public DbSet<Tournament> Tournaments => Set<Tournament>();
 	public DbSet<League> Leagues => Set<League>();
 	public DbSet<AnalysisBoard> AnalysisBoards => Set<AnalysisBoard>();
+	public DbSet<AttendanceIncident> AttendanceIncidents => Set<AttendanceIncident>();
 
 	#endregion
 

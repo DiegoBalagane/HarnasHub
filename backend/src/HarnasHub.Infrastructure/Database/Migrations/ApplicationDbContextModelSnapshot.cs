@@ -62,6 +62,38 @@ namespace HarnasHub.Infrastructure.Database.Migrations
                     b.ToTable("AnalysisBoards", (string)null);
                 });
 
+            modelBuilder.Entity("HarnasHub.Core.Entities.AttendanceIncident", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Note")
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)");
+
+                    b.Property<DateOnly>("OccurredOn")
+                        .HasColumnType("date");
+
+                    b.Property<Guid>("RecordedByUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Type")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId", "OccurredOn");
+
+                    b.ToTable("AttendanceIncidents", (string)null);
+                });
+
             modelBuilder.Entity("HarnasHub.Core.Entities.Availability", b =>
                 {
                     b.Property<Guid>("Id")

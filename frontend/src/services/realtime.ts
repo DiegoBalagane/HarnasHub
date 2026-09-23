@@ -30,6 +30,7 @@ function invalidateForTopic(queryClient: QueryClient, topic: string) {
     materials: ['materials'],
     opponents: ['opponent-notes'],
     'analysis-boards': ['analysis-boards'],
+    attendance: ['attendance'],
   }
 
   const queryKey = topLevelKeys[topic]

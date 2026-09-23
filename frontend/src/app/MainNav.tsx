@@ -21,6 +21,7 @@ const navGroups: NavGroup[] = [
       { to: '/events', label: 'Wydarzenia' },
       { to: '/tasks', label: 'Zadania' },
       { to: '/roster', label: 'Skład' },
+      { to: '/attendance', label: 'Frekwencja' },
     ],
   },
   {
