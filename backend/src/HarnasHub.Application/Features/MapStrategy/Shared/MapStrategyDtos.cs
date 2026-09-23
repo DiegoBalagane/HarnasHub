@@ -13,3 +13,12 @@ public record MapPositionDto(
 	float X,
 	float Y,
 	string? Note);
+
+/// <summary>A free-floating text label on the radar — not tied to a player, e.g. a callout note.</summary>
+public record MapTextAnnotationDto(
+	Guid Id,
+	string Text,
+	string Color,
+	int FontSizePx,
+	float X,
+	float Y);
