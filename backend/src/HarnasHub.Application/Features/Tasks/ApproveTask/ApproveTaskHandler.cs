@@ -7,7 +7,8 @@ using Microsoft.EntityFrameworkCore;
 
 namespace HarnasHub.Application.Features.Tasks.ApproveTask;
 
-/// <summary>Handles <see cref="ApproveTaskCommand"/>.</summary>
+/// <summary>Handles <see cref="ApproveTaskCommand"/> — a Coach/Manager can mark a task Done from any status, not just
+/// PendingReview, since they may want to confirm completion without waiting for the player to submit it first.</summary>
 public class ApproveTaskHandler(IApplicationDbContext dbContext, IRealtimeNotifier realtimeNotifier)
 	: IRequestHandler<ApproveTaskCommand, ErrorOr<Success>>
 {
@@ -20,11 +21,6 @@ public class ApproveTaskHandler(IApplicationDbContext dbContext, IRealtimeNotifi
 		if (task is null)
 		{
 			return TaskErrors.TaskNotFound;
-		}
-
-		if (task.Status != TaskItemStatus.PendingReview)
-		{
-			return TaskErrors.NotPendingReview;
 		}
 
 		task.Status = TaskItemStatus.Done;

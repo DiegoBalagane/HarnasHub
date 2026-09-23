@@ -38,7 +38,7 @@ public class ApproveTaskHandlerTests
 	}
 
 	[Fact]
-	public async Task Should_reject_approving_a_task_that_is_not_pending_review()
+	public async Task Should_mark_a_todo_task_as_done_directly_without_review()
 	{
 		await using var dbContext = TestApplicationDbContext.Create();
 		var task = new TaskItem
@@ -57,8 +57,20 @@ public class ApproveTaskHandlerTests
 
 		var result = await handler.Handle(new ApproveTaskCommand(task.Id), CancellationToken.None);
 
+		Assert.False(result.IsError);
+		Assert.Equal(TaskItemStatus.Done, task.Status);
+	}
+
+	[Fact]
+	public async Task Should_return_not_found_for_a_missing_task()
+	{
+		await using var dbContext = TestApplicationDbContext.Create();
+		var handler = new ApproveTaskHandler(dbContext, new TestRealtimeNotifier());
+
+		var result = await handler.Handle(new ApproveTaskCommand(Guid.NewGuid()), CancellationToken.None);
+
 		Assert.True(result.IsError);
-		Assert.Equal("Tasks.NotPendingReview", result.FirstError.Code);
+		Assert.Equal("Tasks.TaskNotFound", result.FirstError.Code);
 	}
 
 	#endregion
