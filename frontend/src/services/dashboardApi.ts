@@ -45,6 +45,12 @@ export interface LastMatchResult {
   mapName: string | null
 }
 
+/** Team-wide lateness/absence totals over the trailing 30 days, for the dashboard tile. */
+export interface TeamAttendanceSummary {
+  lateCount: number
+  absentCount: number
+}
+
 export interface DashboardSummary {
   nextEvent: CalendarEvent | null
   openTaskCount: number
@@ -52,6 +58,7 @@ export interface DashboardSummary {
   tomorrow: DailyTeamStatus
   myRecentPerformance: MyRecentPerformance | null
   lastMatch: LastMatchResult | null
+  attendance: TeamAttendanceSummary
 }
 
 export const dashboardApi = {
