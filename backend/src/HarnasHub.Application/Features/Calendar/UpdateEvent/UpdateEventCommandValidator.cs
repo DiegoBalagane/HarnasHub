@@ -17,6 +17,10 @@ public class UpdateEventCommandValidator : AbstractValidator<UpdateEventCommand>
 
 		RuleFor(x => x.Type).IsInEnum().WithMessage("Nieprawidłowy typ wydarzenia.");
 
+		RuleFor(x => x.EndsAtUtc)
+			.GreaterThan(x => x.StartsAtUtc).WithMessage("Koniec musi być późniejszy niż początek.")
+			.When(x => x.EndsAtUtc.HasValue);
+
 		RuleFor(x => x.Location).MaximumLength(200).WithMessage("Lokalizacja może mieć maksymalnie 200 znaków.");
 
 		RuleFor(x => x.Url)

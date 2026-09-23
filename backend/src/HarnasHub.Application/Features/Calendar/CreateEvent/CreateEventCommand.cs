@@ -10,6 +10,7 @@ public record CreateEventCommand(
 	string Title,
 	EventType Type,
 	DateTime StartsAtUtc,
+	DateTime? EndsAtUtc,
 	string? Location,
 	string? Url,
 	string? Notes) : IRequest<ErrorOr<EventDto>>;

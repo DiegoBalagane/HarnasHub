@@ -34,7 +34,7 @@ public class GetDashboardSummaryHandler(IApplicationDbContext dbContext, ICurren
 		var nextEvent = await dbContext.Events
 			.Where(e => e.StartsAtUtc >= now)
 			.OrderBy(e => e.StartsAtUtc)
-			.Select(e => new EventDto(e.Id, e.Title, e.Type.ToString(), e.StartsAtUtc, e.Location, e.Url, e.Notes))
+			.Select(e => new EventDto(e.Id, e.Title, e.Type.ToString(), e.StartsAtUtc, e.EndsAtUtc, e.Location, e.Url, e.Notes))
 			.FirstOrDefaultAsync(cancellationToken);
 
 		var userId = currentUser.UserId;
@@ -96,7 +96,7 @@ public class GetDashboardSummaryHandler(IApplicationDbContext dbContext, ICurren
 		return await dbContext.Events
 			.Where(e => e.StartsAtUtc >= rangeStart && e.StartsAtUtc < rangeEnd)
 			.OrderBy(e => e.StartsAtUtc)
-			.Select(e => new EventDto(e.Id, e.Title, e.Type.ToString(), e.StartsAtUtc, e.Location, e.Url, e.Notes))
+			.Select(e => new EventDto(e.Id, e.Title, e.Type.ToString(), e.StartsAtUtc, e.EndsAtUtc, e.Location, e.Url, e.Notes))
 			.ToListAsync(cancellationToken);
 	}
 

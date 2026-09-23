@@ -14,12 +14,20 @@ public class GetUpcomingEventsHandler(IApplicationDbContext dbContext)
 
 	public async Task<ErrorOr<List<EventDto>>> Handle(GetUpcomingEventsQuery request, CancellationToken cancellationToken)
 	{
+		if (request.IncludePast)
+		{
+			return await dbContext.Events
+				.OrderByDescending(e => e.StartsAtUtc)
+				.Select(e => new EventDto(e.Id, e.Title, e.Type.ToString(), e.StartsAtUtc, e.EndsAtUtc, e.Location, e.Url, e.Notes))
+				.ToListAsync(cancellationToken);
+		}
+
 		var now = DateTime.UtcNow;
 
 		return await dbContext.Events
 			.Where(e => e.StartsAtUtc >= now)
 			.OrderBy(e => e.StartsAtUtc)
-			.Select(e => new EventDto(e.Id, e.Title, e.Type.ToString(), e.StartsAtUtc, e.Location, e.Url, e.Notes))
+			.Select(e => new EventDto(e.Id, e.Title, e.Type.ToString(), e.StartsAtUtc, e.EndsAtUtc, e.Location, e.Url, e.Notes))
 			.ToListAsync(cancellationToken);
 	}
 

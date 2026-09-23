@@ -4,8 +4,13 @@ import { useSetVacation } from '../hooks/useAvailability'
 const inputClass =
   'rounded-md border border-neutral-800 bg-neutral-900 px-3 py-2 text-sm outline-none focus:border-neutral-500'
 
+interface VacationFormProps {
+  /** Called after a successful submit — e.g. to close the modal hosting this form. */
+  onDone?: () => void
+}
+
 /** Form for adding a time-off range for the signed-in user. */
-export function VacationForm() {
+export function VacationForm({ onDone }: VacationFormProps) {
   const [startDate, setStartDate] = useState('')
   const [endDate, setEndDate] = useState('')
   const [reason, setReason] = useState('')
@@ -28,18 +33,14 @@ export function VacationForm() {
           setStartDate('')
           setEndDate('')
           setReason('')
+          onDone?.()
         },
       },
     )
   }
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      className="flex w-full max-w-xl flex-col gap-3 rounded-md border border-neutral-800 p-4"
-    >
-      <h2 className="font-medium">Dodaj urlop</h2>
-
+    <form onSubmit={handleSubmit} className="flex w-full flex-col gap-3">
       <div className="flex flex-wrap gap-3">
         <input
           required

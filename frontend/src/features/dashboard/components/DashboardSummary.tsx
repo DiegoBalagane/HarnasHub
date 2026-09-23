@@ -31,7 +31,7 @@ export function DashboardSummary() {
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <Link
-          to={data?.nextEvent ? `/calendar?event=${data.nextEvent.id}` : '/calendar'}
+          to={data?.nextEvent ? `/events?event=${data.nextEvent.id}` : '/events'}
           className="rounded-md border border-neutral-800 p-4 transition hover:border-neutral-600"
         >
           <p className="text-sm text-neutral-400">Najbliższe wydarzenie</p>

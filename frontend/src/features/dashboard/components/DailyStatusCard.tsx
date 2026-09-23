@@ -78,7 +78,7 @@ export const DailyStatusCard = React.memo(function DailyStatusCard({
 
       {day.event ? (
         <Link
-          to={`/calendar?event=${day.event.id}`}
+          to={`/events?event=${day.event.id}`}
           className="rounded-md border border-neutral-800 bg-neutral-900 px-2 py-1 transition hover:border-neutral-600"
         >
           <p className="truncate text-sm font-medium">{day.event.title}</p>

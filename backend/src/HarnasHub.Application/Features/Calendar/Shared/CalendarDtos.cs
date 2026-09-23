@@ -6,6 +6,7 @@ public record EventDto(
 	string Title,
 	string Type,
 	DateTime StartsAtUtc,
+	DateTime? EndsAtUtc,
 	string? Location,
 	string? Url,
 	string? Notes);
