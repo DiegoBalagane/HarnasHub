@@ -4,7 +4,19 @@ import type { PlayerLeaderboardEntry } from '../../../services/statsApi'
 import { matchCategories, matchCategoryLabels } from '../../results/labels'
 import { usePlayerLeaderboard } from '../hooks/useStats'
 
-type SortKey = 'matchesPlayed' | 'avgKills' | 'avgDeaths' | 'avgAssists' | 'avgAdr' | 'avgHeadshotPercentage' | 'avgKastPercentage' | 'avgRating'
+type SortKey =
+  | 'matchesPlayed'
+  | 'avgKills'
+  | 'avgDeaths'
+  | 'avgAssists'
+  | 'avgAdr'
+  | 'avgHeadshotPercentage'
+  | 'avgKastPercentage'
+  | 'avgEntryKills'
+  | 'avgEntryDeaths'
+  | 'avgUtilityDamage'
+  | 'avgFlashAssists'
+  | 'avgRating'
 
 const columns: { key: SortKey; label: string; title: string }[] = [
   { key: 'matchesPlayed', label: 'Mecze', title: 'Liczba rozegranych meczów w tym filtrze' },
@@ -14,6 +26,10 @@ const columns: { key: SortKey; label: string; title: string }[] = [
   { key: 'avgAdr', label: 'ADR', title: 'Średnie obrażenia na rundę' },
   { key: 'avgHeadshotPercentage', label: 'HS%', title: 'Średni procent zabójstw w głowę' },
   { key: 'avgKastPercentage', label: 'KAST%', title: 'Średni KAST% (tylko mecze z importu demki)' },
+  { key: 'avgEntryKills', label: 'EntryK', title: 'Średnie entry kille na mecz — pierwsze zabójstwo rundy (tylko mecze z importu demki)' },
+  { key: 'avgEntryDeaths', label: 'EntryD', title: 'Średnie entry śmierci na mecz — pierwsza śmierć rundy (tylko mecze z importu demki)' },
+  { key: 'avgUtilityDamage', label: 'UtilDmg', title: 'Średnie obrażenia granatami/ogniem na mecz (tylko mecze z importu demki)' },
+  { key: 'avgFlashAssists', label: 'FlashA', title: 'Średnie asysty za oślepienie na mecz (tylko mecze z importu demki)' },
   { key: 'avgRating', label: 'Rating', title: 'Średni rating' },
 ]
 
@@ -102,6 +118,10 @@ export function PlayerLeaderboard() {
                   <td className="pr-3">{entry.avgAdr.toFixed(1)}</td>
                   <td className="pr-3">{entry.avgHeadshotPercentage.toFixed(0)}%</td>
                   <td className="pr-3">{entry.avgKastPercentage !== null ? `${entry.avgKastPercentage.toFixed(0)}%` : '—'}</td>
+                  <td className="pr-3">{entry.avgEntryKills !== null ? entry.avgEntryKills.toFixed(1) : '—'}</td>
+                  <td className="pr-3">{entry.avgEntryDeaths !== null ? entry.avgEntryDeaths.toFixed(1) : '—'}</td>
+                  <td className="pr-3">{entry.avgUtilityDamage !== null ? entry.avgUtilityDamage.toFixed(0) : '—'}</td>
+                  <td className="pr-3">{entry.avgFlashAssists !== null ? entry.avgFlashAssists.toFixed(1) : '—'}</td>
                   <td className="pr-3 font-medium text-neutral-100">{entry.avgRating.toFixed(2)}</td>
                 </tr>
               ))}

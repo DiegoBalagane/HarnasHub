@@ -4,6 +4,7 @@ import { useIsCoachOrManager } from '../../auth/hooks/useIsCoachOrManager'
 import { MatchStatsPanel } from '../../stats/components/MatchStatsPanel'
 import { useDeleteResult, useResults } from '../hooks/useResults'
 import { leagueTypeLabels, matchCategoryLabels } from '../labels'
+import { EditResultForm } from './EditResultForm'
 
 const dateFormatter = new Intl.DateTimeFormat('pl-PL', { dateStyle: 'medium' })
 
@@ -96,12 +97,18 @@ function ResultCard({ result, isExpanded, onToggle }: ResultCardProps) {
   const won = result.ourScore > result.opponentScore
   const canManage = useIsCoachOrManager()
   const deleteResult = useDeleteResult()
+  const [isEditing, setIsEditing] = useState(false)
 
   function handleDelete(event: React.MouseEvent) {
     event.stopPropagation()
     if (window.confirm(`Usunąć wynik meczu vs ${result.opponent}? Tej operacji nie można cofnąć.`)) {
       deleteResult.mutate(result.id)
     }
+  }
+
+  function handleEdit(event: React.MouseEvent) {
+    event.stopPropagation()
+    setIsEditing((current) => !current)
   }
 
   return (
@@ -117,19 +124,31 @@ function ResultCard({ result, isExpanded, onToggle }: ResultCardProps) {
           <span className="text-sm text-neutral-500">{dateFormatter.format(new Date(result.playedAtUtc))}</span>
         </button>
         {canManage && (
-          <button
-            type="button"
-            title="Usuń wynik"
-            onClick={handleDelete}
-            disabled={deleteResult.isPending}
-            className="shrink-0 rounded-md px-2 py-1 text-sm text-neutral-500 transition hover:bg-red-950/40 hover:text-red-400 disabled:opacity-50"
-          >
-            ✕
-          </button>
+          <>
+            <button
+              type="button"
+              title="Edytuj wynik"
+              onClick={handleEdit}
+              className="shrink-0 rounded-md px-2 py-1 text-sm text-neutral-500 transition hover:bg-neutral-800 hover:text-neutral-200"
+            >
+              ✎
+            </button>
+            <button
+              type="button"
+              title="Usuń wynik"
+              onClick={handleDelete}
+              disabled={deleteResult.isPending}
+              className="shrink-0 rounded-md px-2 py-1 text-sm text-neutral-500 transition hover:bg-red-950/40 hover:text-red-400 disabled:opacity-50"
+            >
+              ✕
+            </button>
+          </>
         )}
       </div>
       {result.mapName && <p className="text-sm text-neutral-400">Mapa: {result.mapName}</p>}
       {result.notes && <p className="mt-1 text-sm text-neutral-400">{result.notes}</p>}
+
+      {isEditing && <EditResultForm result={result} onClose={() => setIsEditing(false)} />}
 
       {isExpanded && (
         <div className="mt-3">
