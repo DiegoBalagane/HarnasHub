@@ -6,6 +6,7 @@ using HarnasHub.Application.Features.Tasks.GetAllTasks;
 using HarnasHub.Application.Features.Tasks.GetMyTasks;
 using HarnasHub.Application.Features.Tasks.RejectTask;
 using HarnasHub.Application.Features.Tasks.SubmitTaskForReview;
+using HarnasHub.Application.Features.Tasks.UpdateTask;
 using MediatR;
 
 namespace HarnasHub.Api.Endpoints.Tasks;
@@ -35,6 +36,13 @@ public class TasksEndpoints : IEndpoint
 		{
 			var command = new AssignTaskCommand(
 				request.Title, request.Description, request.AssignedToUserId, request.DueAtUtc, request.TrainingMaterialId);
+			var result = await sender.Send(command, cancellationToken);
+			return result.Match(success => Results.Ok(success), errors => errors.ToProblemResult());
+		}).RequireAuthorization(policy => policy.RequireRole("Coach", "Manager"));
+
+		group.MapPatch("/{taskId:guid}", async (Guid taskId, UpdateTaskRequest request, ISender sender, CancellationToken cancellationToken) =>
+		{
+			var command = new UpdateTaskCommand(taskId, request.Title, request.Description, request.DueAtUtc, request.TrainingMaterialId);
 			var result = await sender.Send(command, cancellationToken);
 			return result.Match(success => Results.Ok(success), errors => errors.ToProblemResult());
 		}).RequireAuthorization(policy => policy.RequireRole("Coach", "Manager"));
@@ -70,3 +78,6 @@ public class TasksEndpoints : IEndpoint
 /// <summary>Request body for POST /api/tasks.</summary>
 public record AssignTaskRequest(
 	string Title, string? Description, Guid AssignedToUserId, DateTime? DueAtUtc, Guid? TrainingMaterialId);
+
+/// <summary>Request body for PATCH /api/tasks/{taskId}.</summary>
+public record UpdateTaskRequest(string Title, string? Description, DateTime? DueAtUtc, Guid? TrainingMaterialId);
