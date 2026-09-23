@@ -35,7 +35,11 @@ public class GetPlayerLeaderboardHandler(IApplicationDbContext dbContext)
 				AvgAdr = g.Average(x => x.stat.Adr),
 				AvgRating = g.Average(x => x.stat.Rating),
 				AvgHeadshotPercentage = g.Average(x => x.stat.HeadshotPercentage),
-				AvgKastPercentage = g.Average(x => x.stat.KastPercentage)
+				AvgKastPercentage = g.Average(x => x.stat.KastPercentage),
+				AvgEntryKills = g.Average(x => (double?)x.stat.EntryKills),
+				AvgEntryDeaths = g.Average(x => (double?)x.stat.EntryDeaths),
+				AvgUtilityDamage = g.Average(x => (double?)x.stat.UtilityDamage),
+				AvgFlashAssists = g.Average(x => (double?)x.stat.FlashAssists)
 			})
 			.ToListAsync(cancellationToken);
 
@@ -59,7 +63,11 @@ public class GetPlayerLeaderboardHandler(IApplicationDbContext dbContext)
 					Math.Round(g.AvgAdr, 1),
 					Math.Round(g.AvgRating, 2),
 					Math.Round(g.AvgHeadshotPercentage, 1),
-					g.AvgKastPercentage is { } kast ? Math.Round(kast, 1) : null);
+					g.AvgKastPercentage is { } kast ? Math.Round(kast, 1) : null,
+					g.AvgEntryKills is { } entryKills ? Math.Round(entryKills, 1) : null,
+					g.AvgEntryDeaths is { } entryDeaths ? Math.Round(entryDeaths, 1) : null,
+					g.AvgUtilityDamage is { } utilDmg ? Math.Round(utilDmg, 1) : null,
+					g.AvgFlashAssists is { } flashAssists ? Math.Round(flashAssists, 1) : null);
 			})
 			.OrderByDescending(e => e.AvgRating)
 			.ToList();

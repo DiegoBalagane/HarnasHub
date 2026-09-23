@@ -87,6 +87,10 @@ export interface PlayerLeaderboardEntry {
   avgRating: number
   avgHeadshotPercentage: number
   avgKastPercentage: number | null
+  avgEntryKills: number | null
+  avgEntryDeaths: number | null
+  avgUtilityDamage: number | null
+  avgFlashAssists: number | null
 }
 
 export const statsApi = {
