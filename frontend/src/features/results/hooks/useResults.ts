@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { DEMO_DIRECT_UPLOAD_MAX_BYTES } from '../../../constants'
-import { resultsApi, uploadFileToPresignedUrl, type AddResultPayload } from '../../../services/resultsApi'
+import { resultsApi, uploadFileToPresignedUrl, type AddResultPayload, type UpdateResultPayload } from '../../../services/resultsApi'
 
 /** Fetches every logged result, most recent first. */
 export function useResults() {
@@ -35,6 +35,19 @@ export function useAnalyzeDemo() {
       const { uploadUrl, objectKey } = await resultsApi.presignDemoUpload()
       await uploadFileToPresignedUrl(uploadUrl, demoFile)
       return resultsApi.analyzeDemoFromStorage(objectKey)
+    },
+  })
+}
+
+/** Edits a logged result's metadata and refreshes the results list. */
+export function useUpdateResult() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ matchResultId, payload }: { matchResultId: string; payload: UpdateResultPayload }) =>
+      resultsApi.updateResult(matchResultId, payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['results'] })
     },
   })
 }

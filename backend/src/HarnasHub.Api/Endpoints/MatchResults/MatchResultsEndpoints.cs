@@ -6,6 +6,7 @@ using HarnasHub.Application.Features.Results.DeleteResult;
 using HarnasHub.Application.Features.Results.GetResults;
 using HarnasHub.Application.Features.Results.PresignDemoUpload;
 using HarnasHub.Application.Features.Results.Shared;
+using HarnasHub.Application.Features.Results.UpdateResult;
 using HarnasHub.Core.Enums;
 using MediatR;
 using Microsoft.AspNetCore.Http.Features;
@@ -33,6 +34,15 @@ public class MatchResultsEndpoints : IEndpoint
 				request.Opponent, request.OurScore, request.OpponentScore, request.MapName, request.DemoUrl, request.Notes,
 				request.PlayedAtUtc, request.Category, request.TournamentId, request.LeagueId,
 				request.DemoRoundsPlayed, request.DemoPlayers, request.OurTeamSteamIds);
+			var result = await sender.Send(command, cancellationToken);
+			return result.Match(success => Results.Ok(success), errors => errors.ToProblemResult());
+		}).RequireAuthorization(policy => policy.RequireRole("Coach", "Manager"));
+
+		group.MapPatch("/{matchResultId:guid}", async (Guid matchResultId, UpdateResultRequest request, ISender sender, CancellationToken cancellationToken) =>
+		{
+			var command = new UpdateResultCommand(
+				matchResultId, request.Opponent, request.OurScore, request.OpponentScore, request.MapName, request.DemoUrl,
+				request.Notes, request.PlayedAtUtc, request.Category, request.TournamentId, request.LeagueId);
 			var result = await sender.Send(command, cancellationToken);
 			return result.Match(success => Results.Ok(success), errors => errors.ToProblemResult());
 		}).RequireAuthorization(policy => policy.RequireRole("Coach", "Manager"));
@@ -116,3 +126,16 @@ public record AddResultRequest(
 
 /// <summary>Request body for POST /api/results/analyze-demo/from-storage.</summary>
 public record AnalyzeDemoFromStorageRequest(string ObjectKey);
+
+/// <summary>Request body for PATCH /api/results/{matchResultId}.</summary>
+public record UpdateResultRequest(
+	string Opponent,
+	int OurScore,
+	int OpponentScore,
+	string? MapName,
+	string? DemoUrl,
+	string? Notes,
+	DateTime PlayedAtUtc,
+	MatchCategory Category,
+	Guid? TournamentId,
+	Guid? LeagueId);
