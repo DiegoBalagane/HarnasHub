@@ -17,6 +17,9 @@ public class TestFileStorage(bool isConfigured = true, Stream? streamToReturn = 
 	public Task<PresignedUpload> CreatePresignedUploadAsync(string keyPrefix, TimeSpan expiry, CancellationToken cancellationToken) =>
 		Task.FromResult(new PresignedUpload($"https://example.com/upload/{keyPrefix}", $"{keyPrefix}/{Guid.NewGuid():N}"));
 
+	public Task<string> CreatePresignedDownloadUrlAsync(string objectKey, TimeSpan expiry, CancellationToken cancellationToken) =>
+		Task.FromResult($"https://example.com/download/{objectKey}");
+
 	public Task<Stream> OpenReadAsync(string objectKey, CancellationToken cancellationToken)
 	{
 		if (throwOnOpenRead is not null)

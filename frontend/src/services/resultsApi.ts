@@ -117,10 +117,10 @@ export const resultsApi = {
     apiClient.post<AnalyzeDemoResult>(API_ENDPOINTS.analyzeResultDemoFromStorage, { objectKey }),
 }
 
-/** Uploads a file directly to a presigned object-storage URL — deliberately not going through apiClient, since this
- * request goes to a completely different origin (the storage provider's own endpoint) and must carry neither our
- * Bearer token nor a JSON Content-Type. */
-export async function uploadFileToPresignedUrl(uploadUrl: string, file: File): Promise<void> {
+/** Uploads a file (or any other blob, e.g. a pasted clipboard image) directly to a presigned object-storage URL —
+ * deliberately not going through apiClient, since this request goes to a completely different origin (the storage
+ * provider's own endpoint) and must carry neither our Bearer token nor a JSON Content-Type. */
+export async function uploadFileToPresignedUrl(uploadUrl: string, file: Blob): Promise<void> {
   const response = await fetch(uploadUrl, { method: 'PUT', body: file })
 
   if (!response.ok) {

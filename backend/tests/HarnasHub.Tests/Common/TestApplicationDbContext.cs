@@ -28,6 +28,7 @@ public class TestApplicationDbContext(DbContextOptions<TestApplicationDbContext>
 	public DbSet<TacticPoint> TacticPoints => Set<TacticPoint>();
 	public DbSet<Tournament> Tournaments => Set<Tournament>();
 	public DbSet<League> Leagues => Set<League>();
+	public DbSet<AnalysisBoard> AnalysisBoards => Set<AnalysisBoard>();
 
 	#endregion
 

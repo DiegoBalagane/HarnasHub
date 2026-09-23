@@ -24,6 +24,7 @@ public interface IApplicationDbContext
 	DbSet<TacticPoint> TacticPoints { get; }
 	DbSet<Tournament> Tournaments { get; }
 	DbSet<League> Leagues { get; }
+	DbSet<AnalysisBoard> AnalysisBoards { get; }
 
 	Task<int> SaveChangesAsync(CancellationToken cancellationToken);
 }
