@@ -30,6 +30,45 @@ public class OpponentVetoPredictorTests
 	}
 
 	[Fact]
+	public void Should_not_call_a_rarely_played_map_a_ban_below_the_avoidance_sample()
+	{
+		var metrics = Metrics(new() { [MapName.Mirage] = (6, 4), [MapName.Inferno] = (5, 3), [MapName.Ancient] = (1, 0) });
+
+		var predictions = OpponentVetoPredictor.Predict(metrics, totalGames: 12);
+
+		Assert.Equal("Unknown", predictions[MapName.Ancient].Prediction);
+		Assert.StartsWith("Rzadko grają drużynowo (1 z 12) — za mało meczów (< 15)", predictions[MapName.Ancient].Reason);
+	}
+
+	[Fact]
+	public void Should_downgrade_a_ban_the_lifetime_numbers_contradict()
+	{
+		var metrics = Metrics(new() { [MapName.Mirage] = (10, 6), [MapName.Inferno] = (9, 5), [MapName.Ancient] = (1, 0) });
+		var lifetime = Enum.GetValues<MapName>().ToDictionary(
+			map => map,
+			map => new MapLifetime(map, 5, map == MapName.Ancient ? 113 : 20, map == MapName.Ancient ? 60 : 10, 1.1, map == MapName.Ancient ? 0.23 : 0.04));
+
+		var predictions = OpponentVetoPredictor.Predict(metrics, totalGames: 20, lifetime: lifetime);
+
+		Assert.Equal("Unknown", predictions[MapName.Ancient].Prediction);
+		Assert.Equal("Rzadko grają drużynowo (1 z 20), ale indywidualnie dużo (113 meczów lifetime składu) → niepewne", predictions[MapName.Ancient].Reason);
+		Assert.Equal("Ban", predictions[MapName.Nuke].Prediction);
+		Assert.True(predictions[MapName.Ancient].Preference > predictions[MapName.Nuke].Preference);
+	}
+
+	[Fact]
+	public void Should_quote_a_win_rate_only_from_enough_games_on_the_map()
+	{
+		var metrics = Metrics(new() { [MapName.Mirage] = (8, 6), [MapName.Ancient] = (4, 4), [MapName.Inferno] = (3, 1), [MapName.Nuke] = (2, 1) });
+
+		var predictions = OpponentVetoPredictor.Predict(metrics, totalGames: 17);
+
+		Assert.Contains("75% wygranych", predictions[MapName.Mirage].Reason);
+		Assert.DoesNotContain("wygranych", predictions[MapName.Ancient].Reason);
+		Assert.Equal("Grają ją okazjonalnie (3 mecze)", predictions[MapName.Inferno].Reason);
+	}
+
+	[Fact]
 	public void Should_not_flag_a_most_played_but_losing_map_as_a_pick()
 	{
 		var metrics = Metrics(new() { [MapName.Mirage] = (10, 1), [MapName.Ancient] = (4, 3) });

@@ -9,7 +9,7 @@ using Microsoft.EntityFrameworkCore;
 namespace HarnasHub.Application.Features.Availability.GetWeekAvailability;
 
 /// <summary>Handles <see cref="GetWeekAvailabilityQuery"/> by combining daily declarations with vacations, which win.</summary>
-public class GetWeekAvailabilityHandler(IApplicationDbContext dbContext)
+public class GetWeekAvailabilityHandler(IApplicationDbContext dbContext, ICurrentUserService currentUser)
 	: IRequestHandler<GetWeekAvailabilityQuery, ErrorOr<WeekAvailabilityDto>>
 {
 	#region Private Fields
@@ -30,13 +30,16 @@ public class GetWeekAvailabilityHandler(IApplicationDbContext dbContext)
 		// Who appears in the calendar: stand-ins never do (they only fill a temporary gap), guests never do, and
 		// neither does anyone still waiting for a roster slot — unless they're the coach, who is always listed.
 		// Sorting puts the coach in their own section at the very bottom, then main five above the bench.
+		var currentUserId = currentUser.UserId;
 		var members = await dbContext.Users
 			.Where(user => user.RosterSlot != RosterSlot.StandIn
 				&& user.AccessLevel != AccessLevel.Guest
 				&& (user.RosterSlot != null || user.IsCoach))
+			// Players hidden from the calendar are left out for everyone else but still get their own row, so they can edit their availability.
+			.Where(user => user.ShowInCalendar || user.Id == currentUserId)
 			.OrderBy(user => user.IsCoach ? 2 : user.RosterSlot == RosterSlot.Main ? 0 : 1)
 			.ThenBy(user => user.DisplayName)
-			.Select(user => new { user.Id, user.DisplayName, user.InGameNickname, user.TeamRole, user.RosterSlot, user.IsCoach })
+			.Select(user => new { user.Id, user.DisplayName, user.InGameNickname, user.TeamRole, user.RosterSlot, user.IsCoach, user.ShowInCalendar })
 			.ToListAsync(cancellationToken);
 
 		var declaredDays = await dbContext.PlayerAvailabilityDays
@@ -58,7 +61,8 @@ public class GetWeekAvailabilityHandler(IApplicationDbContext dbContext)
 				member.TeamRole?.ToString(),
 				member.RosterSlot?.ToString(),
 				member.IsCoach,
-				BuildDays(weekStart, member.Id, declaredByUserAndDate, vacationsByUser)))
+				BuildDays(weekStart, member.Id, declaredByUserAndDate, vacationsByUser),
+				!member.ShowInCalendar))
 			.ToList();
 
 		return new WeekAvailabilityDto(rows);

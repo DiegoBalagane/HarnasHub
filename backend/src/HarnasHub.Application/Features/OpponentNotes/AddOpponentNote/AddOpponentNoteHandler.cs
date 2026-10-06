@@ -25,6 +25,7 @@ public class AddOpponentNoteHandler(IApplicationDbContext dbContext, ICurrentUse
 		};
 
 		dbContext.OpponentNotes.Add(note);
+		await OpponentRevival.ReviveAsync(dbContext, request.OpponentName, cancellationToken);
 		await dbContext.SaveChangesAsync(cancellationToken);
 		await realtimeNotifier.NotifyAsync("opponents", cancellationToken);
 

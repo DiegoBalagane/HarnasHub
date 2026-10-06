@@ -70,12 +70,19 @@ public static class OpponentInsightRules
 		}
 	}
 
-	/// <summary>Maps they (almost) never play — near-certain bans; the map already covered by
+	/// <summary>Maps they (almost) never play over at least <see cref="SampleThresholds.MinTeamGamesForAvoidance"/> team games and that the individual data doesn't contradict — near-certain bans; the map already covered by
 	/// <see cref="IndividualInsightRules.SoloAvoidance"/> is skipped so the TL;DR doesn't say it twice.</summary>
 	public static IEnumerable<OpponentInsightDto> LikelyBans(InsightInput input)
 	{
 		var soloCovered = IndividualInsightRules.MostAvoidedMap(input)?.MapName;
-		var bans = input.Maps.Where(m => m.Prediction == "Ban" && m.MapName != soloCovered).Take(2).ToList();
+		var bans = input.Maps
+			.Where(m => m.Prediction == "Ban"
+				&& m.MapName != soloCovered
+				&& m.TheirGames <= OpponentVetoPredictor.RarelyPlayedGames
+				&& input.TheirTeamGames >= SampleThresholds.MinTeamGamesForAvoidance
+				&& m.TheirLifetime?.Experienced != true)
+			.Take(2)
+			.ToList();
 		if (bans.Count > 0)
 		{
 			var names = string.Join(" i ", bans.Select(m => m.MapName));
@@ -84,10 +91,10 @@ public static class OpponentInsightRules
 		}
 	}
 
-	/// <summary>Maps where they are weak and we are clearly better — pick candidates.</summary>
+	/// <summary>Maps where they are weak and we are clearly better — pick candidates; both samples must reach <see cref="SampleThresholds.MinGamesForWinRate"/>.</summary>
 	public static IEnumerable<OpponentInsightDto> Opportunities(InsightInput input) =>
 		input.Maps
-			.Where(m => m.TheirGames >= 3 && m.TheirWinRate <= 45 && m.OurWinRate >= 55 && m.Advantage >= 10)
+			.Where(m => SampleThresholds.HasWinRateSample(m.TheirGames) && SampleThresholds.HasWinRateSample(m.OurGames) && m.TheirWinRate <= 45 && m.OurWinRate >= 55 && m.Advantage >= 10)
 			.OrderByDescending(m => m.Advantage)
 			.Take(2)
 			.Select(m => new OpponentInsightDto(
@@ -96,16 +103,16 @@ public static class OpponentInsightRules
 				$"Słabi na {m.MapName} ({Pct(m.TheirWinRate!.Value)}%), my {Pct(m.OurWinRate!.Value)}% → pick",
 				$"oni {m.TheirWins}/{m.TheirGames}, my {Num(m.OurWins)}/{m.OurGames}, przewaga {Signed(m.Advantage)} pp"));
 
-	/// <summary>Maps where they hold a real edge over us — ban candidates.</summary>
+	/// <summary>Maps where they hold a real edge over us — ban candidates; their per-map win rate needs <see cref="SampleThresholds.MinGamesForWinRate"/> games, ours is only quoted from as many.</summary>
 	public static IEnumerable<OpponentInsightDto> Dangers(InsightInput input) =>
 		input.Maps
-			.Where(m => m.Advantage <= -10 && m.Confidence != nameof(ConfidenceLevel.Low) && m.TheirWinRate.HasValue)
+			.Where(m => m.Advantage <= -10 && m.Confidence != nameof(ConfidenceLevel.Low) && m.TheirWinRate.HasValue && SampleThresholds.HasWinRateSample(m.TheirGames))
 			.OrderBy(m => m.Advantage)
 			.Take(2)
 			.Select(m => new OpponentInsightDto(
 				"Danger",
 				"Warning",
-				$"Uwaga na {m.MapName}: oni {Pct(m.TheirWinRate!.Value)}%, my {(m.OurWinRate.HasValue ? $"{Pct(m.OurWinRate.Value)}%" : "brak meczów")} — kandydat do bana",
+				$"Uwaga na {m.MapName}: oni {Pct(m.TheirWinRate!.Value)}%, my {OurRate(m)} — {(m.PoolStatus == "Core" ? "groźnie, choć to nasza mapa komfortowa" : "kandydat do bana")}",
 				$"przewaga {Signed(m.Advantage)} pp, pewność {ConfidenceLabel(m.Confidence)}"));
 
 	/// <summary>The single most dangerous player (by ADR, then K/D) with at least 3 games on a map.</summary>
@@ -183,6 +190,14 @@ public static class OpponentInsightRules
 
 	/// <summary>Percentage points with an explicit sign.</summary>
 	private static string Signed(double value) => (value > 0 ? "+" : "") + Pct(value);
+
+	/// <summary>Our win rate on the row, or "brak meczów" / "za mało danych (n)" below the sample threshold.</summary>
+	private static string OurRate(MapComparisonDto m) =>
+		m.OurGames == 0
+			? "brak meczów"
+			: SampleThresholds.HasWinRateSample(m.OurGames) && m.OurWinRate is { } rate
+				? $"{Pct(rate)}%"
+				: $"za mało danych ({m.OurGames} {VetoNotes.MatchNoun(m.OurGames)})";
 
 	#endregion
 }

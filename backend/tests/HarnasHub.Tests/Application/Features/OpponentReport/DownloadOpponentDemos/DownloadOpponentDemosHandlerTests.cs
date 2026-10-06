@@ -118,7 +118,7 @@ public class DownloadOpponentDemosHandlerTests
 	private static DownloadOpponentDemosHandler Handler(
 		TestApplicationDbContext dbContext, TestFileStorage storage, TestFaceitClient faceit, TestFaceitDemoDownloader downloader) =>
 		new(dbContext, storage, new TestDemoParser(timeline: OpponentTimelineFactory.Timeline([OpponentTimelineFactory.Round(1, MapSide.T, MapSide.T)])), faceit, downloader,
-			new TestCurrentUserService(Guid.NewGuid()), new TestJobProgress(), NullLogger<DownloadOpponentDemosHandler>.Instance);
+			new TestCurrentUserService(Guid.NewGuid()), new TestJobProgress(), TestTeamNotifications.Create(dbContext, storage), NullLogger<DownloadOpponentDemosHandler>.Instance);
 
 	private static void SeedLink(TestApplicationDbContext dbContext)
 	{

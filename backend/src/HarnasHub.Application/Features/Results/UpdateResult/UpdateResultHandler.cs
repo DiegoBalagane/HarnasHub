@@ -1,5 +1,6 @@
 using ErrorOr;
 using HarnasHub.Application.Abstractions;
+using HarnasHub.Application.Features.OpponentNotes.Shared;
 using HarnasHub.Application.Features.Results.Shared;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -21,6 +22,7 @@ public class UpdateResultHandler(IApplicationDbContext dbContext, IRealtimeNotif
 			return ResultErrors.MatchNotFound;
 		}
 
+		await OpponentRevival.ReviveIfRenamedAsync(dbContext, result.Opponent, request.Opponent, cancellationToken);
 		result.Opponent = request.Opponent;
 		result.OurScore = request.OurScore;
 		result.OpponentScore = request.OpponentScore;

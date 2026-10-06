@@ -59,6 +59,7 @@ public class GetDashboardSummaryHandler(IApplicationDbContext dbContext, ICurren
 		var members = (await dbContext.Users
 				.Where(user => user.AccessLevel != AccessLevel.Guest && user.RosterSlot != RosterSlot.StandIn)
 				.Where(user => user.RosterSlot != null || user.IsCoach)
+				.Where(user => user.ShowInCalendar)
 				.OrderBy(user => user.DisplayName)
 				.Select(user => new { user.Id, user.DisplayName, user.InGameNickname, user.TeamRole, user.RosterSlot, user.IsCoach })
 				.ToListAsync(cancellationToken))
@@ -103,7 +104,8 @@ public class GetDashboardSummaryHandler(IApplicationDbContext dbContext, ICurren
 
 		var attendanceCutoff = today.AddDays(-30);
 		var recentIncidentTypes = await dbContext.AttendanceIncidents
-			.Where(incident => incident.OccurredOn >= attendanceCutoff)
+			.Where(incident => incident.OccurredOn >= attendanceCutoff
+				&& dbContext.Users.Any(user => user.Id == incident.UserId && user.ShowInCalendar))
 			.Select(incident => incident.Type)
 			.ToListAsync(cancellationToken);
 		var attendance = new TeamAttendanceSummaryDto(

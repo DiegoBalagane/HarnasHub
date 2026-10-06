@@ -1,6 +1,8 @@
 using System.Text.Json;
 using ErrorOr;
 using HarnasHub.Application.Abstractions;
+using HarnasHub.Application.Features.OpponentNotes.Shared;
+using HarnasHub.Application.Common.Notifications;
 using HarnasHub.Application.Features.MatchAnalysis.Shared;
 using HarnasHub.Application.Features.Results.Shared;
 using HarnasHub.Application.Features.Stats.Shared;
@@ -18,6 +20,7 @@ public class AddResultHandler(
 	ICurrentUserService currentUser,
 	IRealtimeNotifier realtimeNotifier,
 	IFileStorage fileStorage,
+	TeamNotifications notifications,
 	ILogger<AddResultHandler> logger)
 	: IRequestHandler<AddResultCommand, ErrorOr<MatchResultDto>>
 {
@@ -58,6 +61,7 @@ public class AddResultHandler(
 			importedStatCount = await ImportTeamStatsAsync(result.Id, ourPlayers, roundsPlayed, cancellationToken);
 		}
 
+		await OpponentRevival.ReviveAsync(dbContext, request.Opponent, cancellationToken);
 		await dbContext.SaveChangesAsync(cancellationToken);
 
 		await realtimeNotifier.NotifyAsync("results", cancellationToken);
@@ -68,11 +72,14 @@ public class AddResultHandler(
 			await realtimeNotifier.NotifyAsync($"match-stats:{result.Id}", cancellationToken);
 		}
 
+		await notifications.NotifyResultSavedAsync(result, cancellationToken);
+
 		// Best-effort: the result is saved and valid without a timeline (one can still be attached later).
 		if (request.PendingTimelineKey is { } pendingKey
 			&& await MatchTimelineAttacher.ClaimPendingAsync(dbContext, fileStorage, logger, result, pendingKey, request.OurTeamSteamIds, cancellationToken))
 		{
 			await realtimeNotifier.NotifyAsync($"match-analysis:{result.Id}", cancellationToken);
+			await notifications.NotifyDemoReviewAsync(result.Id, cancellationToken);
 		}
 
 		var tournament = request.TournamentId is null

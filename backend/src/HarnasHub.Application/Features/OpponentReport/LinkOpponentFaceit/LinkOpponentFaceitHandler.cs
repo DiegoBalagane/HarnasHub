@@ -76,6 +76,7 @@ public class LinkOpponentFaceitHandler(
 			link.LastSyncedAtUtc = null;
 
 			await OpponentReportSnapshots.RemoveAsync(dbContext, key, cancellationToken);
+			await OpponentRevival.ReviveAsync(dbContext, request.OpponentName, cancellationToken);
 			await dbContext.SaveChangesAsync(cancellationToken);
 
 			return new OpponentFaceitLinkDto(

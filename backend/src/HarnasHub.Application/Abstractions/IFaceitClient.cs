@@ -22,12 +22,17 @@ public interface IFaceitClient
 	/// <summary>Loads a match room with both factions' rosters.</summary>
 	Task<FaceitMatchInfo?> GetMatchAsync(string matchId, CancellationToken cancellationToken);
 
-	/// <summary>A player's CS2 match history since <paramref name="fromUtc"/>, newest first, at most <paramref name="limit"/> entries.</summary>
+	/// <summary>One page (max 100) of a player's CS2 match history since <paramref name="fromUtc"/>, newest first, skipping
+	/// <paramref name="offset"/> entries; every competition type (matchmaking, hub, championship such as ESEA League) is included.</summary>
 	Task<IReadOnlyList<FaceitHistoryItem>> GetPlayerHistoryAsync(
 		string playerId,
 		DateTime fromUtc,
 		int limit,
-		CancellationToken cancellationToken);
+		CancellationToken cancellationToken,
+		int offset = 0);
+
+	/// <summary>A player's lifetime CS2 numbers per map (the "Map" segments of <c>/players/{id}/stats/cs2</c>); empty when unknown.</summary>
+	Task<IReadOnlyList<FaceitLifetimeMapStats>> GetPlayerMapStatsAsync(string playerId, CancellationToken cancellationToken);
 
 	/// <summary>Per-map scoreboards of a finished match; empty when FACEIT has no statistics for it.</summary>
 	Task<IReadOnlyList<FaceitMapStats>> GetMatchStatsAsync(string matchId, CancellationToken cancellationToken);

@@ -52,9 +52,13 @@ public class SyncOpponentFaceitHandler(
 			var ourIds = await FaceitSync.ResolveOurPlayersAsync(dbContext, faceitClient, now, cancellationToken);
 			jobProgress.Report(15, "Pobieranie profili graczy rywala");
 			await FaceitSync.RefreshProfilesAsync(dbContext, faceitClient, link.PlayerIds, now, cancellationToken);
-			jobProgress.BeginStep(25, 90, "Pobieranie historii meczów (to trwa najdłużej)");
+			jobProgress.BeginStep(25, 85, "Pobieranie historii meczów (to trwa najdłużej)");
 			var (newMapGames, complete) = await FaceitSync.SyncHistoryAsync(
 				dbContext, faceitClient, link.PlayerIds.Concat(ourIds).ToList(), now, cancellationToken, jobProgress.ReportStep);
+
+			jobProgress.Report(85, "Pobieranie statystyk map (lifetime)");
+			var activeIds = await OpponentReportGenerator.ActiveLineupIdsAsync(dbContext, link.PlayerIds, now, cancellationToken);
+			await FaceitLifetimeStats.RefreshAsync(dbContext, faceitClient, activeIds.Concat(ourIds).ToList(), now, cancellationToken);
 
 			link.LastSyncedAtUtc = now;
 			await dbContext.SaveChangesAsync(cancellationToken);

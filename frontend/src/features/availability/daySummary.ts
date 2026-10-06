@@ -23,6 +23,10 @@ export function computeDaySummary(members: MemberWeek[], date: string): DaySumma
   let commonTo: string | null = null
 
   for (const member of members) {
+    if (member.hiddenFromCalendar) {
+      continue
+    }
+
     const group = member.rosterSlot === 'Main' ? main : rest
     group.totalCount += 1
 

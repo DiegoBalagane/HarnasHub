@@ -133,5 +133,30 @@ public class GetPlayerLeaderboardHandlerTests
 		Assert.Equal(1.80, entry.AvgRating);
 	}
 
+	[Fact]
+	public async Task Should_leave_out_stat_lines_of_accounts_that_no_longer_exist()
+	{
+		await using var dbContext = TestApplicationDbContext.Create();
+		var matchId = Guid.NewGuid();
+		dbContext.MatchResults.Add(new MatchResult { Id = matchId, Opponent = "Foo", PlayedAtUtc = DateTime.UtcNow, CreatedAtUtc = DateTime.UtcNow });
+		dbContext.PlayerMatchStats.Add(new PlayerMatchStat
+		{
+			Id = Guid.NewGuid(),
+			MatchResultId = matchId,
+			UserId = Guid.NewGuid(),
+			Kills = 10,
+			Deaths = 10,
+			Adr = 50,
+			Rating = 1.00,
+			CreatedAtUtc = DateTime.UtcNow
+		});
+		await dbContext.SaveChangesAsync(CancellationToken.None);
+
+		var result = await new GetPlayerLeaderboardHandler(dbContext).Handle(new GetPlayerLeaderboardQuery(null), CancellationToken.None);
+
+		Assert.False(result.IsError);
+		Assert.Empty(result.Value);
+	}
+
 	#endregion
 }

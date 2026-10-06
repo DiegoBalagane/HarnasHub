@@ -2,6 +2,7 @@
 
 using ErrorOr;
 using HarnasHub.Application.Abstractions;
+using HarnasHub.Application.Common.Notifications;
 using HarnasHub.Application.Features.MatchAnalysis.Shared;
 using HarnasHub.Application.Features.OpponentReport.Shared;
 using MediatR;
@@ -17,6 +18,7 @@ namespace HarnasHub.Application.Features.OpponentReport.SetOpponentDemoTeam;
 public class SetOpponentDemoTeamHandler(
 	IApplicationDbContext dbContext,
 	IFileStorage fileStorage,
+	TeamNotifications notifications,
 	ILogger<SetOpponentDemoTeamHandler> logger) : IRequestHandler<SetOpponentDemoTeamCommand, ErrorOr<OpponentDemoDto>>
 {
 	#region Public Methods
@@ -46,8 +48,16 @@ public class SetOpponentDemoTeamHandler(
 			return OpponentDemoErrors.TimelineUnavailable;
 		}
 
+		var firstResolution = analysis.FactsJson is null;
 		OpponentDemoProcessor.ApplyTeam(analysis, stored.Timeline, request.Team);
 		await dbContext.SaveChangesAsync(cancellationToken);
+
+		// Only the first resolution is announced; correcting an already resolved team stays silent.
+		if (firstResolution)
+		{
+			await notifications.NotifyOpponentDemosAsync(analysis.OpponentKey, null, [analysis.MapName?.ToString() ?? string.Empty], cancellationToken);
+		}
+
 		return await OpponentPlayerNames.ResolveDemoAsync(dbContext, OpponentDemoProcessor.ToDto(analysis), cancellationToken);
 	}
 

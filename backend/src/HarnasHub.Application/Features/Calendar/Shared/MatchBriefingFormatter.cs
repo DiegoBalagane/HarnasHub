@@ -2,6 +2,7 @@
 
 using System.Globalization;
 using System.Text;
+using HarnasHub.Application.Common.Notifications;
 using HarnasHub.Application.Features.OpponentReport.Shared;
 
 #endregion
@@ -14,7 +15,7 @@ public static class MatchBriefingFormatter
 	#region Public Fields
 
 	/// <summary>Discord's hard limit for a single message.</summary>
-	public const int MaxMessageLength = 2000;
+	public const int MaxMessageLength = DiscordMessage.MaxLength;
 
 	#endregion
 
@@ -51,7 +52,7 @@ public static class MatchBriefingFormatter
 			sb.Append($"\n**Uważaj na:** {string.Join(", ", players)}");
 		}
 
-		return Truncate(sb.ToString(), link);
+		return DiscordMessage.WithFooter(sb.ToString(), link);
 	}
 
 	/// <summary>One line from the BO1 plan, e.g. "my ban Nuke → oni ban Mirage → decider Inferno"; null without a BO1 plan.</summary>
@@ -96,17 +97,6 @@ public static class MatchBriefingFormatter
 		return string.Equals(step.Action, "Decider", StringComparison.OrdinalIgnoreCase)
 			? $"decider {step.MapName}"
 			: $"{who} {step.Action.ToLowerInvariant()} {step.MapName}";
-	}
-
-	private static string Truncate(string body, string? link)
-	{
-		var linkLength = link?.Length ?? 0;
-		if (body.Length + linkLength > MaxMessageLength)
-		{
-			body = body[..(MaxMessageLength - linkLength - 1)] + "…";
-		}
-
-		return body + link;
 	}
 
 	#endregion

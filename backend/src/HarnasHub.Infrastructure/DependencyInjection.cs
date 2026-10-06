@@ -40,6 +40,7 @@ public static class DependencyInjection
 		services.AddHttpClient<IDiscordOAuthClient, DiscordOAuthClient>();
 
 		services.AddHttpClient<IDiscordNotifier, DiscordWebhookNotifier>();
+		services.AddSingleton<IFrontendLinks, FrontendLinks>();
 		services.AddHostedService<EventReminderService>();
 		services.AddHostedService<PendingTimelineCleanupService>();
 

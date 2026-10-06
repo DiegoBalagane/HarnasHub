@@ -3,6 +3,7 @@
 using ErrorOr;
 using HarnasHub.Application.Abstractions;
 using HarnasHub.Application.Common.Faceit;
+using HarnasHub.Application.Common.Notifications;
 using HarnasHub.Application.Features.OpponentNotes.Shared;
 using HarnasHub.Application.Features.OpponentReport.Shared;
 using HarnasHub.Core.Enums;
@@ -24,6 +25,7 @@ public class AnalyzeOpponentDemoHandler(
 	IDemoParser demoParser,
 	ICurrentUserService currentUser,
 	FaceitDemoMatchLookup faceitLookup,
+	TeamNotifications notifications,
 	ILogger<AnalyzeOpponentDemoHandler> logger) : IRequestHandler<AnalyzeOpponentDemoCommand, ErrorOr<OpponentDemoDto>>
 {
 	#region Public Methods
@@ -48,6 +50,12 @@ public class AnalyzeOpponentDemoHandler(
 			var input = await BuildInputAsync(key, request.FileName, cancellationToken);
 			var analysis = await OpponentDemoProcessor.StoreAsync(dbContext, fileStorage, input, timeline, DateTime.UtcNow, cancellationToken);
 			await dbContext.SaveChangesAsync(cancellationToken);
+			// Digest only when the opponent team was resolved (otherwise there are no tendencies to summarise yet).
+			if (analysis.FactsJson is not null)
+			{
+				await notifications.NotifyOpponentDemosAsync(key, request.OpponentName, [analysis.MapName?.ToString() ?? string.Empty], cancellationToken);
+			}
+
 			return OpponentDemoProcessor.ToDto(analysis);
 		}
 		catch (Exception ex) when (ex is not OperationCanceledException)

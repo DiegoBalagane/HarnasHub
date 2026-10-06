@@ -27,6 +27,9 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
 		builder.Property(u => u.PinMark).HasMaxLength(4);
 		builder.Property(u => u.InGameNickname).HasMaxLength(50);
 		builder.Property(u => u.SteamId64).HasMaxLength(17);
+		builder.Property(u => u.ShowInStats).IsRequired().HasDefaultValue(true);
+		builder.Property(u => u.ShowInCalendar).IsRequired().HasDefaultValue(true);
+		builder.Property(u => u.FaceitNickname).HasMaxLength(64);
 	}
 
 	#endregion

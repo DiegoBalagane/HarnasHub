@@ -1,13 +1,14 @@
 using ErrorOr;
 using HarnasHub.Application.Abstractions;
 using HarnasHub.Application.Features.Calendar.Shared;
+using HarnasHub.Core.Enums;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
 namespace HarnasHub.Application.Features.Calendar.DeleteEvent;
 
 /// <summary>Handles <see cref="DeleteEventCommand"/> — also clears any availability declarations for the event, since nothing else references them once it's gone.</summary>
-public class DeleteEventHandler(IApplicationDbContext dbContext, IRealtimeNotifier realtimeNotifier)
+public class DeleteEventHandler(IApplicationDbContext dbContext, IRealtimeNotifier realtimeNotifier, IDiscordNotifier discordNotifier)
 	: IRequestHandler<DeleteEventCommand, ErrorOr<Success>>
 {
 	#region Public Methods
@@ -39,6 +40,11 @@ public class DeleteEventHandler(IApplicationDbContext dbContext, IRealtimeNotifi
 
 		dbContext.Events.Remove(calendarEvent);
 		await dbContext.SaveChangesAsync(cancellationToken);
+
+		if (calendarEvent.Type == EventType.Match)
+		{
+			await discordNotifier.SendAsync(DiscordChannel.MatchSchedule, MatchEventFormatter.Deleted(calendarEvent), cancellationToken);
+		}
 
 		await realtimeNotifier.NotifyAsync("calendar", cancellationToken);
 		await realtimeNotifier.NotifyAsync("dashboard", cancellationToken);
