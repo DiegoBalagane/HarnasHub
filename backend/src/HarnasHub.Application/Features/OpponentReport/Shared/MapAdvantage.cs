@@ -23,13 +23,14 @@ public static class MapAdvantage
 
 	#region Public Methods
 
-	/// <summary><c>(wins + k·0.5) / (games + k)</c>; exactly 0.5 without games. Draws may be passed as half wins.</summary>
-	public static double SmoothedWinRate(double wins, int games, double k = SmoothingGames) =>
-		(wins + k * 0.5) / (games + k);
+	/// <summary><c>(wins + k·prior) / (games + k)</c>; exactly the prior (0.5 by default) without games. Draws may be passed as half wins.</summary>
+	public static double SmoothedWinRate(double wins, int games, double k = SmoothingGames, double prior = 0.5) =>
+		(wins + k * prior) / (games + k);
 
-	/// <summary>Smoothed win rate of ours minus theirs, in the range −1…1.</summary>
-	public static double Advantage(double ourWins, int ourGames, double theirWins, int theirGames) =>
-		SmoothedWinRate(ourWins, ourGames) - SmoothedWinRate(theirWins, theirGames);
+	/// <summary>Smoothed win rate of ours minus theirs, in the range −1…1. The priors default to 0.5; the report passes each side's
+	/// solo-form prior from <see cref="IndividualSignal.WinRatePrior"/> (capped to 0.4–0.6), whose weight shrinks as k / (k + games).</summary>
+	public static double Advantage(double ourWins, int ourGames, double theirWins, int theirGames, double ourPrior = 0.5, double theirPrior = 0.5) =>
+		SmoothedWinRate(ourWins, ourGames, prior: ourPrior) - SmoothedWinRate(theirWins, theirGames, prior: theirPrior);
 
 	/// <summary>Confidence from the smaller of the two samples: &lt; 3 low, 3–9 medium, ≥ 10 high.</summary>
 	public static ConfidenceLevel Confidence(int minGames) =>

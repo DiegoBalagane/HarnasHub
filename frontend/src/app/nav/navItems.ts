@@ -11,6 +11,8 @@ export interface NavItem {
 export interface NavSection {
   label?: string
   items: NavItem[]
+  /** When true the whole section is shown to Managers only. */
+  managerOnly?: boolean
 }
 
 /** All sidebar sections in display order. */
@@ -39,6 +41,11 @@ export const navSections: NavSection[] = [
       { to: '/tasks', label: 'Zadania', icon: 'tasks' },
       { to: '/attendance', label: 'Frekwencja', icon: 'attendance' },
     ],
+  },
+  {
+    label: 'Administracja',
+    managerOnly: true,
+    items: [{ to: '/admin', label: 'Panel admina', icon: 'admin' }],
   },
 ]
 
