@@ -1,3 +1,4 @@
+import { PageHeader } from '../../components/ui/PageHeader'
 import { useIsCoachOrManager } from '../../features/auth/hooks/useIsCoachOrManager'
 import { PinColorAssignmentPanel } from '../../features/roster/components/PinColorAssignmentPanel'
 import { RosterBoard } from '../../features/roster/components/RosterBoard'
@@ -9,7 +10,7 @@ export function RosterPage() {
 
   return (
     <>
-      <h1 className="text-2xl font-semibold">Skład drużyny</h1>
+      <PageHeader title="Skład drużyny" />
       {canManageRoster && <RosterBoard />}
       <PinColorAssignmentPanel />
       <SteamIdAssignmentPanel />

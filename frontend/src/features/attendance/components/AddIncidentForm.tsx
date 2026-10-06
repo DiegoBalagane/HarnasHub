@@ -5,8 +5,13 @@ import { useAddIncident } from '../hooks/useAttendance'
 
 const todayIso = () => new Date().toISOString().slice(0, 10)
 
+interface AddIncidentFormProps {
+  /** Called after saving, e.g. to close the modal hosting the form. */
+  onDone?: () => void
+}
+
 /** Coach/Manager-only form to log a lateness or absence for a roster player on a training day. */
-export function AddIncidentForm() {
+export function AddIncidentForm({ onDone }: AddIncidentFormProps) {
   const { data: roster } = useRoster()
   const addIncident = useAddIncident()
 
@@ -23,6 +28,7 @@ export function AddIncidentForm() {
         onSuccess: () => {
           setUserId('')
           setNote('')
+          onDone?.()
         },
       },
     )
@@ -85,12 +91,12 @@ export function AddIncidentForm() {
       <button
         type="submit"
         disabled={addIncident.isPending || userId === ''}
-        className="rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-red-500 disabled:opacity-50"
+        className="rounded-md bg-primary-500 px-4 py-2 text-sm font-medium text-primary-950 transition hover:bg-primary-400 disabled:opacity-50"
       >
         {addIncident.isPending ? 'Zapisywanie…' : 'Dodaj'}
       </button>
 
-      {addIncident.isError && <p className="w-full text-sm text-red-400">Nie udało się zapisać wpisu.</p>}
+      {addIncident.isError && <p className="w-full text-sm text-danger-400">Nie udało się zapisać wpisu.</p>}
     </form>
   )
 }

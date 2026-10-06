@@ -1,4 +1,5 @@
 using HarnasHub.Application.Abstractions;
+using HarnasHub.Application.Features.MatchAnalysis.Shared;
 using HarnasHub.Application.Features.Results.AnalyzeDemo;
 using HarnasHub.Core.Entities;
 using HarnasHub.Core.Enums;
@@ -109,12 +110,44 @@ public class AnalyzeDemoHandlerTests
 		Assert.Null(result.Value.SuggestedTeam);
 	}
 
+	[Fact]
+	public async Task Should_park_the_full_timeline_under_a_pending_key()
+	{
+		await using var dbContext = TestApplicationDbContext.Create();
+		var parsed = ParseResult(MapName.Mirage, [Player(1001, "alpha-1"), Player(2001, "bravo-1"), Round(MapSide.T, [1001], [2001])]);
+		var timeline = new DemoTimeline("de_mirage", MapName.Mirage, true, parsed,
+			[new DemoTimelineRound(1, 0f, 15f, 60f, MapSide.T, DemoRoundEndReason.Elimination, [1001], [2001], null, null)], []);
+		var parser = new TestDemoParser(parsed, timeline: timeline);
+		var storage = new TestFileStorage();
+
+		var result = await Handler(dbContext, parser, storage).Handle(new AnalyzeDemoCommand(Stream.Null), CancellationToken.None);
+
+		Assert.Equal(DemoParseOptions.MatchAnalysis, parser.LastOptions);
+		Assert.True(MatchTimelineStorage.IsPendingKey(result.Value.PendingTimelineKey));
+		Assert.True(storage.Objects.ContainsKey(result.Value.PendingTimelineKey!));
+	}
+
+	[Fact]
+	public async Task Should_still_preview_when_the_timeline_cannot_be_parked()
+	{
+		await using var dbContext = TestApplicationDbContext.Create();
+		var parsed = ParseResult(MapName.Mirage, [Player(1001, "alpha-1"), Player(2001, "bravo-1"), Round(MapSide.T, [1001], [2001])]);
+		var timeline = new DemoTimeline("de_mirage", MapName.Mirage, true, parsed,
+			[new DemoTimelineRound(1, 0f, 15f, 60f, MapSide.T, DemoRoundEndReason.Elimination, [1001], [2001], null, null)], []);
+		var storage = new TestFileStorage { ThrowOnUpload = new IOException("bucket down") };
+
+		var result = await Handler(dbContext, new TestDemoParser(parsed, timeline: timeline), storage).Handle(new AnalyzeDemoCommand(Stream.Null), CancellationToken.None);
+
+		Assert.False(result.IsError);
+		Assert.Null(result.Value.PendingTimelineKey);
+	}
+
 	#endregion
 
 	#region Private Methods
 
-	private static AnalyzeDemoHandler Handler(IApplicationDbContext dbContext, TestDemoParser demoParser) =>
-		new(demoParser, dbContext, NullLogger<AnalyzeDemoHandler>.Instance);
+	private static AnalyzeDemoHandler Handler(IApplicationDbContext dbContext, TestDemoParser demoParser, TestFileStorage? fileStorage = null) =>
+		new(demoParser, dbContext, fileStorage ?? new TestFileStorage(isConfigured: false), TestFaceitLookup.Create(dbContext), NullLogger<AnalyzeDemoHandler>.Instance);
 
 	private static DemoParseResult ParseResult(MapName? mapName, params object[] playersAndRounds)
 	{

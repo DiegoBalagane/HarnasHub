@@ -15,6 +15,8 @@ export interface CalendarEvent {
   /** Optional link to the match/stream/lobby, shown as a clickable link instead of jammed into location. */
   url: string | null
   notes: string | null
+  /** Opposing team for a match-like event, null otherwise — links to that opponent's profile. */
+  opponent: string | null
 }
 
 export interface MemberAvailability {
@@ -32,6 +34,7 @@ export interface CreateEventPayload {
   location?: string
   url?: string
   notes?: string
+  opponent?: string | null
 }
 
 export type UpdateEventPayload = CreateEventPayload

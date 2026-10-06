@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { useTeamTrend } from '../hooks/useStats'
 
 const dateFormatter = new Intl.DateTimeFormat('pl-PL', { dateStyle: 'medium' })
@@ -32,11 +33,15 @@ export function TeamTrendChart() {
   }
 
   if (isError) {
-    return <p className="text-red-400">Nie udało się pobrać trendu.</p>
+    return <p className="text-danger-400">Nie udało się pobrać trendu.</p>
   }
 
   if (!points || points.length === 0) {
-    return <p className="text-neutral-400">Brak danych — dodaj pierwszy wynik, żeby zobaczyć trend.</p>
+    return (
+      <p className="text-neutral-400">
+        Brak danych — dodaj pierwszy wynik w <Link to="/results" className="text-primary-400 hover:underline">Wynikach</Link>, żeby zobaczyć trend.
+      </p>
+    )
   }
 
   const linePath = scaled.map((point, index) => `${index === 0 ? 'M' : 'L'} ${point.x} ${point.y}`).join(' ')
@@ -53,7 +58,7 @@ export function TeamTrendChart() {
   }
 
   return (
-    <div className="w-full max-w-2xl">
+    <div className="w-full">
       <p className="mb-1 text-sm text-neutral-400">
         Skuteczność drużyny w czasie ·{' '}
         <span className="font-medium text-neutral-200">{last.winRatePercentage.toFixed(0)}%</span> (
@@ -78,17 +83,17 @@ export function TeamTrendChart() {
           )
         })}
 
-        <path d={areaPath} fill="#ef4444" fillOpacity={0.12} stroke="none" />
+        <path d={areaPath} fill="#f59e0b" fillOpacity={0.12} stroke="none" />
         <path
           d={linePath}
           fill="none"
-          stroke="#ef4444"
+          stroke="#f59e0b"
           strokeWidth={2}
           strokeLinecap="round"
           strokeLinejoin="round"
         />
 
-        <circle cx={last.x} cy={last.y} r={3.5} fill="#ef4444" />
+        <circle cx={last.x} cy={last.y} r={3.5} fill="#f59e0b" />
 
         {hovered && (
           <>
@@ -100,7 +105,7 @@ export function TeamTrendChart() {
               stroke="#52525b"
               strokeWidth={1}
             />
-            <circle cx={hovered.x} cy={hovered.y} r={4} fill="#fafafa" stroke="#ef4444" strokeWidth={2} />
+            <circle cx={hovered.x} cy={hovered.y} r={4} fill="#fafafa" stroke="#f59e0b" strokeWidth={2} />
           </>
         )}
       </svg>
@@ -110,9 +115,9 @@ export function TeamTrendChart() {
           <p className="text-neutral-400">{dateFormatter.format(new Date(hovered.playedAtUtc))}</p>
           <p>
             {hovered.won ? (
-              <span className="text-green-400">Wygrana</span>
+              <span className="text-success-400">Wygrana</span>
             ) : (
-              <span className="text-red-400">Przegrana</span>
+              <span className="text-danger-400">Przegrana</span>
             )}{' '}
             · {hovered.winRatePercentage.toFixed(0)}% skuteczności ({hovered.cumulativeWins}W /{' '}
             {hovered.cumulativeLosses}L)

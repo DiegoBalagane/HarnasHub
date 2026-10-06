@@ -80,14 +80,14 @@ export function TacticPointEditor({
           <button
             type="button"
             onClick={handleSave}
-            className="self-start rounded-md bg-red-600 px-3 py-1.5 text-xs font-medium text-white transition hover:bg-red-500"
+            className="self-start rounded-md bg-primary-500 px-3 py-1.5 text-xs font-medium text-primary-950 transition hover:bg-primary-400"
           >
             Zapisz punkt
           </button>
           <button
             type="button"
             onClick={onRemove}
-            className="rounded-md border border-neutral-700 px-3 py-1.5 text-xs text-neutral-300 transition hover:border-red-500 hover:text-red-400"
+            className="rounded-md border border-neutral-700 px-3 py-1.5 text-xs text-neutral-300 transition hover:border-danger-500 hover:text-danger-400"
           >
             Usuń punkt
           </button>

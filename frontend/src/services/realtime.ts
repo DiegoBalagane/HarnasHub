@@ -10,6 +10,22 @@ function invalidateForTopic(queryClient: QueryClient, topic: string) {
     return
   }
 
+  if (topic.startsWith('match-analysis:')) {
+    const matchResultId = topic.split(':')[1]
+    queryClient.invalidateQueries({ queryKey: ['match-analysis', matchResultId] })
+    return
+  }
+
+  // Background job progress: "job:{id}" refetches that job; "jobs:{userId}" (everything a user started) needs no cache today.
+  if (topic.startsWith('job:')) {
+    queryClient.invalidateQueries({ queryKey: ['jobs', topic.slice('job:'.length)] })
+    return
+  }
+
+  if (topic.startsWith('jobs:')) {
+    return
+  }
+
   if (topic.startsWith('match-stats:')) {
     const matchResultId = topic.split(':')[1]
     queryClient.invalidateQueries({ queryKey: ['stats', 'match', matchResultId] })
@@ -27,8 +43,12 @@ function invalidateForTopic(queryClient: QueryClient, topic: string) {
     roster: ['roster'],
     nades: ['nades'],
     'map-strategy': ['map-strategy'],
+    tactics: ['tactics'],
     materials: ['materials'],
-    opponents: ['opponent-notes'],
+    opponents: ['opponents'],
+    'map-pool': ['map-pool'],
+    veto: ['veto'],
+    'game-plan': ['game-plan'],
     'analysis-boards': ['analysis-boards'],
     attendance: ['attendance'],
   }
@@ -37,6 +57,26 @@ function invalidateForTopic(queryClient: QueryClient, topic: string) {
 
   if (queryKey) {
     queryClient.invalidateQueries({ queryKey })
+  }
+
+  // Opponent profiles aggregate results and scheduled events, so those topics must refresh them too.
+  if (topic === 'results' || topic === 'calendar') {
+    queryClient.invalidateQueries({ queryKey: ['opponents'] })
+  }
+
+  // The map pool's per-map record is computed from logged results; tactic counts come from the tactics library.
+  if (topic === 'results' || topic === 'tactics') {
+    queryClient.invalidateQueries({ queryKey: ['map-pool'] })
+  }
+
+  // Veto suggestions are scored from the pool status, results and tactic counts.
+  if (topic === 'results' || topic === 'tactics' || topic === 'map-pool') {
+    queryClient.invalidateQueries({ queryKey: ['veto'] })
+  }
+
+  // Game plans show tactic and board names, so a rename or delete there must refresh them.
+  if (topic === 'tactics' || topic === 'analysis-boards') {
+    queryClient.invalidateQueries({ queryKey: ['game-plan'] })
   }
 }
 
@@ -51,8 +91,21 @@ export function connectRealtime(queryClient: QueryClient): HubConnection {
     .build()
 
   connection.on('update', (topic: string) => invalidateForTopic(queryClient, topic))
+  connection.onreconnecting(() => (realtimeConnected = false))
+  connection.onreconnected(() => (realtimeConnected = true))
+  connection.onclose(() => (realtimeConnected = false))
 
-  connection.start().catch((error) => console.error('Nie udało się połączyć z live-update:', error))
+  connection
+    .start()
+    .then(() => (realtimeConnected = true))
+    .catch((error) => console.error('Nie udało się połączyć z live-update:', error))
 
   return connection
+}
+
+let realtimeConnected = false
+
+/** Whether the live-update connection is up — background job polling slows down while pushes arrive. */
+export function isRealtimeConnected(): boolean {
+  return realtimeConnected
 }

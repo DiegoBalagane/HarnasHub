@@ -1,0 +1,74 @@
+import { memo } from 'react'
+import type { MapComparison } from '../../../services/opponentReportApi'
+import { vetoActionClasses, vetoRecommendationLabels } from '../../veto/labels'
+import { advantageClass, confidenceLabels, formatPercent, formatSigned, predictionLabels } from '../labels'
+
+/** Map matrix: their games and win rate vs ours, the smoothed advantage, its confidence, their expected move and our recommendation. */
+export const MapMatrix = memo(function MapMatrix({ maps }: { maps: MapComparison[] }) {
+  return (
+    <section className="flex flex-col gap-2">
+      <h2 className="text-lg font-medium">Mapy: oni vs my</h2>
+      <p className="text-xs text-neutral-500">
+        Oni — mecze drużynowe z FACEIT (≥ 3 graczy z listy w jednej drużynie). My — FACEIT plus wyniki zapisane w
+        HarnasHub. Przewaga liczona z wygładzonego WR (małe próbki ciągnięte do 50%).
+      </p>
+      <div className="overflow-x-auto rounded-md border border-neutral-800">
+        <table className="w-full text-sm">
+          <thead className="bg-neutral-900 text-left text-xs text-neutral-400">
+            <tr>
+              <th className="px-3 py-2">Mapa</th>
+              <th className="px-3 py-2">Oni</th>
+              <th className="px-3 py-2">My</th>
+              <th className="px-3 py-2">Przewaga</th>
+              <th className="px-3 py-2">Pewność</th>
+              <th className="px-3 py-2">Oni prawdopodobnie</th>
+              <th className="px-3 py-2">My</th>
+            </tr>
+          </thead>
+          <tbody>
+            {maps.map((map) => (
+              <MapRow key={map.mapName} map={map} />
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  )
+})
+
+/** One map of the matrix; reasons are available on hover. */
+const MapRow = memo(function MapRow({ map }: { map: MapComparison }) {
+  return (
+    <tr className="border-t border-neutral-800">
+      <td className="px-3 py-2 font-medium">{map.mapName}</td>
+      <td className="px-3 py-2 tabular-nums" title={trendTitle(map)}>
+        {map.theirGames} · {formatPercent(map.theirWinRate)}
+        {map.theirGames > 0 && <span className="ml-1 text-xs text-neutral-500">({Math.round(map.theirShare)}% meczów)</span>}
+      </td>
+      <td className="px-3 py-2 tabular-nums" title={`FACEIT: ${map.ourFaceitGames}, HarnasHub: ${map.ourInternalGames}`}>
+        {map.ourGames} · {formatPercent(map.ourWinRate)}
+      </td>
+      <td className={`px-3 py-2 font-medium tabular-nums ${advantageClass(map.advantage)}`}>
+        {formatSigned(map.advantage)} pp
+      </td>
+      <td className="px-3 py-2 text-neutral-400">{confidenceLabels[map.confidence]}</td>
+      <td className="px-3 py-2 text-neutral-300" title={map.predictionReason}>
+        {predictionLabels[map.prediction]}
+      </td>
+      <td className="px-3 py-2" title={map.vetoReasons.join('\n')}>
+        <span className={`rounded-full border px-2 py-0.5 text-xs ${vetoActionClasses[map.recommendation]}`}>
+          {vetoRecommendationLabels[map.recommendation]}
+        </span>
+      </td>
+    </tr>
+  )
+})
+
+/** Tooltip with the round difference, trend and last game of their side. */
+function trendTitle(map: MapComparison): string {
+  if (map.theirGames === 0) return 'Nie grali tej mapy w ostatnich 120 dniach'
+  const parts = [`Średnia różnica rund: ${map.theirAvgRoundDiff ?? 0}`]
+  if (map.theirTrend !== null) parts.push(`Trend (ostatnie 5 vs wcześniej): ${formatSigned(map.theirTrend)} pp`)
+  if (map.theirLastPlayedAtUtc) parts.push(`Ostatnio: ${new Date(map.theirLastPlayedAtUtc).toLocaleDateString('pl-PL')}`)
+  return parts.join('\n')
+}

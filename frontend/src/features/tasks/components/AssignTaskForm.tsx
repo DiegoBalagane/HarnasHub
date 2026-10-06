@@ -3,8 +3,13 @@ import { useMaterials } from '../../materials/hooks/useMaterials'
 import { useRoster } from '../../roster/hooks/useRoster'
 import { useAssignTask } from '../hooks/useTasks'
 
+interface AssignTaskFormProps {
+  /** Called after saving, e.g. to close the modal hosting the form. */
+  onDone?: () => void
+}
+
 /** Coach/Manager-only form for assigning a task to one or several players at once, optionally attaching a material to review. */
-export function AssignTaskForm() {
+export function AssignTaskForm({ onDone }: AssignTaskFormProps) {
   const { data: roster } = useRoster()
   const { data: materials } = useMaterials()
   const [title, setTitle] = useState('')
@@ -44,6 +49,7 @@ export function AssignTaskForm() {
       setAssignedToUserIds([])
       setTrainingMaterialId('')
       setDueAtUtc('')
+      onDone?.()
     } catch {
       setSubmitError(true)
     } finally {
@@ -113,12 +119,12 @@ export function AssignTaskForm() {
         </label>
       </div>
 
-      {submitError && <p className="text-sm text-red-400">Nie udało się przydzielić zadania.</p>}
+      {submitError && <p className="text-sm text-danger-400">Nie udało się przydzielić zadania.</p>}
 
       <button
         type="submit"
         disabled={isSubmitting || assignedToUserIds.length === 0}
-        className="self-start rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-red-500 disabled:opacity-50"
+        className="self-start rounded-md bg-primary-500 px-4 py-2 text-sm font-medium text-primary-950 transition hover:bg-primary-400 disabled:opacity-50"
       >
         {isSubmitting
           ? 'Przydzielanie…'

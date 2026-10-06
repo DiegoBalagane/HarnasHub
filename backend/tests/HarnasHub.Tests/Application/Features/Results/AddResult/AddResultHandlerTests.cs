@@ -1,9 +1,12 @@
 using HarnasHub.Application.Abstractions;
+using HarnasHub.Application.Features.MatchAnalysis.Shared;
 using HarnasHub.Application.Features.Results.AddResult;
 using HarnasHub.Application.Features.Results.Shared;
 using HarnasHub.Core.Entities;
 using HarnasHub.Core.Enums;
+using HarnasHub.Tests.Application.Features.MatchAnalysis;
 using HarnasHub.Tests.Common;
+using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
 
 namespace HarnasHub.Tests.Application.Features.Results.AddResult;
@@ -158,12 +161,45 @@ public class AddResultHandlerTests
 		Assert.Empty(dbContext.PlayerMatchStats);
 	}
 
+	[Fact]
+	public async Task Should_move_the_pending_timeline_to_the_new_match()
+	{
+		await using var dbContext = TestApplicationDbContext.Create();
+		var storage = new TestFileStorage();
+		var pendingKey = MatchTimelineStorage.NewPendingKey();
+		var timeline = MatchTimelineFactory.Timeline([MatchTimelineFactory.Round(1, MapSide.T)]);
+		await MatchTimelineStorage.SaveAsync(storage, pendingKey, timeline, DemoTimelineSerializer.CurrentParserVersion, CancellationToken.None);
+
+		var command = Command(ourTeamSteamIds: ["3", "4"]) with { PendingTimelineKey = pendingKey };
+		var result = await Handler(dbContext, storage).Handle(command, CancellationToken.None);
+
+		Assert.False(result.IsError);
+		var analysis = Assert.Single(dbContext.MatchDemoAnalyses);
+		Assert.Equal(result.Value.Id, analysis.MatchResultId);
+		Assert.Equal([3L, 4L], analysis.OurTeamSteamIds);
+		Assert.True(storage.Objects.ContainsKey(MatchTimelineStorage.MatchKey(result.Value.Id)));
+		Assert.Contains(pendingKey, storage.DeletedKeys);
+	}
+
+	[Fact]
+	public async Task Should_still_save_the_result_when_the_pending_timeline_is_gone()
+	{
+		await using var dbContext = TestApplicationDbContext.Create();
+		var command = Command() with { PendingTimelineKey = MatchTimelineStorage.NewPendingKey() };
+
+		var result = await Handler(dbContext, new TestFileStorage()).Handle(command, CancellationToken.None);
+
+		Assert.False(result.IsError);
+		Assert.Single(dbContext.MatchResults);
+		Assert.Empty(dbContext.MatchDemoAnalyses);
+	}
+
 	#endregion
 
 	#region Private Methods
 
-	private AddResultHandler Handler(IApplicationDbContext dbContext) =>
-		new(dbContext, new TestCurrentUserService(_userId), new TestRealtimeNotifier());
+	private AddResultHandler Handler(IApplicationDbContext dbContext, TestFileStorage? fileStorage = null) =>
+		new(dbContext, new TestCurrentUserService(_userId), new TestRealtimeNotifier(), fileStorage ?? new TestFileStorage(), NullLogger<AddResultHandler>.Instance);
 
 	private static AddResultCommand Command(
 		MatchCategory category = MatchCategory.Scrimmage,

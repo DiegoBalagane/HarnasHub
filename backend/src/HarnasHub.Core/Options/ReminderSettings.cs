@@ -10,4 +10,7 @@ public class ReminderSettings
 
 	/// <summary>How often the background check runs.</summary>
 	public int CheckIntervalSeconds { get; set; } = 60;
+
+	/// <summary>How many hours before a match with a known opponent the Discord briefing from the opponent report is sent; 0 turns it off.</summary>
+	public int MatchBriefingHoursBefore { get; set; } = 24;
 }

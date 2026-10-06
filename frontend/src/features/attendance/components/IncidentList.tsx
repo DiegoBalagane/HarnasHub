@@ -20,7 +20,7 @@ export function IncidentList() {
   }
 
   if (isError) {
-    return <p className="text-red-400">Nie udało się pobrać wpisów.</p>
+    return <p className="text-danger-400">Nie udało się pobrać wpisów.</p>
   }
 
   if (incidents?.length === 0) {
@@ -36,7 +36,7 @@ export function IncidentList() {
         >
           <div>
             <span className="font-medium">{incident.playerName}</span>{' '}
-            <span className={incident.type === 'Absent' ? 'text-red-400' : 'text-amber-400'}>
+            <span className={incident.type === 'Absent' ? 'text-danger-400' : 'text-warning-400'}>
               {typeLabels[incident.type]}
             </span>{' '}
             <span className="text-neutral-500">· {dateFormatter.format(parseIsoDate(incident.occurredOn))}</span>
@@ -48,7 +48,7 @@ export function IncidentList() {
               type="button"
               onClick={() => deleteIncident.mutate(incident.id)}
               disabled={deleteIncident.isPending}
-              className="text-xs text-neutral-500 transition hover:text-red-400 disabled:opacity-50"
+              className="text-xs text-neutral-500 transition hover:text-danger-400 disabled:opacity-50"
             >
               Usuń
             </button>

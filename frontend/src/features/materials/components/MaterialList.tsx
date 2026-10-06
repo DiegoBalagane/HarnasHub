@@ -10,7 +10,7 @@ export function MaterialList() {
   }
 
   if (isError) {
-    return <p className="text-red-400">Nie udało się pobrać materiałów.</p>
+    return <p className="text-danger-400">Nie udało się pobrać materiałów.</p>
   }
 
   if (materials?.length === 0) {
@@ -18,14 +18,14 @@ export function MaterialList() {
   }
 
   return (
-    <ul className="flex w-full max-w-xl flex-col gap-3">
+    <ul className="flex w-full flex-col gap-3">
       {materials?.map((material) => (
         <li key={material.id} className="rounded-md border border-neutral-800 p-4">
           <a
             href={material.url}
             target="_blank"
             rel="noreferrer"
-            className="font-medium text-red-400 hover:underline"
+            className="font-medium text-primary-400 hover:underline"
           >
             {material.title}
           </a>

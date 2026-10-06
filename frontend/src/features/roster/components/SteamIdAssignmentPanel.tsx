@@ -32,7 +32,7 @@ export function SteamIdAssignmentPanel() {
           Możesz ustawić SteamID64 za gracza, jeśli sam jeszcze go nie wpisał — potrzebne do dopasowania statystyk z demek.
         </p>
       </div>
-      {updateSteamId64.isError && <p className="text-sm text-red-400">{updateSteamId64.error.message}</p>}
+      {updateSteamId64.isError && <p className="text-sm text-danger-400">{updateSteamId64.error.message}</p>}
       <ul className="flex flex-col gap-2">
         {roster.map((member) => (
           <li key={member.id} className="flex items-center gap-2">
@@ -53,7 +53,7 @@ export function SteamIdAssignmentPanel() {
               type="button"
               disabled={updateSteamId64.isPending}
               onClick={() => save(member)}
-              className="shrink-0 rounded-md bg-red-600 px-2.5 py-1 text-xs font-medium text-white transition hover:bg-red-500 disabled:opacity-50"
+              className="shrink-0 rounded-md bg-primary-500 px-2.5 py-1 text-xs font-medium text-primary-950 transition hover:bg-primary-400 disabled:opacity-50"
             >
               Zapisz
             </button>

@@ -1,7 +1,8 @@
 using HarnasHub.Api.Common;
+using HarnasHub.Application.Features.Jobs.StartJob;
 using HarnasHub.Application.Features.Results.AddResult;
-using HarnasHub.Application.Features.Results.AnalyzeDemo;
 using HarnasHub.Application.Features.Results.AnalyzeDemoFromStorage;
+using HarnasHub.Application.Features.Results.AnalyzeUploadedDemo;
 using HarnasHub.Application.Features.Results.DeleteResult;
 using HarnasHub.Application.Features.Results.GetResults;
 using HarnasHub.Application.Features.Results.PresignDemoUpload;
@@ -33,7 +34,7 @@ public class MatchResultsEndpoints : IEndpoint
 			var command = new AddResultCommand(
 				request.Opponent, request.OurScore, request.OpponentScore, request.MapName, request.DemoUrl, request.Notes,
 				request.PlayedAtUtc, request.Category, request.TournamentId, request.LeagueId,
-				request.DemoRoundsPlayed, request.DemoPlayers, request.OurTeamSteamIds);
+				request.DemoRoundsPlayed, request.DemoPlayers, request.OurTeamSteamIds, request.PendingTimelineKey);
 			var result = await sender.Send(command, cancellationToken);
 			return result.Match(success => Results.Ok(success), errors => errors.ToProblemResult());
 		}).RequireAuthorization(policy => policy.RequireRole("Coach", "Manager"));
@@ -54,7 +55,7 @@ public class MatchResultsEndpoints : IEndpoint
 		}).RequireAuthorization(policy => policy.RequireRole("Coach", "Manager"));
 
 		// A separate step from creating the result: parses the demo and previews the map/score/roster-suggested team
-		// split so the coach can review and correct it before anything is saved — nothing here touches the database.
+		// split so the coach can review and correct it before anything is saved (only the background job row is stored).
 		group.MapPost("/analyze-demo", async (HttpRequest request, ISender sender, CancellationToken cancellationToken) =>
 		{
 			// CS2 demos routinely run 100-300MB — raise Kestrel's per-request cap (default 30MB) for this endpoint only.
@@ -80,9 +81,22 @@ public class MatchResultsEndpoints : IEndpoint
 				return Results.BadRequest("Brak pliku demki.");
 			}
 
-			await using var demoStream = file.OpenReadStream();
-			var result = await sender.Send(new AnalyzeDemoCommand(demoStream), cancellationToken);
-			return result.Match(success => Results.Ok(success), errors => errors.ToProblemResult());
+			// Parsing runs as a background job (202 + job id), so the upload is buffered to a server-named temp file the job
+			// reads and deletes — the request's own form file is gone as soon as this request ends.
+			var tempPath = UploadedDemoFiles.NewTempPath();
+			await using (var demoStream = file.OpenReadStream())
+			await using (var tempFile = new FileStream(tempPath, FileMode.CreateNew, FileAccess.Write, FileShare.None))
+			{
+				await demoStream.CopyToAsync(tempFile, cancellationToken);
+			}
+
+			var result = await sender.Send(new StartJobCommand(new AnalyzeUploadedDemoCommand(tempPath, file.FileName)), cancellationToken);
+			if (result.IsError)
+			{
+				UploadedDemoFiles.TryDelete(tempPath);
+			}
+
+			return result.ToAcceptedJob();
 		}).RequireAuthorization(policy => policy.RequireRole("Coach", "Manager"));
 
 		// For demos too large for the above (the hosting platform's own edge proxy has its own size limit that no
@@ -98,8 +112,8 @@ public class MatchResultsEndpoints : IEndpoint
 			ISender sender,
 			CancellationToken cancellationToken) =>
 		{
-			var result = await sender.Send(new AnalyzeDemoFromStorageCommand(request.ObjectKey), cancellationToken);
-			return result.Match(success => Results.Ok(success), errors => errors.ToProblemResult());
+			var result = await sender.Send(new StartJobCommand(new AnalyzeDemoFromStorageCommand(request.ObjectKey, request.FileName)), cancellationToken);
+			return result.ToAcceptedJob();
 		}).RequireAuthorization(policy => policy.RequireRole("Coach", "Manager"));
 	}
 
@@ -122,10 +136,12 @@ public record AddResultRequest(
 	Guid? LeagueId,
 	int? DemoRoundsPlayed,
 	IReadOnlyList<AnalyzedDemoPlayerDto>? DemoPlayers,
-	IReadOnlyList<string>? OurTeamSteamIds);
+	IReadOnlyList<string>? OurTeamSteamIds,
+	string? PendingTimelineKey = null);
 
-/// <summary>Request body for POST /api/results/analyze-demo/from-storage.</summary>
-public record AnalyzeDemoFromStorageRequest(string ObjectKey);
+/// <summary>Request body for POST /api/results/analyze-demo/from-storage; <paramref name="FileName"/> is the original .dem
+/// name, used to recognise a FACEIT match.</summary>
+public record AnalyzeDemoFromStorageRequest(string ObjectKey, string? FileName = null);
 
 /// <summary>Request body for PATCH /api/results/{matchResultId}.</summary>
 public record UpdateResultRequest(

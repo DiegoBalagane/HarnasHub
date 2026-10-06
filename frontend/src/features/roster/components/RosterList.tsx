@@ -39,19 +39,19 @@ export function RosterList() {
   }
 
   if (isError) {
-    return <p className="text-red-400">Nie udało się pobrać składu drużyny.</p>
+    return <p className="text-danger-400">Nie udało się pobrać składu drużyny.</p>
   }
 
   // Fixed column widths keep every row aligned regardless of nickname/badge length — no per-row layout shifting.
   const gridColumns = 'grid-cols-[minmax(140px,1fr)_minmax(150px,200px)_140px_70px_140px_120px]'
 
   return (
-    <div className="w-full max-w-4xl overflow-x-auto rounded-md border border-neutral-800">
+    <div className="w-full overflow-x-auto rounded-md border border-neutral-800">
       {updateRosterSlot.isError && (
-        <p className="px-4 pt-3 text-sm text-red-400">{updateRosterSlot.error.message}</p>
+        <p className="px-4 pt-3 text-sm text-danger-400">{updateRosterSlot.error.message}</p>
       )}
-      {setIsCoach.isError && <p className="px-4 pt-3 text-sm text-red-400">{setIsCoach.error.message}</p>}
-      {deleteMember.isError && <p className="px-4 pt-3 text-sm text-red-400">{deleteMember.error.message}</p>}
+      {setIsCoach.isError && <p className="px-4 pt-3 text-sm text-danger-400">{setIsCoach.error.message}</p>}
+      {deleteMember.isError && <p className="px-4 pt-3 text-sm text-danger-400">{deleteMember.error.message}</p>}
 
       <div className={`grid min-w-[820px] ${gridColumns} gap-x-3 border-b border-neutral-800 px-4 py-2 text-xs text-neutral-500`}>
         <span>Zawodnik</span>
@@ -161,7 +161,7 @@ export function RosterList() {
                     <button
                       type="button"
                       onClick={() => setConfirmingUserId(member.id)}
-                      className="shrink-0 rounded-md border border-neutral-700 px-2 py-1 text-xs text-neutral-400 transition hover:border-red-500 hover:text-red-400"
+                      className="shrink-0 rounded-md border border-neutral-700 px-2 py-1 text-xs text-neutral-400 transition hover:border-danger-500 hover:text-danger-400"
                     >
                       Usuń z drużyny
                     </button>

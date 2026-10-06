@@ -62,5 +62,15 @@ public class CreateEventCommandValidatorTests
 		result.ShouldNotHaveAnyValidationErrors();
 	}
 
+	[Fact]
+	public void Should_have_error_when_opponent_is_too_long()
+	{
+		var command = new CreateEventCommand("Mecz", EventType.Match, DateTime.UtcNow, null, null, null, null, new string('x', 101));
+
+		var result = _validator.TestValidate(command);
+
+		result.ShouldHaveValidationErrorFor(x => x.Opponent);
+	}
+
 	#endregion
 }

@@ -1,11 +1,13 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using HarnasHub.Application.Abstractions;
+using HarnasHub.Application.Common.Jobs;
 
 namespace HarnasHub.Api.Common;
 
-/// <summary>Reads the authenticated user's id, access level, and coach tag from the JWT claims of the current request.</summary>
-public class CurrentUserService(IHttpContextAccessor httpContextAccessor) : ICurrentUserService
+/// <summary>Reads the authenticated user's id, access level, and coach tag from the JWT claims of the current request — or,
+/// inside a background job (no HTTP context), the id of the user who started the job.</summary>
+public class CurrentUserService(IHttpContextAccessor httpContextAccessor, JobExecutionContext jobContext) : ICurrentUserService
 {
 	#region Public Properties
 
@@ -13,6 +15,11 @@ public class CurrentUserService(IHttpContextAccessor httpContextAccessor) : ICur
 	{
 		get
 		{
+			if (httpContextAccessor.HttpContext is null && jobContext.RequestedByUserId is { } jobUserId)
+			{
+				return jobUserId;
+			}
+
 			var user = httpContextAccessor.HttpContext?.User;
 
 			// JwtBearer may or may not remap "sub" to ClaimTypes.NameIdentifier depending on the token handler in use — check both.

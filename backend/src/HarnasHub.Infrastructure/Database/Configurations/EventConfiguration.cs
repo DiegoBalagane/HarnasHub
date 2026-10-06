@@ -17,6 +17,7 @@ public class EventConfiguration : IEntityTypeConfiguration<Event>
 		builder.Property(e => e.Title).IsRequired().HasMaxLength(100);
 		builder.Property(e => e.Type).HasConversion<string>().HasMaxLength(20);
 		builder.Property(e => e.Location).HasMaxLength(200);
+		builder.Property(e => e.Opponent).HasMaxLength(100);
 
 		builder.HasIndex(e => e.StartsAtUtc);
 	}

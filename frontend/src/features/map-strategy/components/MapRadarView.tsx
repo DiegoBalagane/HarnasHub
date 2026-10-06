@@ -10,28 +10,36 @@ import { AddPositionControl } from './AddPositionControl'
 import { AddTextAnnotationControl } from './AddTextAnnotationControl'
 import { MapRadar } from './MapRadar'
 
+interface MapRadarViewProps {
+  /** Map chosen by the host page (Playbook); when set, the built-in map selector is hidden. */
+  mapName?: MapName
+}
+
 /** Per-map starting-position board: pick a map and side, then read (or, as Coach/Manager, arrange) the team's setup. */
-export function MapRadarView() {
-  const [mapName, setMapName] = useState<MapName>('Mirage')
+export function MapRadarView({ mapName: controlledMapName }: MapRadarViewProps) {
+  const [ownMapName, setMapName] = useState<MapName>('Mirage')
+  const mapName = controlledMapName ?? ownMapName
   const [side, setSide] = useState<MapSide>('CT')
   const { data: positions, isLoading, isError } = useMapPositions(mapName, side)
   const { data: annotations } = useMapTextAnnotations(mapName, side)
   const canEdit = useIsCoachOrManager()
 
   return (
-    <section className="flex w-full max-w-3xl flex-col gap-4">
+    <section className="flex w-full flex-col gap-4">
       <div className="flex flex-wrap items-center gap-3">
-        <select
-          value={mapName}
-          onChange={(event) => setMapName(event.target.value as MapName)}
-          className="rounded-md border border-neutral-800 bg-neutral-900 px-3 py-2 text-sm outline-none focus:border-neutral-500"
-        >
-          {mapNames.map((map) => (
-            <option key={map} value={map}>
-              {map}
-            </option>
-          ))}
-        </select>
+        {controlledMapName === undefined && (
+          <select
+            value={mapName}
+            onChange={(event) => setMapName(event.target.value as MapName)}
+            className="rounded-md border border-neutral-800 bg-neutral-900 px-3 py-2 text-sm outline-none focus:border-neutral-500"
+          >
+            {mapNames.map((map) => (
+              <option key={map} value={map}>
+                {map}
+              </option>
+            ))}
+          </select>
+        )}
 
         <div className="flex overflow-hidden rounded-md border border-neutral-800">
           {mapSides.map((option) => (
@@ -61,7 +69,7 @@ export function MapRadarView() {
       )}
 
       {isLoading && <p className="text-neutral-400">Ładowanie…</p>}
-      {isError && <p className="text-red-400">Nie udało się pobrać pozycji na mapie.</p>}
+      {isError && <p className="text-danger-400">Nie udało się pobrać pozycji na mapie.</p>}
 
       {positions && (
         <>

@@ -21,9 +21,15 @@ function clampFraction(value: number): number {
   return Math.min(1, Math.max(0, value))
 }
 
+interface NadeMapViewProps {
+  /** Map chosen by the host page (Playbook); when set, the built-in map selector is hidden. */
+  mapName?: MapName
+}
+
 /** Per-map radar of grenade landing spots: pick a map, see every lineup's pin, click one to watch it, drag to reposition. */
-export function NadeMapView() {
-  const [mapName, setMapName] = useState<MapName>(mapNames[0])
+export function NadeMapView({ mapName: controlledMapName }: NadeMapViewProps) {
+  const [ownMapName, setMapName] = useState<MapName>(mapNames[0])
+  const mapName = controlledMapName ?? ownMapName
   const [visibleTypes, setVisibleTypes] = useState<Set<GrenadeType>>(new Set(grenadeTypes))
   const [selectedNadeId, setSelectedNadeId] = useState<string | null>(null)
   const [armedNadeId, setArmedNadeId] = useState<string | null>(null)
@@ -109,10 +115,7 @@ export function NadeMapView() {
       return
     }
 
-    updatePosition.mutate(
-      { nadeId: nade.id, x: draft.x, y: draft.y },
-      { onSettled: () => setDraft(null) },
-    )
+    updatePosition.mutate({ nadeId: nade.id, x: draft.x, y: draft.y }, { onSettled: () => setDraft(null) })
   }, [draft, positioned, canEditNade, updatePosition])
 
   function handleRadarClick(event: MouseEvent<HTMLImageElement>) {
@@ -132,23 +135,25 @@ export function NadeMapView() {
   }
 
   return (
-    <section className="flex w-full max-w-3xl flex-col gap-4">
+    <section className="flex w-full flex-col gap-4">
       <div className="flex flex-wrap items-center gap-3">
-        <select
-          value={mapName}
-          onChange={(event) => {
-            setMapName(event.target.value as MapName)
-            setSelectedNadeId(null)
-            setArmedNadeId(null)
-          }}
-          className="rounded-md border border-neutral-800 bg-neutral-900 px-3 py-2 text-sm outline-none focus:border-neutral-500"
-        >
-          {mapNames.map((map) => (
-            <option key={map} value={map}>
-              {map}
-            </option>
-          ))}
-        </select>
+        {controlledMapName === undefined && (
+          <select
+            value={mapName}
+            onChange={(event) => {
+              setMapName(event.target.value as MapName)
+              setSelectedNadeId(null)
+              setArmedNadeId(null)
+            }}
+            className="rounded-md border border-neutral-800 bg-neutral-900 px-3 py-2 text-sm outline-none focus:border-neutral-500"
+          >
+            {mapNames.map((map) => (
+              <option key={map} value={map}>
+                {map}
+              </option>
+            ))}
+          </select>
+        )}
 
         <div className="flex flex-wrap gap-1">
           {grenadeTypes.map((type) => (
@@ -170,7 +175,7 @@ export function NadeMapView() {
       </div>
 
       {isLoading && <p className="text-neutral-400">Ładowanie…</p>}
-      {isError && <p className="text-red-400">Nie udało się pobrać granatów.</p>}
+      {isError && <p className="text-danger-400">Nie udało się pobrać granatów.</p>}
 
       {nades && (
         <>
@@ -231,7 +236,9 @@ export function NadeMapView() {
                 </button>
               </div>
 
-              {selectedNade.description && <p className="mt-2 text-sm text-neutral-400">{selectedNade.description}</p>}
+              {selectedNade.description && (
+                <p className="mt-2 text-sm text-neutral-400">{selectedNade.description}</p>
+              )}
 
               {selectedNade.youtubeUrl && (
                 <YoutubeEmbed url={selectedNade.youtubeUrl} title={selectedNade.title} className="mt-3" />
@@ -242,7 +249,7 @@ export function NadeMapView() {
                   type="button"
                   onClick={() => clearPosition(selectedNade)}
                   disabled={updatePosition.isPending}
-                  className="mt-3 text-xs text-neutral-500 hover:text-red-400"
+                  className="mt-3 text-xs text-neutral-500 hover:text-danger-400"
                 >
                   Usuń pozycję z mapy
                 </button>
@@ -260,7 +267,9 @@ export function NadeMapView() {
                     className="flex items-center justify-between gap-3 rounded-md border border-neutral-800 px-3 py-2 text-sm"
                   >
                     <span>
-                      <span className={`mr-2 inline-block h-2 w-2 rounded-full ${grenadeTypeColors[nade.type]}`} />
+                      <span
+                        className={`mr-2 inline-block h-2 w-2 rounded-full ${grenadeTypeColors[nade.type]}`}
+                      />
                       {nade.title}
                       <span className="ml-2 text-xs text-neutral-500">{grenadeTypeLabels[nade.type]}</span>
                     </span>

@@ -2,7 +2,7 @@ using HarnasHub.Core.Enums;
 
 namespace HarnasHub.Application.Features.Nades.Shared;
 
-/// <summary>One nade lineup entry.</summary>
+/// <summary>One nade lineup entry; <c>ThrowX</c>/<c>ThrowY</c> is the radar spot it is thrown from, set only for entries imported from a demo.</summary>
 public record NadeEntryDto(
 	Guid Id,
 	MapName MapName,
@@ -12,4 +12,6 @@ public record NadeEntryDto(
 	string? YoutubeUrl,
 	float? LandingX,
 	float? LandingY,
-	Guid CreatedByUserId);
+	Guid CreatedByUserId,
+	float? ThrowX,
+	float? ThrowY);

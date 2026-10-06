@@ -35,7 +35,7 @@ export function CoachTaskOverview() {
   }
 
   if (isError) {
-    return <p className="text-red-400">Nie udało się pobrać zadań zespołu.</p>
+    return <p className="text-danger-400">Nie udało się pobrać zadań zespołu.</p>
   }
 
   if (tasks?.length === 0) {
@@ -45,7 +45,7 @@ export function CoachTaskOverview() {
   const groups = groupByPlayer(tasks ?? [])
 
   return (
-    <div className="flex w-full max-w-3xl flex-col gap-4">
+    <div className="flex w-full flex-col gap-4">
       <h2 className="font-medium">Zadania zawodników</h2>
       {groups.map((group) => (
         <div key={group.name} className="rounded-md border border-neutral-800 p-4">
@@ -75,7 +75,7 @@ export function CoachTaskOverview() {
                       <button
                         onClick={() => approveTask.mutate(task.id)}
                         disabled={approveTask.isPending}
-                        className="rounded-md border border-green-700 px-2 py-1 text-xs text-green-400 hover:border-green-500 disabled:opacity-50"
+                        className="rounded-md border border-success-700 px-2 py-1 text-xs text-success-400 hover:border-success-500 disabled:opacity-50"
                       >
                         Zaliczone
                       </button>
@@ -84,7 +84,7 @@ export function CoachTaskOverview() {
                       <button
                         onClick={() => rejectTask.mutate(task.id)}
                         disabled={rejectTask.isPending}
-                        className="rounded-md border border-red-700 px-2 py-1 text-xs text-red-400 hover:border-red-500 disabled:opacity-50"
+                        className="rounded-md border border-danger-700 px-2 py-1 text-xs text-danger-400 hover:border-danger-500 disabled:opacity-50"
                       >
                         Do poprawy
                       </button>
@@ -183,13 +183,13 @@ function TaskEditRow({ task, onDone }: TaskEditRowProps) {
           />
         </div>
 
-        {updateTask.isError && <p className="text-sm text-red-400">Nie udało się zapisać zmian.</p>}
+        {updateTask.isError && <p className="text-sm text-danger-400">Nie udało się zapisać zmian.</p>}
 
         <div className="flex gap-2">
           <button
             type="submit"
             disabled={updateTask.isPending}
-            className="rounded-md bg-red-600 px-3 py-1.5 text-xs font-medium text-white transition hover:bg-red-500 disabled:opacity-50"
+            className="rounded-md bg-primary-500 px-3 py-1.5 text-xs font-medium text-primary-950 transition hover:bg-primary-400 disabled:opacity-50"
           >
             {updateTask.isPending ? 'Zapisywanie…' : 'Zapisz'}
           </button>

@@ -6,10 +6,12 @@ interface ModalProps {
   children: React.ReactNode
   /** Wider content (e.g. a drawing canvas) needs more than the default form-sized max width. */
   wide?: boolean
+  /** Near full-screen width for content that benefits from every pixel, such as the 2D round replay. */
+  extraWide?: boolean
 }
 
 /** Generic popup overlay for a form/content block — click outside or Escape to close. */
-export function Modal({ title, onClose, children, wide }: ModalProps) {
+export function Modal({ title, onClose, children, wide, extraWide }: ModalProps) {
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key === 'Escape') onClose()
@@ -30,7 +32,7 @@ export function Modal({ title, onClose, children, wide }: ModalProps) {
         aria-modal="true"
         aria-labelledby="modal-title"
         onClick={(event) => event.stopPropagation()}
-        className={`w-full ${wide ? 'max-w-4xl' : 'max-w-xl'} rounded-lg border border-neutral-800 bg-neutral-950 p-5 shadow-xl`}
+        className={`w-full ${extraWide ? 'max-w-7xl' : wide ? 'max-w-4xl' : 'max-w-xl'} rounded-lg border border-neutral-800 bg-neutral-950 p-5 shadow-xl`}
       >
         <div className="mb-4 flex items-center justify-between">
           <h2 id="modal-title" className="text-base font-semibold text-white">

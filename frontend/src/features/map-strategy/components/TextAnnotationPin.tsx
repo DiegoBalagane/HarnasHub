@@ -43,7 +43,7 @@ export const TextAnnotationPin = memo(function TextAnnotationPin({
           type="button"
           title="Usuń notatkę"
           onClick={() => onRemove(annotation.id)}
-          className="absolute -right-3 -top-3 hidden h-4 w-4 items-center justify-center rounded-full bg-neutral-900 text-[10px] leading-none text-neutral-300 hover:text-red-400 group-hover:flex"
+          className="absolute -right-3 -top-3 hidden h-4 w-4 items-center justify-center rounded-full bg-neutral-900 text-[10px] leading-none text-neutral-300 hover:text-danger-400 group-hover:flex"
         >
           ×
         </button>

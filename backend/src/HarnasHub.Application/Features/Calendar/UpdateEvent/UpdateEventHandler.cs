@@ -29,21 +29,14 @@ public class UpdateEventHandler(IApplicationDbContext dbContext, IRealtimeNotifi
 		calendarEvent.Location = request.Location;
 		calendarEvent.Url = request.Url;
 		calendarEvent.Notes = request.Notes;
+		calendarEvent.Opponent = EventMappings.NormalizeOpponent(request.Opponent);
 
 		await dbContext.SaveChangesAsync(cancellationToken);
 
 		await realtimeNotifier.NotifyAsync("calendar", cancellationToken);
 		await realtimeNotifier.NotifyAsync("dashboard", cancellationToken);
 
-		return new EventDto(
-			calendarEvent.Id,
-			calendarEvent.Title,
-			calendarEvent.Type.ToString(),
-			calendarEvent.StartsAtUtc,
-			calendarEvent.EndsAtUtc,
-			calendarEvent.Location,
-			calendarEvent.Url,
-			calendarEvent.Notes);
+		return EventMappings.ToDto(calendarEvent);
 	}
 
 	#endregion

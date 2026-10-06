@@ -104,7 +104,7 @@ export function DayAvailabilityEditor({ date, entry, onClose }: DayAvailabilityE
           onClick={handleAvailableClick}
           className={`rounded-md border px-3 py-1 text-xs transition ${
             isAvailable
-              ? 'border-green-700 bg-green-950 text-green-300'
+              ? 'border-success-700 bg-success-950 text-success-300'
               : 'border-neutral-700 text-neutral-400 hover:border-neutral-500'
           }`}
         >
@@ -174,7 +174,7 @@ export function DayAvailabilityEditor({ date, entry, onClose }: DayAvailabilityE
             type="button"
             disabled={!status || setDayAvailability.isPending}
             onClick={() => saveNote(note.trim() === '' ? null : note.trim())}
-            className="rounded-md bg-red-600 px-3 py-1.5 text-xs font-medium text-white transition hover:bg-red-500 disabled:opacity-50"
+            className="rounded-md bg-primary-500 px-3 py-1.5 text-xs font-medium text-primary-950 transition hover:bg-primary-400 disabled:opacity-50"
           >
             Zapisz notatkę
           </button>
@@ -194,9 +194,9 @@ export function DayAvailabilityEditor({ date, entry, onClose }: DayAvailabilityE
         </div>
       </div>
 
-      {validationError !== null && <p className="text-sm text-red-400">{validationError}</p>}
+      {validationError !== null && <p className="text-sm text-danger-400">{validationError}</p>}
       {setDayAvailability.isError && (
-        <p className="text-sm text-red-400">Nie udało się zapisać dostępności.</p>
+        <p className="text-sm text-danger-400">Nie udało się zapisać dostępności.</p>
       )}
     </div>
   )

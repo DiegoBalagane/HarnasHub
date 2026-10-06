@@ -52,7 +52,7 @@ export function PinMarkSettings() {
           type="button"
           disabled={updatePinMark.isPending}
           onClick={save}
-          className="rounded-md bg-red-600 px-3 py-1.5 text-xs font-medium text-white transition hover:bg-red-500 disabled:opacity-50"
+          className="rounded-md bg-primary-500 px-3 py-1.5 text-xs font-medium text-primary-950 transition hover:bg-primary-400 disabled:opacity-50"
         >
           Zapisz
         </button>
@@ -71,7 +71,7 @@ export function PinMarkSettings() {
         )}
       </div>
 
-      {updatePinMark.isError && <p className="text-sm text-red-400">{updatePinMark.error.message}</p>}
+      {updatePinMark.isError && <p className="text-sm text-danger-400">{updatePinMark.error.message}</p>}
     </div>
   )
 }

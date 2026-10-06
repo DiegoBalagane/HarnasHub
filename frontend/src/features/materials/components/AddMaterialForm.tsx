@@ -3,8 +3,13 @@ import type { MaterialCategory } from '../../../services/materialsApi'
 import { materialCategories, materialCategoryLabels } from '../labels'
 import { useAddMaterial } from '../hooks/useMaterials'
 
+interface AddMaterialFormProps {
+  /** Called after saving, e.g. to close the modal hosting the form. */
+  onDone?: () => void
+}
+
 /** Coach/Manager-only form for adding a training material link. */
-export function AddMaterialForm() {
+export function AddMaterialForm({ onDone }: AddMaterialFormProps) {
   const [title, setTitle] = useState('')
   const [url, setUrl] = useState('')
   const [category, setCategory] = useState<MaterialCategory | ''>('')
@@ -21,6 +26,7 @@ export function AddMaterialForm() {
           setUrl('')
           setCategory('')
           setDescription('')
+          onDone?.()
         },
       },
     )
@@ -70,12 +76,12 @@ export function AddMaterialForm() {
         className="rounded-md border border-neutral-800 bg-neutral-900 px-3 py-2 text-sm outline-none focus:border-neutral-500"
       />
 
-      {addMaterial.isError && <p className="text-sm text-red-400">Nie udało się dodać materiału.</p>}
+      {addMaterial.isError && <p className="text-sm text-danger-400">Nie udało się dodać materiału.</p>}
 
       <button
         type="submit"
         disabled={addMaterial.isPending}
-        className="self-start rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-red-500 disabled:opacity-50"
+        className="self-start rounded-md bg-primary-500 px-4 py-2 text-sm font-medium text-primary-950 transition hover:bg-primary-400 disabled:opacity-50"
       >
         {addMaterial.isPending ? 'Dodawanie…' : 'Dodaj materiał'}
       </button>

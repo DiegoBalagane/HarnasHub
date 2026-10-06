@@ -2,7 +2,7 @@ using HarnasHub.Application.Features.Calendar.Shared;
 
 namespace HarnasHub.Application.Features.Dashboard.Shared;
 
-/// <summary>Summary shown on the team dashboard for the current user.</summary>
+/// <summary>Summary shown on the team dashboard for the current user; <paramref name="NextMatch"/> is the next event with an opponent set, null when none is scheduled.</summary>
 public record DashboardSummaryDto(
 	EventDto? NextEvent,
 	int OpenTaskCount,
@@ -10,7 +10,8 @@ public record DashboardSummaryDto(
 	DailyTeamStatusDto Tomorrow,
 	MyRecentPerformanceDto? MyRecentPerformance,
 	LastMatchResultDto? LastMatch,
-	TeamAttendanceSummaryDto Attendance);
+	TeamAttendanceSummaryDto Attendance,
+	EventDto? NextMatch);
 
 /// <summary>Team-wide lateness/absence totals over the trailing 30 days, for the dashboard tile.</summary>
 public record TeamAttendanceSummaryDto(int LateCount, int AbsentCount);

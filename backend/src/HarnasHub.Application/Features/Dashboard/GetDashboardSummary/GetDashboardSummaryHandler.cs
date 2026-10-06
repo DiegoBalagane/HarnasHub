@@ -34,7 +34,14 @@ public class GetDashboardSummaryHandler(IApplicationDbContext dbContext, ICurren
 		var nextEvent = await dbContext.Events
 			.Where(e => e.StartsAtUtc >= now)
 			.OrderBy(e => e.StartsAtUtc)
-			.Select(e => new EventDto(e.Id, e.Title, e.Type.ToString(), e.StartsAtUtc, e.EndsAtUtc, e.Location, e.Url, e.Notes))
+			.Select(EventMappings.Projection)
+			.FirstOrDefaultAsync(cancellationToken);
+
+		// Often not the same as nextEvent (a training usually comes first) — this one drives the "prepare for the match" banner.
+		var nextMatch = await dbContext.Events
+			.Where(e => e.StartsAtUtc >= now && e.Opponent != null)
+			.OrderBy(e => e.StartsAtUtc)
+			.Select(EventMappings.Projection)
 			.FirstOrDefaultAsync(cancellationToken);
 
 		var userId = currentUser.UserId;
@@ -110,7 +117,8 @@ public class GetDashboardSummaryHandler(IApplicationDbContext dbContext, ICurren
 			BuildDay(tomorrow, members, declaredByUserAndDate, vacationsByUser, events),
 			myRecentPerformance,
 			lastMatch,
-			attendance);
+			attendance,
+			nextMatch);
 	}
 
 	#endregion
@@ -126,7 +134,7 @@ public class GetDashboardSummaryHandler(IApplicationDbContext dbContext, ICurren
 		return await dbContext.Events
 			.Where(e => e.StartsAtUtc >= rangeStart && e.StartsAtUtc < rangeEnd)
 			.OrderBy(e => e.StartsAtUtc)
-			.Select(e => new EventDto(e.Id, e.Title, e.Type.ToString(), e.StartsAtUtc, e.EndsAtUtc, e.Location, e.Url, e.Notes))
+			.Select(EventMappings.Projection)
 			.ToListAsync(cancellationToken);
 	}
 

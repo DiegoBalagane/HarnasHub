@@ -8,9 +8,15 @@ import { grenadeTypeLabels, mapNames } from '../labels'
 const grenadeTypes: GrenadeType[] = ['Smoke', 'Flash', 'Molotov', 'Frag']
 const coachRoles = new Set(['Coach', 'Manager'])
 
+interface NadeLibraryProps {
+  /** Map chosen by the host page (Playbook); when set, the built-in map selector is hidden. */
+  mapName?: MapName
+}
+
 /** Filterable per-map nade library with inline YouTube previews. */
-export function NadeLibrary() {
-  const [mapName, setMapName] = useState<MapName | ''>('')
+export function NadeLibrary({ mapName: controlledMapName }: NadeLibraryProps) {
+  const [ownMapName, setMapName] = useState<MapName | ''>('')
+  const mapName = controlledMapName ?? ownMapName
   const [type, setType] = useState<GrenadeType | ''>('')
   const {
     data: nades,
@@ -22,20 +28,22 @@ export function NadeLibrary() {
   const canModerate = role !== null && coachRoles.has(role)
 
   return (
-    <div className="flex w-full max-w-2xl flex-col gap-4">
+    <div className="flex w-full flex-col gap-4">
       <div className="flex gap-3">
-        <select
-          value={mapName}
-          onChange={(event) => setMapName(event.target.value as MapName | '')}
-          className="rounded-md border border-neutral-800 bg-neutral-900 px-3 py-2 text-sm outline-none focus:border-neutral-500"
-        >
-          <option value="">Wszystkie mapy</option>
-          {mapNames.map((map) => (
-            <option key={map} value={map}>
-              {map}
-            </option>
-          ))}
-        </select>
+        {controlledMapName === undefined && (
+          <select
+            value={mapName}
+            onChange={(event) => setMapName(event.target.value as MapName | '')}
+            className="rounded-md border border-neutral-800 bg-neutral-900 px-3 py-2 text-sm outline-none focus:border-neutral-500"
+          >
+            <option value="">Wszystkie mapy</option>
+            {mapNames.map((map) => (
+              <option key={map} value={map}>
+                {map}
+              </option>
+            ))}
+          </select>
+        )}
 
         <select
           value={type}
@@ -52,8 +60,12 @@ export function NadeLibrary() {
       </div>
 
       {isLoading && <p className="text-neutral-400">Ładowanie…</p>}
-      {isError && <p className="text-red-400">Nie udało się pobrać granatów.</p>}
-      {nades?.length === 0 && <p className="text-neutral-400">Brak pozycji spełniających filtry.</p>}
+      {isError && <p className="text-danger-400">Nie udało się pobrać granatów.</p>}
+      {nades?.length === 0 && (
+        <p className="text-neutral-400">
+          Brak granatów dla tych filtrów — dodaj pierwszy przyciskiem „+ Dodaj granat”.
+        </p>
+      )}
 
       <ul className="flex flex-col gap-3">
         {nades?.map((nade) => {
@@ -72,7 +84,7 @@ export function NadeLibrary() {
                   <button
                     onClick={() => deleteNade.mutate(nade.id)}
                     disabled={deleteNade.isPending}
-                    className="text-xs text-neutral-500 hover:text-red-400"
+                    className="text-xs text-neutral-500 hover:text-danger-400"
                   >
                     Usuń
                   </button>

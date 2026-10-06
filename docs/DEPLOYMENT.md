@@ -37,6 +37,12 @@ Render jest równoważną alternatywą (też wspiera deploy z Dockerfile + manag
    | `DiscordOAuth__RequiredGuildId` | ID Waszego serwera Discord (patrz niżej, jak go znaleźć) — **bez tego każdy z Discorda mógłby się zalogować** |
    | `Reminders__LookaheadMinutes` | `60` |
    | `Reminders__CheckIntervalSeconds` | `60` |
+   | `Reminders__MatchBriefingHoursBefore` | `24` — ile godzin przed meczem wysłać na Discorda odprawę z raportu rywala (`0` = wyłączone) |
+   | `Frontend__BaseUrl` | publiczny adres aplikacji, np. `https://<twoja-domena-railway>` — używany do linku do raportu w odprawie (puste = bez linku) |
+   | `Faceit__ApiKey` | Klucz serwerowy FACEIT Data API v4 ([developers.faceit.com](https://developers.faceit.com) → App Studio → API Keys → Server side) — **traktuj jak hasło**. Bez niego aplikacja działa, ale raport rywala nie pobiera danych z FACEIT |
+   | `Faceit__DownloadsApiToken` | (opcjonalne) Token z uprawnieniem Downloads API — przyznaje go FACEIT po wniosku ([fce.gg/downloads-api-application](https://fce.gg/downloads-api-application), odpowiedź do ~30 dni) — **traktuj jak hasło**. Bez niego demki rywala wgrywa się ręcznie; z nim raport rywala ma przycisk „Pobierz automatycznie” (wymaga też `Faceit__ApiKey` i skonfigurowanego S3) |
+   | `Faceit__SyncIntervalHours` | `6` (opcjonalne) — co ile godzin odświeżać w tle rywali z meczem w najbliższych dniach |
+   | `Faceit__UpcomingEventDays` | `7` (opcjonalne) — ile dni do przodu sprawdzać zaplanowane mecze |
    | `ASPNETCORE_ENVIRONMENT` | `Production` |
 
    `Cors__AllowedOrigins` **nie jest potrzebne** w tym modelu — frontend i backend są na tym samym originie.

@@ -17,6 +17,10 @@ public class NadeEntry
 	public float? LandingX { get; set; }
 	/// <summary>Radar-relative landing-spot fraction in [0,1], measured from the top edge; null when the entry has no pin yet.</summary>
 	public float? LandingY { get; set; }
+	/// <summary>Radar-relative throw-position fraction in [0,1] from the left edge; null unless the entry was imported from a demo.</summary>
+	public float? ThrowX { get; set; }
+	/// <summary>Radar-relative throw-position fraction in [0,1] from the top edge; null unless the entry was imported from a demo.</summary>
+	public float? ThrowY { get; set; }
 	public Guid CreatedByUserId { get; set; }
 	public DateTime CreatedAtUtc { get; set; }
 

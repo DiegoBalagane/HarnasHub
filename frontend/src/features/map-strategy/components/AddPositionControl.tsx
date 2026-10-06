@@ -57,7 +57,7 @@ export function AddPositionControl({ mapName, side, placedUserIds }: AddPosition
       </button>
 
       {setPlayerPosition.isError && (
-        <span className="text-xs text-red-400">Nie udało się zapisać pozycji.</span>
+        <span className="text-xs text-danger-400">Nie udało się zapisać pozycji.</span>
       )}
     </div>
   )
