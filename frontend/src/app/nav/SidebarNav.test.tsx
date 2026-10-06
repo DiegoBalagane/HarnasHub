@@ -1,5 +1,6 @@
 import { screen } from '@testing-library/react'
-import { describe, expect, it } from 'vitest'
+import { useAuthStore } from '../../features/auth/stores/useAuthStore'
+import { afterEach, describe, expect, it } from 'vitest'
 import { renderWithProviders } from '../../test/renderWithProviders'
 import { isNavItemActive } from './navItems'
 import { SidebarNav } from './SidebarNav'
@@ -50,5 +51,22 @@ describe('SidebarNav', () => {
     renderWithProviders(<SidebarNav collapsed />)
     expect(screen.queryByText('Kalendarz')).not.toBeInTheDocument()
     expect(screen.getByRole('link', { name: 'Kalendarz' })).toHaveAttribute('title', 'Kalendarz')
+  })
+})
+
+describe('SidebarNav admin section', () => {
+  afterEach(() => useAuthStore.setState({ role: null }))
+
+  it('shows Panel admina only to a Manager', () => {
+    useAuthStore.setState({ role: 'Player' })
+    const { unmount } = renderWithProviders(<SidebarNav collapsed={false} />)
+    expect(screen.queryByRole('link', { name: 'Panel admina' })).not.toBeInTheDocument()
+    expect(screen.queryByText('Administracja')).not.toBeInTheDocument()
+    unmount()
+
+    useAuthStore.setState({ role: 'Manager' })
+    renderWithProviders(<SidebarNav collapsed={false} />)
+    expect(screen.getByRole('link', { name: 'Panel admina' })).toHaveAttribute('href', '/admin')
+    expect(screen.getByText('Administracja')).toBeInTheDocument()
   })
 })

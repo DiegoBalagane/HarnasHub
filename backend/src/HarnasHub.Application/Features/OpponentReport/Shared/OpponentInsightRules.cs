@@ -2,12 +2,13 @@ using System.Globalization;
 
 namespace HarnasHub.Application.Features.OpponentReport.Shared;
 
-/// <summary>Everything the TL;DR rules look at: the finished map matrix, players to watch and form.</summary>
+/// <summary>Everything the TL;DR rules look at: the finished map matrix, players to watch, form and (optionally) individual form.</summary>
 public record InsightInput(
 	int TheirTeamGames,
 	IReadOnlyList<MapComparisonDto> Maps,
 	IReadOnlyList<MapPlayersToWatchDto> PlayersToWatch,
-	OpponentFormDto Form);
+	OpponentFormDto Form,
+	IndividualFormDto? Individual = null);
 
 /// <summary>Turns the report numbers into 3–5 plain-Polish TL;DR points. Each rule is a separate public method so it can be tested alone.</summary>
 public static class OpponentInsightRules
@@ -24,15 +25,20 @@ public static class OpponentInsightRules
 
 	#region Public Methods
 
-	/// <summary>All firing rules, most severe first, capped at <see cref="MaxInsights"/>.</summary>
+	/// <summary>All firing rules (team and <see cref="IndividualInsightRules"/>), most severe first, capped at <see cref="MaxInsights"/>;
+	/// within one severity the concatenation order below is the priority.</summary>
 	public static List<OpponentInsightDto> Build(InsightInput input) =>
 		LowSample(input)
 			.Concat(Opportunities(input))
 			.Concat(Dangers(input))
 			.Concat(MainMaps(input))
+			.Concat(IndividualInsightRules.SoloAvoidance(input))
 			.Concat(LikelyBans(input))
 			.Concat(ThreatPlayer(input))
+			.Concat(IndividualInsightRules.PlayerForm(input))
 			.Concat(Form(input))
+			.Concat(IndividualInsightRules.SoloComfortPick(input))
+			.Concat(IndividualInsightRules.OurStrongMap(input))
 			.Concat(RosterChanges(input))
 			.OrderBy(i => SeverityRank(i.Severity))
 			.Take(MaxInsights)
@@ -64,10 +70,12 @@ public static class OpponentInsightRules
 		}
 	}
 
-	/// <summary>Maps they (almost) never play — near-certain bans.</summary>
+	/// <summary>Maps they (almost) never play — near-certain bans; the map already covered by
+	/// <see cref="IndividualInsightRules.SoloAvoidance"/> is skipped so the TL;DR doesn't say it twice.</summary>
 	public static IEnumerable<OpponentInsightDto> LikelyBans(InsightInput input)
 	{
-		var bans = input.Maps.Where(m => m.Prediction == "Ban").Take(2).ToList();
+		var soloCovered = IndividualInsightRules.MostAvoidedMap(input)?.MapName;
+		var bans = input.Maps.Where(m => m.Prediction == "Ban" && m.MapName != soloCovered).Take(2).ToList();
 		if (bans.Count > 0)
 		{
 			var names = string.Join(" i ", bans.Select(m => m.MapName));

@@ -2,6 +2,7 @@ import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import type { ComponentType } from 'react'
 import { Layout } from './Layout'
 import { ProtectedRoute } from './ProtectedRoute'
+import { AdminPage } from './routes/AdminPage'
 import { AttendancePage } from './routes/AttendancePage'
 import { AuthCallbackPage } from './routes/AuthCallbackPage'
 import { CalendarPage } from './routes/CalendarPage'
@@ -43,6 +44,7 @@ const protectedRoutes: [string, ComponentType][] = [
   ['/roster', RosterPage],
   ['/attendance', AttendancePage],
   ['/settings', SettingsPage],
+  ['/admin', AdminPage],
 ]
 
 /** Redirects a retired route to its new home, carrying the original query string over. */

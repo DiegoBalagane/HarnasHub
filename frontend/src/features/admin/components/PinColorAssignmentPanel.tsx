@@ -1,7 +1,7 @@
 import type { TeamMember } from '../../../services/rosterApi'
 import { useAuthStore } from '../../auth/stores/useAuthStore'
-import { useRoster, useUpdatePinColor } from '../hooks/useRoster'
-import { PinColorPicker } from './PinColorPicker'
+import { useRoster, useUpdatePinColor } from '../../roster/hooks/useRoster'
+import { PinColorPicker } from '../../roster/components/PinColorPicker'
 
 /** Manager-only panel for assigning map-radar pin colours to the 5 Main-roster players, kept out of the roster rows so it doesn't crowd out their names. */
 export function PinColorAssignmentPanel() {

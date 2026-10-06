@@ -74,6 +74,33 @@ public class OpponentReportBuilderTests
 		Assert.Contains(report.Insights, i => i.Kind == "Player" && i.Text.Contains("nick-t1"));
 	}
 
+	[Fact]
+	public void Should_add_individual_form_of_both_rosters_from_solo_and_team_lines()
+	{
+		var team = Enumerable.Range(0, 6).Select(i => Match("de_mirage", Them, Strangers(), 13, 6, Now.AddDays(-i - 1))).ToList();
+		var solo = Them
+			.SelectMany(id => Enumerable.Range(0, 10).Select(i => (Id: id, Game: Match("de_inferno", [id, .. Strangers()[..4]], Strangers(), 13, 10, Now.AddDays(-i - 10)))))
+			.ToList();
+		var ours = Enumerable.Range(0, 5).Select(i => Match("de_nuke", ["u1", .. Strangers()[..4]], Strangers(), 13, 3, Now.AddDays(-i - 1))).ToList();
+		var theirStats = team.SelectMany(g => Them.Select(id => Stat(g, id, 20, 15, 80))).Concat(solo.Select(s => Stat(s.Game, s.Id, 25, 15, 90))).ToList();
+		var input = Input([.. team, .. solo.Select(s => s.Game), .. ours], theirStats, []) with
+		{
+			OurStats = ours.Select(g => Stat(g, "u1", 30, 10, 110)).ToList(),
+			OurPlayers = [new FaceitPlayerDto("u1", "Kacper", 2500, 10)]
+		};
+
+		var report = OpponentReportBuilder.Build(input);
+
+		var individual = report.IndividualForm!;
+		Assert.Equal(5, individual.Theirs.Players.Count);
+		Assert.All(individual.Theirs.Players, p => Assert.Equal((16, 6, 10), (p.Games, p.TeamGames, p.SoloGames)));
+		var inferno = individual.Theirs.MapComfort.Single(c => c.MapName == "Inferno");
+		Assert.Equal((5, 5, 0), (inferno.RatedPlayers, inferno.RegularPlayers, inferno.AvoidingPlayers));
+		var kacper = Assert.Single(individual.Ours.Players, p => p.Games > 0);
+		Assert.Equal(("nick-u1", 2500, 5), (kacper.Nickname, kacper.Elo ?? 0, kacper.Maps.Single().SoloGames));
+		Assert.Contains("solo: 5/5", report.Maps.Single(m => m.MapName == "Inferno").PredictionReason);
+	}
+
 	#endregion
 
 	#region Private Methods

@@ -1,5 +1,6 @@
 import { memo } from 'react'
 import { Link, useLocation } from 'react-router-dom'
+import { useAuthStore } from '../../features/auth/stores/useAuthStore'
 import { NavIcon } from './NavIcon'
 import { isNavItemActive, navSections } from './navItems'
 
@@ -10,10 +11,12 @@ interface SidebarNavProps {
 /** Every navigation group expanded as a labelled section; collapses to an icon-only column with title tooltips. */
 export const SidebarNav = memo(function SidebarNav({ collapsed }: SidebarNavProps) {
   const { pathname } = useLocation()
+  const isManager = useAuthStore((state) => state.role === 'Manager')
+  const visibleSections = navSections.filter((section) => !section.managerOnly || isManager)
 
   return (
     <nav aria-label="Menu główne" className="flex flex-col gap-4 px-3 py-4">
-      {navSections.map((section, index) => (
+      {visibleSections.map((section, index) => (
         <div key={section.label ?? index} className="flex flex-col gap-1">
           {section.label &&
             (collapsed ? (

@@ -34,6 +34,7 @@ public static class DependencyInjection
 		services.Configure<FrontendSettings>(configuration.GetSection(FrontendSettings.SectionName));
 		services.Configure<S3Settings>(configuration.GetSection(S3Settings.SectionName));
 		services.Configure<FaceitOptions>(configuration.GetSection(FaceitOptions.SectionName));
+		services.AddSingleton<IIntegrationSettings, IntegrationSettings>();
 
 		services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
 		services.AddHttpClient<IDiscordOAuthClient, DiscordOAuthClient>();

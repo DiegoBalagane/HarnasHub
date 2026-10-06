@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { useIsCoachOrManager } from '../../features/auth/hooks/useIsCoachOrManager'
 import { FaceitLinkForm } from '../../features/opponentReport/components/FaceitLinkForm'
+import { IndividualFormSection } from '../../features/opponentReport/components/IndividualFormSection'
 import { InsightList } from '../../features/opponentReport/components/InsightList'
 import { MapMatrix } from '../../features/opponentReport/components/MapMatrix'
 import { MapTendenciesSection } from '../../features/opponentReport/components/MapTendenciesSection'
@@ -13,7 +14,7 @@ import { useOpponentReport } from '../../features/opponentReport/hooks/useOppone
 import { opponentProfilePath } from '../../features/opponents/paths'
 import type { VetoFormat } from '../../services/opponentReportApi'
 
-/** Opponent report: FACEIT "them vs us" (TL;DR, map matrix, veto, players, form) plus tendencies from their demos. */
+/** Opponent report: FACEIT "them vs us" (TL;DR, map matrix, veto, players, form, individual form) plus tendencies from their demos. */
 export function OpponentReportPage() {
   const [searchParams] = useSearchParams()
   const name = searchParams.get('name') ?? ''
@@ -51,10 +52,11 @@ export function OpponentReportPage() {
 
           <ReportToolbar report={report} canManage={canManage} format={format} />
           <InsightList insights={report.insights} />
-          <MapMatrix maps={report.maps} />
+          <MapMatrix maps={report.maps} comfort={report.individualForm?.theirs.mapComfort} />
           <VetoPlanSection plans={report.vetoPlans} format={format} onFormatChange={setFormat} />
           <PlayersToWatch maps={report.playersToWatch} />
           <TeamFormSection form={report.form} />
+          <IndividualFormSection form={report.individualForm} />
           <MapTendenciesSection opponentName={report.opponentName} tendencies={report.tendencies ?? []} canManage={canManage} />
           <OpponentDemosSection opponentName={report.opponentName} canManage={canManage} />
         </>

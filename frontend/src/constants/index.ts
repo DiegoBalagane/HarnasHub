@@ -43,6 +43,9 @@ export const API_ENDPOINTS = {
     myPinMark: '/api/roster/me/pin-mark',
     mySteamId64: '/api/roster/me/steam-id',
   },
+  admin: {
+    status: '/api/admin/status',
+  },
   dashboard: '/api/dashboard',
   calendar: {
     events: '/api/calendar/events',

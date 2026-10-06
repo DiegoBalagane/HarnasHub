@@ -106,6 +106,82 @@ export interface OpponentForm {
   newPlayers: string[]
 }
 
+export type FormDirection = 'Up' | 'Down' | 'Flat'
+
+/** One player's numbers on one map; rates and share in percent, team/solo split by "≥ 3 linked players on one side". */
+export interface PlayerMapForm {
+  mapName: MapName
+  games: number
+  share: number
+  wins: number
+  winRate: number
+  kdRatio: number
+  adr: number | null
+  headshotPercent: number | null
+  lastPlayedAtUtc: string
+  teamGames: number
+  soloGames: number
+  teamWinRate: number | null
+  soloWinRate: number | null
+  teamKdRatio: number | null
+  soloKdRatio: number | null
+}
+
+/** Last 10 games vs the earlier ones; win rates in percent, the delta in percentage points. */
+export interface PlayerRecentForm {
+  recentGames: number
+  earlierGames: number
+  recentKdRatio: number
+  earlierKdRatio: number
+  recentWinRate: number
+  earlierWinRate: number
+  kdDelta: number
+  winRateDelta: number
+  direction: FormDirection
+}
+
+/** One linked player's individual form across team and solo games. */
+export interface PlayerForm {
+  playerId: string
+  nickname: string
+  elo: number | null
+  skillLevel: number | null
+  games: number
+  teamGames: number
+  soloGames: number
+  winRate: number | null
+  kdRatio: number | null
+  adr: number | null
+  headshotPercent: number | null
+  lastPlayedAtUtc: string | null
+  recentForm: PlayerRecentForm | null
+  maps: PlayerMapForm[]
+}
+
+/** A roster's comfort on a map from solo games: of the rated players, how many play it regularly / avoid it. */
+export interface MapComfort {
+  mapName: MapName
+  ratedPlayers: number
+  regularPlayers: number
+  avoidingPlayers: number
+  soloShare: number
+  avgWinRate: number | null
+  avgKdRatio: number | null
+  regularNicknames: string[]
+  avoidingNicknames: string[]
+}
+
+export interface TeamIndividualForm {
+  players: PlayerForm[]
+  mapComfort: MapComfort[]
+}
+
+/** Individual form of both rosters. */
+export interface IndividualForm {
+  theirs: TeamIndividualForm
+  ours: TeamIndividualForm
+}
+
 /** The FACEIT "them vs us" report of one opponent. */
 export interface OpponentReport {
   opponentName: string
@@ -127,6 +203,8 @@ export interface OpponentReport {
   nextEventAtUtc: string | null
   /** Tendencies from the opponent's analysed demos per map; empty without demos. */
   tendencies: MapTendencies[]
+  /** Individual form (team + solo games) of both rosters; null/absent in reports generated before it existed. */
+  individualForm?: IndividualForm | null
 }
 
 export const opponentReportApi = {

@@ -42,10 +42,11 @@ public static class OpponentReportGenerator
 			.Where(u => u.SteamId64 != null && u.SteamId64 != "")
 			.Select(u => u.SteamId64!.Trim())
 			.ToListAsync(cancellationToken);
-		var ourIds = await dbContext.FaceitPlayers.AsNoTracking()
+		var ourPlayers = await dbContext.FaceitPlayers.AsNoTracking()
 			.Where(p => p.SteamId64 != null && ourSteamIds.Contains(p.SteamId64))
-			.Select(p => p.Id)
+			.Select(p => new FaceitPlayerDto(p.Id, p.Nickname, p.Elo, p.SkillLevel))
 			.ToListAsync(cancellationToken);
+		var ourIds = ourPlayers.Select(p => p.PlayerId).Distinct().ToList();
 
 		var since = nowUtc - FaceitSync.HistoryWindow;
 		var matches = await dbContext.FaceitMatches.AsNoTracking()
@@ -53,6 +54,11 @@ public static class OpponentReportGenerator
 			.ToListAsync(cancellationToken);
 		var theirStats = await dbContext.FaceitMatchPlayerStats.AsNoTracking()
 			.Where(s => theirIds.Contains(s.PlayerId))
+			.ToListAsync(cancellationToken);
+		// Our players' lines for their individual form, limited to the window by joining the cached maps.
+		var ourStats = await dbContext.FaceitMatchPlayerStats.AsNoTracking()
+			.Where(s => ourIds.Contains(s.PlayerId))
+			.Join(dbContext.FaceitMatches.Where(m => m.PlayedAtUtc >= since), s => s.MatchId, m => m.Id, (s, _) => s)
 			.ToListAsync(cancellationToken);
 
 		var vetoData = await VetoInputLoader.LoadAsync(dbContext, key, cancellationToken);
@@ -65,7 +71,9 @@ public static class OpponentReportGenerator
 			theirStats,
 			theirIds.ToHashSet(),
 			ourIds.ToHashSet(),
-			vetoData.Inputs));
+			vetoData.Inputs,
+			ourStats,
+			ourPlayers));
 	}
 
 	/// <summary>Fills the fields that must reflect the present rather than the snapshot: whether FACEIT is configured and the next

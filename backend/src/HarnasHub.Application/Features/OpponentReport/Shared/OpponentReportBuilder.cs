@@ -5,7 +5,8 @@ using HarnasHub.Core.Enums;
 namespace HarnasHub.Application.Features.OpponentReport.Shared;
 
 /// <summary>Everything the report is computed from, already loaded: cached FACEIT maps in the window, the opponent's scoreboard
-/// lines, both rosters and the internal veto inputs (map pool, our results, head-to-head, tactics).</summary>
+/// lines, both rosters and the internal veto inputs (map pool, our results, head-to-head, tactics); optionally our players'
+/// scoreboard lines and cached profiles for their individual form.</summary>
 public record OpponentReportInput(
 	string OpponentName,
 	OpponentFaceitLinkDto? Link,
@@ -14,7 +15,9 @@ public record OpponentReportInput(
 	IReadOnlyList<FaceitMatchPlayerStat> TheirStats,
 	IReadOnlySet<string> TheirRoster,
 	IReadOnlySet<string> OurRoster,
-	IReadOnlyList<MapVetoInput> VetoInputs);
+	IReadOnlyList<MapVetoInput> VetoInputs,
+	IReadOnlyList<FaceitMatchPlayerStat>? OurStats = null,
+	IReadOnlyList<FaceitPlayerDto>? OurPlayers = null);
 
 /// <summary>Pure assembly of <see cref="OpponentReportDto"/> from <see cref="OpponentReportInput"/> — no I/O, fully unit-testable.</summary>
 public static class OpponentReportBuilder
@@ -28,7 +31,8 @@ public static class OpponentReportBuilder
 		var ourGames = TeamMatchDetector.Detect(input.Matches, input.OurRoster);
 		var theirs = MapMetricsCalculator.Calculate(theirGames);
 		var ours = MapMetricsCalculator.Calculate(ourGames);
-		var predictions = OpponentVetoPredictor.Predict(theirs, theirGames.Count);
+		var individual = IndividualFormBuilder.Build(input);
+		var predictions = OpponentVetoPredictor.Predict(theirs, theirGames.Count, individual.TheirComfort);
 		var vetoInputs = input.VetoInputs.ToDictionary(i => i.MapName);
 
 		var maps = Enum.GetValues<MapName>().Select(map =>
@@ -38,7 +42,14 @@ public static class OpponentReportBuilder
 			var internalGames = vetoInput.Wins + vetoInput.Losses + vetoInput.Draws;
 			var ourWins = ours[map].Wins + vetoInput.Wins + 0.5 * vetoInput.Draws;
 			var ourTotal = ours[map].Games + internalGames;
-			var advantage = MapAdvantage.Advantage(ourWins, ourTotal, their.Wins, their.Games);
+			// Solo form only shifts each side's smoothing prior (capped 0.4–0.6, weight k/(k+games)) — see IndividualSignal.
+			var advantage = MapAdvantage.Advantage(
+				ourWins,
+				ourTotal,
+				their.Wins,
+				their.Games,
+				IndividualSignal.WinRatePrior(individual.OurComfort.GetValueOrDefault(map)),
+				IndividualSignal.WinRatePrior(individual.TheirComfort.GetValueOrDefault(map)));
 
 			return new MapContext(
 				map,
@@ -61,7 +72,12 @@ public static class OpponentReportBuilder
 			.ToList();
 
 		var candidates = maps
-			.Select(m => new VetoCandidate(m.Map, suggestions[m.Map.ToString()].Score, predictions[m.Map].Preference, OurNote(m), TheirNote(m.Their)))
+			.Select(m => new VetoCandidate(
+				m.Map,
+				suggestions[m.Map.ToString()].Score,
+				predictions[m.Map].Preference,
+				VetoNotes.Ours(m.VetoInput.Status, m.OurWins, m.OurTotal),
+				VetoNotes.Theirs(m.Their)))
 			.ToList();
 		var plans = new List<VetoPlanDto>
 		{
@@ -72,7 +88,7 @@ public static class OpponentReportBuilder
 		var nicknames = Nicknames(input);
 		var playersToWatch = PlayersToWatchCalculator.Calculate(PlayerLines(input));
 		var form = TeamFormCalculator.Calculate(theirGames, nicknames);
-		var insights = OpponentInsightRules.Build(new InsightInput(theirGames.Count, rows, playersToWatch, form));
+		var insights = OpponentInsightRules.Build(new InsightInput(theirGames.Count, rows, playersToWatch, form, individual.Form));
 
 		return new OpponentReportDto(
 			input.OpponentName,
@@ -91,7 +107,10 @@ public static class OpponentReportBuilder
 			playersToWatch,
 			form,
 			null,
-			null);
+			null)
+		{
+			IndividualForm = individual.Form
+		};
 	}
 
 	#endregion
@@ -135,18 +154,6 @@ public static class OpponentReportBuilder
 			suggestion.Recommendation,
 			suggestion.Reasons);
 
-	/// <summary>Our side of a map in a few words, for veto step reasons.</summary>
-	private static string OurNote(MapContext m) =>
-		m.VetoInput.Status == MapPoolStatus.Ban
-			? "u nas stały ban w puli map"
-			: m.OurTotal == 0
-				? "my: brak meczów"
-				: $"my: {m.OurTotal} {MatchNoun(m.OurTotal)}, {Percent(m.OurWins / m.OurTotal):0}% wygranych";
-
-	/// <summary>Their side of a map in a few words, for veto step reasons.</summary>
-	private static string TheirNote(MapMetrics their) =>
-		their.Games == 0 ? "oni: nie grają" : $"oni: {their.Games} {MatchNoun(their.Games)}, {Percent(their.WinRate):0}% wygranych";
-
 	/// <summary>Opponent scoreboard lines on pool maps, oldest first so the latest nickname ends up last.</summary>
 	private static IEnumerable<PlayerGameLine> PlayerLines(OpponentReportInput input)
 	{
@@ -181,19 +188,6 @@ public static class OpponentReportBuilder
 
 	/// <summary>A fraction as a percentage with one decimal; null stays null.</summary>
 	private static double? Percent(double? fraction) => fraction is { } value ? Math.Round(value * 100, 1) : null;
-
-	/// <summary>Polish plural of "mecz": 1 mecz, 2–4 mecze (except 12–14), otherwise meczów.</summary>
-	private static string MatchNoun(int count)
-	{
-		if (count == 1)
-		{
-			return "mecz";
-		}
-
-		var lastDigit = count % 10;
-		var lastTwo = count % 100;
-		return lastDigit is >= 2 and <= 4 && lastTwo is < 12 or > 14 ? "mecze" : "meczów";
-	}
 
 	#endregion
 }

@@ -99,6 +99,10 @@ public record OpponentReportDto(
 	/// <summary>Tendencies from the opponent's analysed demos per map (filled live on every read, never stored in the
 	/// snapshot); empty without demos, so a FACEIT-only report is unchanged.</summary>
 	public List<MapTendenciesDto> Tendencies { get; init; } = [];
+
+	/// <summary>Individual form of both rosters (team and solo games) with per-map comfort; null in snapshots generated before
+	/// it existed, so old snapshots stay readable.</summary>
+	public IndividualFormDto? IndividualForm { get; init; }
 }
 
 /// <summary>Outcome of a sync run: how many map games were newly cached and whether the per-run fetch cap cut it short.</summary>
