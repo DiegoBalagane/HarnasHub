@@ -30,7 +30,7 @@ export function CalendarHeader({ label, view, onViewChange, onPrev, onNext, onTo
         <Button variant="ghost" size="sm" aria-label="Następny" onClick={onNext}>
           ▶
         </Button>
-        <h2 className="text-base font-semibold capitalize text-white">{label}</h2>
+        <h2 className="text-base font-semibold text-white first-letter:uppercase">{label}</h2>
       </div>
       <div role="group" aria-label="Widok kalendarza" className="flex gap-0.5 rounded-md border border-neutral-800 p-0.5 text-xs">
         {viewOptions.map((option) => (
