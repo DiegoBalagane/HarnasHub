@@ -28,18 +28,19 @@ export function PinColorPicker({ value, onChange, disabled, size = 'md' }: PinCo
         />
       ))}
 
-      {value && (
-        <button
-          type="button"
-          title="Usuń kolor"
-          aria-label="Usuń kolor"
-          disabled={disabled}
-          onClick={() => onChange(null)}
-          className="text-xs text-neutral-500 transition hover:text-neutral-300 disabled:opacity-50"
-        >
-          ✕
-        </button>
-      )}
+      {/* Always rendered (hidden when there's nothing to clear) so rows with and without a colour line up. */}
+      <button
+        type="button"
+        title="Usuń kolor"
+        aria-label="Usuń kolor"
+        aria-hidden={!value}
+        tabIndex={value ? 0 : -1}
+        disabled={disabled || !value}
+        onClick={() => onChange(null)}
+        className={`text-xs text-neutral-500 transition hover:text-neutral-300 disabled:opacity-50 ${value ? '' : 'invisible'}`}
+      >
+        ✕
+      </button>
     </div>
   )
 }
