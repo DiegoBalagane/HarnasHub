@@ -1,5 +1,8 @@
 using ErrorOr;
 using HarnasHub.Application.Abstractions;
+using HarnasHub.Application.Common.Faceit;
+using HarnasHub.Application.Common.Demos;
+using HarnasHub.Application.Features.MatchAnalysis.Shared;
 using HarnasHub.Application.Features.Results.Shared;
 using HarnasHub.Application.Features.Stats.Shared;
 using MediatR;
@@ -12,18 +15,25 @@ namespace HarnasHub.Application.Features.Results.AnalyzeDemo;
 /// candidate "our team" groups — whichever the roster's SteamID64s overlap with (if either) is suggested, but the
 /// coach picks the final one client-side, so this never has to guess wrong the way pure SteamID matching can when
 /// nobody's SteamID64 is on file yet.</summary>
-public class AnalyzeDemoHandler(IDemoParser demoParser, IApplicationDbContext dbContext, ILogger<AnalyzeDemoHandler> logger)
+public class AnalyzeDemoHandler(
+	IDemoParser demoParser,
+	IApplicationDbContext dbContext,
+	IFileStorage fileStorage,
+	FaceitDemoMatchLookup faceitLookup,
+	ILogger<AnalyzeDemoHandler> logger)
 	: IRequestHandler<AnalyzeDemoCommand, ErrorOr<AnalyzeDemoResultDto>>
 {
 	#region Public Methods
 
 	public async Task<ErrorOr<AnalyzeDemoResultDto>> Handle(AnalyzeDemoCommand request, CancellationToken cancellationToken)
 	{
-		DemoParseResult parsed;
+		DemoTimeline timeline;
 
 		try
 		{
-			parsed = await demoParser.ParseAsync(request.DemoStream, cancellationToken);
+			// One pass with every collector: the score/stats preview needs only Stats, but the same read also yields the
+			// full timeline, which is parked in storage so the result can keep it without uploading the demo again.
+			timeline = await demoParser.ParseAsync(request.DemoStream, DemoParseOptions.MatchAnalysis, cancellationToken);
 		}
 		catch (Exception ex)
 		{
@@ -34,18 +44,25 @@ public class AnalyzeDemoHandler(IDemoParser demoParser, IApplicationDbContext db
 			return ResultErrors.InvalidDemoFile;
 		}
 
-		if (parsed.RoundsPlayed == 0 || parsed.Rounds.Count == 0 || parsed.Players.Count == 0)
+		var parsed = timeline.Stats;
+		if (parsed is null || parsed.RoundsPlayed == 0 || parsed.Rounds.Count == 0 || parsed.Players.Count == 0)
 		{
 			logger.LogWarning(
 				"Demka sparsowana bez błędu, ale bez rozgrywki do zapisania: RoundsPlayed={RoundsPlayed}, Rounds={Rounds}, Players={Players}",
-				parsed.RoundsPlayed, parsed.Rounds.Count, parsed.Players.Count);
+				parsed?.RoundsPlayed, parsed?.Rounds.Count, parsed?.Players.Count);
 			return ResultErrors.InvalidDemoFile;
 		}
 
 		var firstRound = parsed.Rounds[0];
-		var nameBySteamId = parsed.Players.ToDictionary(p => p.SteamId64, p => p.PlayerName);
+		var demoNames = parsed.Players.ToDictionary(p => p.SteamId64, p => (string?)p.PlayerName);
+		foreach (var id in firstRound.TerroristSteamIds.Concat(firstRound.CounterTerroristSteamIds))
+		{
+			demoNames.TryAdd(id, null);
+		}
 
-		string NameOrId(long steamId) => nameBySteamId.TryGetValue(steamId, out var name) ? name : steamId.ToString();
+		var nameBySteamId = await PlayerNameResolver.ResolveAsync(dbContext, demoNames, cancellationToken);
+
+		string NameOrId(long steamId) => nameBySteamId.TryGetValue(steamId, out var name) ? name : PlayerNameResolver.Fallback(steamId);
 
 		var teamA = BuildTeamPreview(parsed.Rounds, firstRound.TerroristSteamIds, NameOrId);
 		var teamB = BuildTeamPreview(parsed.Rounds, firstRound.CounterTerroristSteamIds, NameOrId);
@@ -57,10 +74,20 @@ public class AnalyzeDemoHandler(IDemoParser demoParser, IApplicationDbContext db
 				? "B"
 				: null;
 
+		// A FACEIT file name pre-fills opponent/date/category; FACEIT knowing which faction is us also settles the team pick.
+		var faceit = await faceitLookup.FindAsync(request.FileName, cancellationToken);
+		var faceitPrefill = faceit.Match is { } faceitMatch
+			? FaceitMatchPrefillBuilder.Build(faceitMatch, firstRound.TerroristSteamIds, firstRound.CounterTerroristSteamIds)
+			: null;
+		if (suggestedTeam is null && faceitPrefill?.OurFactionIndex is { } ourFaction)
+		{
+			suggestedTeam = faceitPrefill.Factions[ourFaction].DemoTeam;
+		}
+
 		var players = parsed.Players
 			.Select(p => new AnalyzedDemoPlayerDto(
 				p.SteamId64.ToString(),
-				p.PlayerName,
+				NameOrId(p.SteamId64),
 				p.Kills,
 				p.Deaths,
 				p.Assists,
@@ -78,12 +105,37 @@ public class AnalyzeDemoHandler(IDemoParser demoParser, IApplicationDbContext db
 				p.DeathPositions.Select(d => new DeathPositionDto(d.X, d.Y, d.Side.ToString())).ToList()))
 			.ToList();
 
-		return new AnalyzeDemoResultDto(parsed.RoundsPlayed, parsed.MapName?.ToString(), teamA, teamB, suggestedTeam, players);
+		var pendingTimelineKey = await ParkTimelineAsync(timeline, cancellationToken);
+		return new AnalyzeDemoResultDto(
+			parsed.RoundsPlayed, parsed.MapName?.ToString(), teamA, teamB, suggestedTeam, players, pendingTimelineKey,
+			faceitPrefill, faceit.Note);
 	}
 
 	#endregion
 
 	#region Private Methods
+
+	/// <summary>Stores the timeline under a fresh pending key for <c>AddResultCommand</c> to claim; null when storage isn't
+	/// configured or the upload failed — the preview itself must never fail just because the timeline couldn't be kept.</summary>
+	private async Task<string?> ParkTimelineAsync(DemoTimeline timeline, CancellationToken cancellationToken)
+	{
+		if (!fileStorage.IsConfigured || timeline.Rounds.Count == 0)
+		{
+			return null;
+		}
+
+		var key = MatchTimelineStorage.NewPendingKey();
+		try
+		{
+			await MatchTimelineStorage.SaveAsync(fileStorage, key, timeline, DemoTimelineSerializer.CurrentParserVersion, cancellationToken);
+			return key;
+		}
+		catch (Exception ex) when (ex is not OperationCanceledException)
+		{
+			logger.LogWarning(ex, "Nie udało się zapisać tymczasowej osi czasu meczu");
+			return null;
+		}
+	}
 
 	/// <summary>A group's own would-be score, found by treating its round-1 members as "our roster" for the same
 	/// per-round majority-side attribution <see cref="DemoScoreCalculator"/> uses for a real roster match — always

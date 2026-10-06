@@ -11,6 +11,7 @@ public interface IApplicationDbContext
 	DbSet<Availability> Availabilities { get; }
 	DbSet<TaskItem> Tasks { get; }
 	DbSet<MatchResult> MatchResults { get; }
+	DbSet<MatchDemoAnalysis> MatchDemoAnalyses { get; }
 	DbSet<NadeEntry> NadeEntries { get; }
 	DbSet<TrainingMaterial> TrainingMaterials { get; }
 	DbSet<PlayerMatchStat> PlayerMatchStats { get; }
@@ -26,6 +27,17 @@ public interface IApplicationDbContext
 	DbSet<League> Leagues { get; }
 	DbSet<AnalysisBoard> AnalysisBoards { get; }
 	DbSet<AttendanceIncident> AttendanceIncidents { get; }
+	DbSet<MapPoolEntry> MapPoolEntries { get; }
+	DbSet<EventVetoStep> EventVetoSteps { get; }
+	DbSet<EventGamePlan> EventGamePlans { get; }
+	DbSet<EventGamePlanItem> EventGamePlanItems { get; }
+	DbSet<OpponentFaceitLink> OpponentFaceitLinks { get; }
+	DbSet<FaceitPlayer> FaceitPlayers { get; }
+	DbSet<FaceitMatch> FaceitMatches { get; }
+	DbSet<FaceitMatchPlayerStat> FaceitMatchPlayerStats { get; }
+	DbSet<OpponentReportSnapshot> OpponentReportSnapshots { get; }
+	DbSet<OpponentDemoAnalysis> OpponentDemoAnalyses { get; }
+	DbSet<BackgroundJob> BackgroundJobs { get; }
 
 	Task<int> SaveChangesAsync(CancellationToken cancellationToken);
 }

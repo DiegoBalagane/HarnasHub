@@ -18,6 +18,9 @@ export interface NadeEntry {
   /** Radar-relative fraction in [0,1], measured from the top edge; null until a pin is placed on the map. */
   landingY: number | null
   createdByUserId: string
+  /** Radar-relative throw spot; set only for entries imported from a demo. */
+  throwX?: number | null
+  throwY?: number | null
 }
 
 export interface AddNadePayload {

@@ -35,7 +35,7 @@ function Column({
     <div
       ref={setNodeRef}
       className={`flex min-h-[120px] flex-1 flex-col gap-2 rounded-md border p-3 transition ${
-        isOver ? 'border-red-500 bg-neutral-900' : 'border-neutral-800'
+        isOver ? 'border-primary-500 bg-neutral-900' : 'border-neutral-800'
       } ${isFull ? 'opacity-60' : ''}`}
     >
       <h3 className="text-xs font-medium text-neutral-400">
@@ -95,8 +95,8 @@ export function RosterBoard() {
   }
 
   return (
-    <div className="flex w-full max-w-3xl flex-col gap-2">
-      {updateRosterSlot.isError && <p className="text-sm text-red-400">{updateRosterSlot.error.message}</p>}
+    <div className="flex w-full flex-col gap-2">
+      {updateRosterSlot.isError && <p className="text-sm text-danger-400">{updateRosterSlot.error.message}</p>}
       <DndContext onDragEnd={handleDragEnd}>
         <div className="flex flex-col gap-3 sm:flex-row">
           {columns.map((column) => (

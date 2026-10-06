@@ -125,6 +125,25 @@ public class AddResultCommandValidatorTests
 		result.ShouldNotHaveAnyValidationErrors();
 	}
 
+	[Theory]
+	[InlineData("demos/0123456789abcdef0123456789abcdef")]
+	[InlineData("matches/abc/timeline.json.gz")]
+	[InlineData("timelines/pending/../secret.json.gz")]
+	public void Should_reject_a_timeline_key_that_is_not_a_pending_one(string key)
+	{
+		var result = _validator.TestValidate(Command() with { PendingTimelineKey = key });
+
+		result.ShouldHaveValidationErrorFor(x => x.PendingTimelineKey);
+	}
+
+	[Fact]
+	public void Should_accept_a_pending_timeline_key()
+	{
+		var result = _validator.TestValidate(Command() with { PendingTimelineKey = "timelines/pending/0123456789abcdef0123456789abcdef.json.gz" });
+
+		result.ShouldNotHaveValidationErrorFor(x => x.PendingTimelineKey);
+	}
+
 	#endregion
 
 	#region Private Methods

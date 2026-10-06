@@ -1,3 +1,5 @@
+import { PageHeader } from '../../components/ui/PageHeader'
+import { AddFormModal } from '../../components/AddFormModal'
 import { AssignTaskForm } from '../../features/tasks/components/AssignTaskForm'
 import { CoachTaskOverview } from '../../features/tasks/components/CoachTaskOverview'
 import { TaskList } from '../../features/tasks/components/TaskList'
@@ -8,8 +10,16 @@ export function TasksPage() {
 
   return (
     <>
-      <h1 className="text-2xl font-semibold">Zadania</h1>
-      {canManage && <AssignTaskForm />}
+      <PageHeader
+        title="Zadania"
+        actions={
+          canManage && (
+          <AddFormModal buttonLabel="+ Przydziel zadanie" title="Przydziel zadanie">
+            {(close) => <AssignTaskForm onDone={close} />}
+          </AddFormModal>
+          )
+        }
+      />
       <TaskList />
       {canManage && <CoachTaskOverview />}
     </>

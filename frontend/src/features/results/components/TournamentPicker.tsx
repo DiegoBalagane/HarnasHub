@@ -52,7 +52,7 @@ export function TournamentPicker({ tournaments, value, onChange }: TournamentPic
           title="Usuń wybrany turniej"
           onClick={handleDelete}
           disabled={deleteTournament.isPending}
-          className="shrink-0 rounded-md border border-neutral-700 px-2 py-2 text-sm text-neutral-400 transition hover:border-red-500 hover:text-red-400 disabled:opacity-50"
+          className="shrink-0 rounded-md border border-neutral-700 px-2 py-2 text-sm text-neutral-400 transition hover:border-danger-500 hover:text-danger-400 disabled:opacity-50"
         >
           ✕
         </button>

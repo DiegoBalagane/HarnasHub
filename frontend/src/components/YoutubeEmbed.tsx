@@ -35,7 +35,7 @@ export function YoutubeEmbed({ url, title, className = '' }: YoutubeEmbedProps) 
         href={url}
         target="_blank"
         rel="noopener noreferrer"
-        className={`text-sm text-red-400 hover:underline ${className}`}
+        className={`text-sm text-primary-400 hover:underline ${className}`}
       >
         Otwórz wideo ↗
       </a>

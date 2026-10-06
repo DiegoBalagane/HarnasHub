@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { useIsCoachOrManager } from '../../auth/hooks/useIsCoachOrManager'
+import { opponentProfilePath } from '../../opponents/paths'
 import { useDeleteEvent, useUpcomingEvents, useUpdateEvent } from '../hooks/useCalendar'
 import { eventTypeBorderColors, eventTypeColors, eventTypeLabels } from '../labels'
-import { AvailabilityPicker } from './AvailabilityPicker'
+import { EventDetails } from './EventDetails'
 import { EventForm } from './EventForm'
 
 const dateFormatter = new Intl.DateTimeFormat('pl-PL', { dateStyle: 'medium', timeStyle: 'short' })
@@ -47,7 +48,7 @@ export function EventList() {
   }, [linkedEventId, events])
 
   return (
-    <div className="flex w-full max-w-xl flex-col gap-3">
+    <div className="flex w-full flex-col gap-3">
       <button
         type="button"
         onClick={() => setIncludePast((current) => !current)}
@@ -57,7 +58,7 @@ export function EventList() {
       </button>
 
       {isLoading && <p className="text-neutral-400">Ładowanie kalendarza…</p>}
-      {isError && <p className="text-red-400">Nie udało się pobrać wydarzeń.</p>}
+      {isError && <p className="text-danger-400">Nie udało się pobrać wydarzeń.</p>}
       {events?.length === 0 && (
         <p className="text-neutral-400">{includePast ? 'Brak wydarzeń.' : 'Brak nadchodzących wydarzeń.'}</p>
       )}
@@ -74,7 +75,7 @@ export function EventList() {
             }
           }}
           className={`rounded-md border border-l-4 p-4 transition ${eventTypeBorderColors[event.type]} ${
-            highlightedEventId === event.id ? 'border-red-500 ring-1 ring-red-500/50' : 'border-neutral-800'
+            highlightedEventId === event.id ? 'border-primary-500 ring-1 ring-primary-500/50' : 'border-neutral-800'
           }`}
         >
           {editingEventId === event.id ? (
@@ -86,6 +87,7 @@ export function EventList() {
                 endsAtUtc: event.endsAtUtc,
                 location: event.location,
                 url: event.url,
+                opponent: event.opponent,
               }}
               onSubmit={(payload) =>
                 updateEvent.mutate(
@@ -122,10 +124,19 @@ export function EventList() {
                   target="_blank"
                   rel="noopener noreferrer"
                   onClick={(clickEvent) => clickEvent.stopPropagation()}
-                  className="mt-1 block truncate text-sm text-blue-400 hover:underline"
+                  className="mt-1 block truncate text-sm text-info-400 hover:underline"
                 >
                   🔗 {event.url}
                 </a>
+              )}
+
+              {event.opponent && (
+                <Link
+                  to={opponentProfilePath(event.opponent)}
+                  className="mt-1 block text-sm text-primary-400 hover:underline"
+                >
+                  🎯 vs {event.opponent} — profil przeciwnika
+                </Link>
               )}
 
               {canManage && (
@@ -146,7 +157,7 @@ export function EventList() {
                         onClick={() =>
                           deleteEvent.mutate(event.id, { onSuccess: () => setConfirmingDeleteId(null) })
                         }
-                        className="font-medium text-red-400 hover:text-red-300 disabled:opacity-50"
+                        className="font-medium text-danger-400 hover:text-danger-300 disabled:opacity-50"
                       >
                         Usuń
                       </button>
@@ -162,7 +173,7 @@ export function EventList() {
                     <button
                       type="button"
                       onClick={() => setConfirmingDeleteId(event.id)}
-                      className="text-neutral-400 transition hover:text-red-400"
+                      className="text-neutral-400 transition hover:text-danger-400"
                     >
                       Usuń
                     </button>
@@ -170,11 +181,7 @@ export function EventList() {
                 </div>
               )}
 
-              {expandedEventId === event.id && (
-                <div className="mt-3">
-                  <AvailabilityPicker eventId={event.id} />
-                </div>
-              )}
+              {expandedEventId === event.id && <EventDetails event={event} />}
             </>
           )}
         </li>

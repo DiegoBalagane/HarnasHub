@@ -17,7 +17,7 @@ export function PinColorAssignmentPanel() {
   return (
     <div className="flex w-full max-w-xl flex-col gap-2 rounded-md border border-neutral-800 p-4">
       <h2 className="text-sm font-medium text-neutral-200">Kolory pinezek (główny skład)</h2>
-      {updatePinColor.isError && <p className="text-sm text-red-400">{updatePinColor.error.message}</p>}
+      {updatePinColor.isError && <p className="text-sm text-danger-400">{updatePinColor.error.message}</p>}
       <ul className="flex flex-col gap-2">
         {mainRoster.map((member: TeamMember) => (
           <li key={member.id} className="flex items-center justify-between gap-3">

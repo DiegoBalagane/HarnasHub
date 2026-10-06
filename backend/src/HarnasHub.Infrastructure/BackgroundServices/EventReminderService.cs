@@ -1,4 +1,8 @@
 using HarnasHub.Application.Abstractions;
+using HarnasHub.Application.Features.Calendar.Shared;
+using HarnasHub.Application.Features.OpponentNotes.Shared;
+using HarnasHub.Application.Features.OpponentReport.Shared;
+using HarnasHub.Core.Enums;
 using HarnasHub.Core.Options;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -15,6 +19,7 @@ namespace HarnasHub.Infrastructure.BackgroundServices;
 public class EventReminderService(
 	IServiceScopeFactory scopeFactory,
 	IOptions<ReminderSettings> settings,
+	IOptions<FrontendSettings> frontend,
 	ILogger<EventReminderService> logger) : BackgroundService
 {
 	#region Protected Methods
@@ -28,6 +33,7 @@ public class EventReminderService(
 			try
 			{
 				await SendDueRemindersAsync(stoppingToken);
+				await SendMatchBriefingsAsync(stoppingToken);
 			}
 			catch (Exception ex) when (ex is not OperationCanceledException)
 			{
@@ -73,5 +79,56 @@ public class EventReminderService(
 		}
 	}
 
+
+	/// <summary>Posts the opponent-report briefing for matches starting within <see cref="ReminderSettings.MatchBriefingHoursBefore"/>
+	/// hours, once per event (<c>BriefingSentAtUtc</c>); events whose opponent has no report yet are left to retry later.</summary>
+	private async Task SendMatchBriefingsAsync(CancellationToken cancellationToken)
+	{
+		var hours = settings.Value.MatchBriefingHoursBefore;
+		if (hours <= 0)
+		{
+			return;
+		}
+
+		using var scope = scopeFactory.CreateScope();
+		var dbContext = scope.ServiceProvider.GetRequiredService<Application.Abstractions.IApplicationDbContext>();
+		var discordNotifier = scope.ServiceProvider.GetRequiredService<IDiscordNotifier>();
+
+		var now = DateTime.UtcNow;
+		var horizon = now.AddHours(hours);
+
+		var dueEvents = await dbContext.Events
+			.Where(e => e.Type == EventType.Match && e.Opponent != null && e.BriefingSentAtUtc == null
+				&& e.StartsAtUtc > now && e.StartsAtUtc <= horizon)
+			.ToListAsync(cancellationToken);
+
+		var sent = false;
+		foreach (var calendarEvent in dueEvents)
+		{
+			var opponent = calendarEvent.Opponent!.Trim();
+			if (opponent.Length == 0)
+			{
+				continue;
+			}
+
+			var report = await OpponentReportSnapshots.LoadAsync(dbContext, OpponentNames.ToKey(opponent), cancellationToken);
+			if (report is null)
+			{
+				continue;
+			}
+
+			var baseUrl = frontend.Value.BaseUrl.Trim().TrimEnd('/');
+			var url = baseUrl.Length == 0 ? null : $"{baseUrl}/opponents/report?name={Uri.EscapeDataString(opponent)}";
+
+			await discordNotifier.SendAsync(MatchBriefingFormatter.Format(calendarEvent.Title, opponent, report, url), cancellationToken);
+			calendarEvent.BriefingSentAtUtc = now;
+			sent = true;
+		}
+
+		if (sent)
+		{
+			await dbContext.SaveChangesAsync(cancellationToken);
+		}
+	}
 	#endregion
 }

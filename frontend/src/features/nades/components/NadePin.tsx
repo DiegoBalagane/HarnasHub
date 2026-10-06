@@ -22,7 +22,7 @@ export const NadePin = memo(function NadePin({ nade, x, y, canEdit, isSelected, 
         onPointerDown={(event) => onDragStart(event, nade.id)}
         className={`flex h-7 w-7 items-center justify-center rounded-full border border-black/40 text-[11px] font-bold text-neutral-950 shadow-md ${grenadeTypeColors[nade.type]} ${
           canEdit ? 'cursor-grab touch-none active:cursor-grabbing' : 'cursor-pointer'
-        } ${isDragging ? 'ring-2 ring-white' : ''} ${isSelected ? 'ring-2 ring-amber-300' : ''}`}
+        } ${isDragging ? 'ring-2 ring-white' : ''} ${isSelected ? 'ring-2 ring-primary-300' : ''}`}
       >
         {grenadeTypeMarks[nade.type]}
       </div>

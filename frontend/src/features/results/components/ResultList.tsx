@@ -1,7 +1,8 @@
 import { useMemo, useState } from 'react'
+import { Link } from 'react-router-dom'
 import type { MatchResult } from '../../../services/resultsApi'
 import { useIsCoachOrManager } from '../../auth/hooks/useIsCoachOrManager'
-import { MatchStatsPanel } from '../../stats/components/MatchStatsPanel'
+import { opponentProfilePath } from '../../opponents/paths'
 import { useDeleteResult, useResults } from '../hooks/useResults'
 import { leagueTypeLabels, matchCategoryLabels } from '../labels'
 import { EditResultForm } from './EditResultForm'
@@ -50,10 +51,9 @@ function groupResults(results: MatchResult[]): Group[] {
   )
 }
 
-/** Lists logged results grouped by tournament/league (scrims stay flat); clicking one expands its per-player stats. */
+/** Lists logged results grouped by tournament/league (scrims stay flat); each row links to the match detail page. */
 export function ResultList() {
   const { data: results, isLoading, isError } = useResults()
-  const [expandedId, setExpandedId] = useState<string | null>(null)
   const groups = useMemo(() => groupResults(results ?? []), [results])
 
   if (isLoading) {
@@ -61,26 +61,21 @@ export function ResultList() {
   }
 
   if (isError) {
-    return <p className="text-red-400">Nie udało się pobrać wyników.</p>
+    return <p className="text-danger-400">Nie udało się pobrać wyników.</p>
   }
 
   if (results?.length === 0) {
-    return <p className="text-neutral-400">Brak zapisanych wyników.</p>
+    return <p className="text-neutral-400">Brak zapisanych wyników. Dodaj pierwszy przyciskiem „+ Dodaj wynik” — statystyki graczy pojawią się po zaimportowaniu demki.</p>
   }
 
   return (
-    <div className="flex w-full max-w-xl flex-col gap-5">
+    <div className="flex w-full flex-col gap-5">
       {groups.map((group) => (
         <section key={group.key} className="flex flex-col gap-2">
           <h3 className="text-sm font-semibold text-neutral-300">{group.label}</h3>
           <ul className="flex flex-col gap-3">
             {group.results.map((result) => (
-              <ResultCard
-                key={result.id}
-                result={result}
-                isExpanded={expandedId === result.id}
-                onToggle={() => setExpandedId(expandedId === result.id ? null : result.id)}
-              />
+              <ResultCard key={result.id} result={result} />
             ))}
           </ul>
         </section>
@@ -91,11 +86,9 @@ export function ResultList() {
 
 interface ResultCardProps {
   result: MatchResult
-  isExpanded: boolean
-  onToggle: () => void
 }
 
-function ResultCard({ result, isExpanded, onToggle }: ResultCardProps) {
+function ResultCard({ result }: ResultCardProps) {
   const won = result.ourScore > result.opponentScore
   const canManage = useIsCoachOrManager()
   const deleteResult = useDeleteResult()
@@ -116,15 +109,22 @@ function ResultCard({ result, isExpanded, onToggle }: ResultCardProps) {
   return (
     <li className="rounded-md border border-neutral-800 p-4">
       <div className="flex w-full items-center justify-between gap-2">
-        <button className="flex flex-1 items-center justify-between text-left" onClick={onToggle}>
+        <Link to={`/results/${result.id}`} className="flex flex-1 items-center justify-between text-left hover:text-white">
           <p className="font-medium">
             vs {result.opponent}{' '}
-            <span className={won ? 'text-green-400' : 'text-red-400'}>
+            <span className={won ? 'text-success-400' : 'text-danger-400'}>
               {result.ourScore}:{result.opponentScore}
             </span>
           </p>
           <span className="text-sm text-neutral-500">{dateFormatter.format(new Date(result.playedAtUtc))}</span>
-        </button>
+        </Link>
+        <Link
+          to={opponentProfilePath(result.opponent)}
+          title="Profil przeciwnika"
+          className="shrink-0 rounded-md px-2 py-1 text-sm text-neutral-500 transition hover:bg-neutral-800 hover:text-primary-400"
+        >
+          🎯
+        </Link>
         {canManage && (
           <>
             <button
@@ -140,7 +140,7 @@ function ResultCard({ result, isExpanded, onToggle }: ResultCardProps) {
               title="Usuń wynik"
               onClick={handleDelete}
               disabled={deleteResult.isPending}
-              className="shrink-0 rounded-md px-2 py-1 text-sm text-neutral-500 transition hover:bg-red-950/40 hover:text-red-400 disabled:opacity-50"
+              className="shrink-0 rounded-md px-2 py-1 text-sm text-neutral-500 transition hover:bg-danger-950/40 hover:text-danger-400 disabled:opacity-50"
             >
               ✕
             </button>
@@ -151,12 +151,6 @@ function ResultCard({ result, isExpanded, onToggle }: ResultCardProps) {
       {result.notes && <p className="mt-1 text-sm text-neutral-400">{result.notes}</p>}
 
       {isEditing && <EditResultForm result={result} onClose={() => setIsEditing(false)} />}
-
-      {isExpanded && (
-        <div className="mt-3">
-          <MatchStatsPanel matchResultId={result.id} mapName={result.mapName} />
-        </div>
-      )}
     </li>
   )
 }

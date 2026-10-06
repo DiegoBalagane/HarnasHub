@@ -1,6 +1,9 @@
+using HarnasHub.Application.Features.MatchAnalysis.Shared;
 using HarnasHub.Application.Features.Results.DeleteResult;
 using HarnasHub.Core.Entities;
 using HarnasHub.Core.Enums;
+using HarnasHub.Tests.Application.Features.MatchAnalysis.GetMatchTimeline;
+using HarnasHub.Tests.Application.Features.Tactics;
 using HarnasHub.Tests.Common;
 using Xunit;
 
@@ -41,7 +44,7 @@ public class DeleteResultHandlerTests
 		});
 		await dbContext.SaveChangesAsync(CancellationToken.None);
 
-		var handler = new DeleteResultHandler(dbContext, new TestRealtimeNotifier());
+		var handler = new DeleteResultHandler(dbContext, new TestRealtimeNotifier(), new TestFileStorage());
 
 		var result = await handler.Handle(new DeleteResultCommand(matchId), CancellationToken.None);
 
@@ -51,10 +54,25 @@ public class DeleteResultHandlerTests
 	}
 
 	[Fact]
+	public async Task Should_delete_the_demo_timeline_row_and_its_stored_file()
+	{
+		await using var dbContext = TestApplicationDbContext.Create();
+		var storage = new TestFileStorage();
+		var match = await GetMatchTimelineHandlerTests.SeedAsync(dbContext, storage, DemoTimelineFactory.TeamA);
+		var handler = new DeleteResultHandler(dbContext, new TestRealtimeNotifier(), storage);
+
+		var result = await handler.Handle(new DeleteResultCommand(match.Id), CancellationToken.None);
+
+		Assert.False(result.IsError);
+		Assert.Empty(dbContext.MatchDemoAnalyses);
+		Assert.Contains(MatchTimelineStorage.MatchKey(match.Id), storage.DeletedKeys);
+	}
+
+	[Fact]
 	public async Task Should_return_not_found_for_a_missing_result()
 	{
 		await using var dbContext = TestApplicationDbContext.Create();
-		var handler = new DeleteResultHandler(dbContext, new TestRealtimeNotifier());
+		var handler = new DeleteResultHandler(dbContext, new TestRealtimeNotifier(), new TestFileStorage());
 
 		var result = await handler.Handle(new DeleteResultCommand(Guid.NewGuid()), CancellationToken.None);
 

@@ -59,6 +59,8 @@ export interface DashboardSummary {
   myRecentPerformance: MyRecentPerformance | null
   lastMatch: LastMatchResult | null
   attendance: TeamAttendanceSummary
+  /** Next scheduled event with an opponent set — drives the "prepare for the match" banner. */
+  nextMatch: CalendarEvent | null
 }
 
 export const dashboardApi = {

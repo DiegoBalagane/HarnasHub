@@ -28,6 +28,7 @@ public class CreateEventHandler(
 			Location = request.Location,
 			Url = request.Url,
 			Notes = request.Notes,
+			Opponent = EventMappings.NormalizeOpponent(request.Opponent),
 			CreatedByUserId = currentUser.UserId,
 			CreatedAtUtc = DateTime.UtcNow
 		};
@@ -51,15 +52,7 @@ public class CreateEventHandler(
 		await realtimeNotifier.NotifyAsync("calendar", cancellationToken);
 		await realtimeNotifier.NotifyAsync("dashboard", cancellationToken);
 
-		return new EventDto(
-			calendarEvent.Id,
-			calendarEvent.Title,
-			calendarEvent.Type.ToString(),
-			calendarEvent.StartsAtUtc,
-			calendarEvent.EndsAtUtc,
-			calendarEvent.Location,
-			calendarEvent.Url,
-			calendarEvent.Notes);
+		return EventMappings.ToDto(calendarEvent);
 	}
 
 	#endregion

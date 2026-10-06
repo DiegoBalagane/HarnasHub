@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { Link } from 'react-router-dom'
 import type { MatchCategory } from '../../../services/resultsApi'
 import type { PlayerLeaderboardEntry } from '../../../services/statsApi'
 import { matchCategories, matchCategoryLabels } from '../../results/labels'
@@ -62,7 +63,7 @@ export function PlayerLeaderboard() {
   }
 
   return (
-    <section className="flex w-full max-w-4xl flex-col gap-3">
+    <section className="flex w-full flex-col gap-3">
       <div className="flex items-center justify-between">
         <h2 className="font-medium">Ranking zawodników</h2>
         <select
@@ -80,10 +81,12 @@ export function PlayerLeaderboard() {
       </div>
 
       {isLoading && <p className="text-neutral-400">Ładowanie…</p>}
-      {isError && <p className="text-red-400">Nie udało się pobrać rankingu.</p>}
+      {isError && <p className="text-danger-400">Nie udało się pobrać rankingu.</p>}
 
       {entries?.length === 0 && (
-        <p className="text-neutral-400">Brak statystyk dla tego filtra.</p>
+        <p className="text-neutral-400">
+          Brak statystyk — zaimportuj demkę przy wyniku w <Link to="/results" className="text-primary-400 hover:underline">Wynikach</Link>.
+        </p>
       )}
 
       {sorted.length > 0 && (

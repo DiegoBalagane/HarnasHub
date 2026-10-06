@@ -134,6 +134,24 @@ public class GetDashboardSummaryHandlerTests
 	}
 
 	[Fact]
+	public async Task Should_return_the_next_event_with_an_opponent_as_the_next_match()
+	{
+		await using var dbContext = TestApplicationDbContext.Create();
+		var userId = Guid.NewGuid();
+		AddUser(dbContext, userId, "Zenek");
+		AddEvent(dbContext, "Trening", Tomorrow, new TimeOnly(18, 0));
+		AddEvent(dbContext, "Stary mecz", Today.AddDays(-3), new TimeOnly(19, 0), "Team Old");
+		AddEvent(dbContext, "Liga", Tomorrow.AddDays(2), new TimeOnly(20, 0), "Team X");
+		AddEvent(dbContext, "Sparing", Tomorrow.AddDays(5), new TimeOnly(20, 0), "Team Y");
+		await dbContext.SaveChangesAsync(CancellationToken.None);
+
+		var result = await HandleAsync(dbContext, userId);
+
+		Assert.Equal("Trening", result.Value.NextEvent?.Title);
+		Assert.Equal("Team X", result.Value.NextMatch?.Opponent);
+	}
+
+	[Fact]
 	public async Task Should_exclude_guests_and_unassigned_non_coaches_but_keep_an_unassigned_coach()
 	{
 		await using var dbContext = TestApplicationDbContext.Create();
@@ -307,13 +325,14 @@ public class GetDashboardSummaryHandlerTests
 			CreatedAtUtc = DateTime.UtcNow
 		});
 
-	private static void AddEvent(TestApplicationDbContext dbContext, string title, DateOnly date, TimeOnly time) =>
+	private static void AddEvent(TestApplicationDbContext dbContext, string title, DateOnly date, TimeOnly time, string? opponent = null) =>
 		dbContext.Events.Add(new Event
 		{
 			Id = Guid.NewGuid(),
 			Title = title,
 			Type = EventType.Training,
 			StartsAtUtc = DateTime.SpecifyKind(date.ToDateTime(time), DateTimeKind.Utc),
+			Opponent = opponent,
 			CreatedByUserId = Guid.NewGuid(),
 			CreatedAtUtc = DateTime.UtcNow
 		});

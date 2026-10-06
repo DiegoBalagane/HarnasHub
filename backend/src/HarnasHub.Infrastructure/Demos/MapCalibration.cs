@@ -37,12 +37,15 @@ public static class MapCalibration
 	//
 	// Fitted by maximising the overlap between a real demo's player-position cloud and the image's rendered geometry,
 	// then verified by eye against the drawn dots. Only maps a demo was available for are listed; Cache and Anubis
-	// ship the untouched overview (1024x1024 and a 2x copy of it) and verified correct as-is, while Dust2, Inferno
-	// and Nuke are cropped the same way but have no demo to fit against yet — they need one before they can be added.
+	// ship the untouched overview (1024x1024 and a 2x copy of it) and verified correct as-is; the rest
+	// ship cropped images — Nuke is fitted (upper level only), Dust2 and Inferno still need a demo to fit against.
 	private static readonly Dictionary<MapName, (float Left, float Top, float Width, float Height)> RadarImageCrops = new()
 	{
 		[MapName.Ancient] = (0.0785f, 0.034f, 0.820f, 0.9325f),
 		[MapName.Mirage] = (0.0815f, 0.127f, 0.862f, 0.7503f),
+		// Fitted from a real Nuke demo's position extents against nuke.webp's playable bounds and checked by eye. The image only
+		// shows the upper level, so lower-level positions (ramp, secret, B) are drawn over the upper floor plan.
+		[MapName.Nuke] = (0.1956f, 0.2533f, 0.6587f, 0.5163f),
 	};
 
 	private const float ImageSizePixels = 1024f;
@@ -66,6 +69,9 @@ public static class MapCalibration
 
 		return null;
 	}
+
+	/// <summary>Whether world coordinates on this map can be converted to radar fractions at all.</summary>
+	public static bool IsCalibrated(MapName mapName) => Calibrations.ContainsKey(mapName);
 
 	/// <summary>Converts a world (X, Y) into a fraction in [0,1] of the radar image the app actually displays, or null
 	/// if there's no calibration for this map.</summary>

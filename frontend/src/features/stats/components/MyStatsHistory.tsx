@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom'
 import { useMyStatsHistory } from '../hooks/useStats'
 
 const dateFormatter = new Intl.DateTimeFormat('pl-PL', { dateStyle: 'medium' })
@@ -11,17 +12,22 @@ export function MyStatsHistory() {
   }
 
   if (isError) {
-    return <p className="text-red-400">Nie udało się pobrać statystyk.</p>
+    return <p className="text-danger-400">Nie udało się pobrać statystyk.</p>
   }
 
   if (history?.length === 0) {
-    return <p className="text-neutral-400">Nie masz jeszcze wpisanych statystyk w żadnym meczu.</p>
+    return (
+      <p className="text-neutral-400">
+        Nie masz jeszcze statystyk w żadnym meczu — pojawią się po zaimportowaniu demki w{' '}
+        <Link to="/results" className="text-primary-400 hover:underline">Wynikach</Link>.
+      </p>
+    )
   }
 
   const avgRating = history ? history.reduce((sum, entry) => sum + entry.rating, 0) / history.length : 0
 
   return (
-    <div className="w-full max-w-2xl">
+    <div className="w-full">
       <p className="mb-2 text-sm text-neutral-400">
         Średni rating: <span className="font-medium text-neutral-200">{avgRating.toFixed(2)}</span> z{' '}
         {history?.length} meczów

@@ -49,13 +49,13 @@ export function NicknameSettings() {
         className={inputClass}
       />
 
-      {updateNickname.isError && <p className="text-sm text-red-400">{updateNickname.error.message}</p>}
+      {updateNickname.isError && <p className="text-sm text-danger-400">{updateNickname.error.message}</p>}
 
       <div className="flex gap-2">
         <button
           type="submit"
           disabled={updateNickname.isPending}
-          className="rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-red-500 disabled:opacity-50"
+          className="rounded-md bg-primary-500 px-4 py-2 text-sm font-medium text-primary-950 transition hover:bg-primary-400 disabled:opacity-50"
         >
           Zapisz
         </button>

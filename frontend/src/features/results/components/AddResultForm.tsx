@@ -1,12 +1,16 @@
-import { useEffect, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import type { MapName } from '../../../services/nadesApi'
-import type { AnalyzeDemoResult, MatchCategory, MatchResult } from '../../../services/resultsApi'
+import type { AnalyzeDemoResult, FaceitMatchPrefill, MatchCategory, MatchResult } from '../../../services/resultsApi'
 import { ApiError } from '../../../services/apiClient'
 import { mapNames } from '../../nades/labels'
+import { useLinkOpponentFaceit } from '../../opponentReport/hooks/useOpponentReport'
+import { OpponentNameInput } from '../../opponents/components/OpponentNameInput'
+import { linkSourceOf, opponentFaction, opponentNameOf, toDateTimeLocal } from '../faceitPrefill'
 import { useAddResult, useAnalyzeDemo } from '../hooks/useResults'
 import { useLeagues } from '../hooks/useLeagues'
 import { useTournaments } from '../hooks/useTournaments'
 import { matchCategories, matchCategoryLabels } from '../labels'
+import { DemoAnalysisSection } from './DemoAnalysisSection'
 import { LeaguePicker } from './LeaguePicker'
 import { TournamentPicker } from './TournamentPicker'
 
@@ -14,10 +18,16 @@ const inputClass =
   'flex-1 rounded-md border border-neutral-800 bg-neutral-900 px-3 py-2 text-sm outline-none focus:border-neutral-500'
 
 /** Coach/Manager-only form for logging a scrim/match/tournament result, grouped under a tournament or league when relevant.
- * A demo upload is a separate "analyse" step, done before the result is submitted — the map, score, and a stat line per
- * matched roster member are all prefilled from that preview, but every prefilled field stays freely editable, so whatever
- * ends up in the form at submit time (typed by hand or left as prefilled) is exactly what gets saved. */
-export function AddResultForm() {
+ * A demo upload is a separate "analyse" step (a background job with inline progress), done before the result is submitted —
+ * the map, score, a stat line per matched roster member and, for a FACEIT demo, the opponent/date/category are prefilled
+ * from that preview, but every prefilled field stays freely editable, so whatever ends up in the form at submit time is
+ * exactly what gets saved. */
+interface AddResultFormProps {
+  /** Called after saving, e.g. to close the modal hosting the form. */
+  onDone?: () => void
+}
+
+export function AddResultForm({ onDone }: AddResultFormProps) {
   const [opponent, setOpponent] = useState('')
   const [ourScore, setOurScore] = useState('')
   const [opponentScore, setOpponentScore] = useState('')
@@ -30,42 +40,37 @@ export function AddResultForm() {
   const [saved, setSaved] = useState<MatchResult | null>(null)
   // A file input keeps showing the chosen file name after its state is cleared — remounting it is the only way to reset it.
   const [demoInputKey, setDemoInputKey] = useState(0)
-  const [elapsedSeconds, setElapsedSeconds] = useState(0)
   const [analysis, setAnalysis] = useState<AnalyzeDemoResult | null>(null)
   const [selectedTeam, setSelectedTeam] = useState<'A' | 'B' | ''>('')
+  const [linkOpponent, setLinkOpponent] = useState(false)
+  // The opponent name last filled in from FACEIT — replaced on a new team pick only while the coach hasn't edited it.
+  const prefilledOpponentRef = useRef('')
 
   const addResult = useAddResult()
-  const analyzeDemo = useAnalyzeDemo()
+  const linkFaceit = useLinkOpponentFaceit(opponent)
+  const analyzeDemo = useAnalyzeDemo(handleAnalyzed)
   const { data: tournaments } = useTournaments()
   const { data: leagues } = useLeagues()
 
-  // A 245MB demo takes ~10-15s to upload and parse — without this, the form just looks frozen for that long.
-  useEffect(() => {
-    if (!analyzeDemo.isPending) {
-      setElapsedSeconds(0)
-      return
-    }
+  const faction = useMemo(
+    () => (analysis?.faceitMatch ? opponentFaction(analysis.faceitMatch, selectedTeam) : null),
+    [analysis, selectedTeam],
+  )
 
-    const startedAt = Date.now()
-    const interval = setInterval(() => setElapsedSeconds(Math.floor((Date.now() - startedAt) / 1000)), 1000)
-    return () => clearInterval(interval)
-  }, [analyzeDemo.isPending])
+  function handleAnalyzed(result: AnalyzeDemoResult) {
+    setAnalysis(result)
+    if (result.mapName) setMapName(result.mapName as MapName)
+    if (result.suggestedTeam) applyTeamPick(result, result.suggestedTeam)
 
-  function handleDemoSelected(event: React.ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0]
-    if (!file) return
-
-    setAnalysis(null)
-    setSelectedTeam('')
-    analyzeDemo.mutate(file, {
-      onSuccess: (result) => {
-        setAnalysis(result)
-        if (result.mapName) setMapName(result.mapName as MapName)
-        if (result.suggestedTeam) {
-          applyTeamPick(result, result.suggestedTeam)
-        }
-      },
-    })
+    const prefill = result.faceitMatch
+    if (!prefill) return
+    if (!result.mapName && prefill.mapName) setMapName(prefill.mapName as MapName)
+    const prefilledPlayedAt = toDateTimeLocal(prefill.playedAtUtc)
+    if (prefilledPlayedAt) setPlayedAt(prefilledPlayedAt)
+    setCategory(prefill.category)
+    setTournamentId('')
+    setLeagueId('')
+    applyFaceitOpponent(prefill, result.suggestedTeam ?? '')
   }
 
   function applyTeamPick(result: AnalyzeDemoResult, team: 'A' | 'B') {
@@ -75,9 +80,32 @@ export function AddResultForm() {
     setOpponentScore(String(preview.opponentScore))
   }
 
+  function applyFaceitOpponent(prefill: FaceitMatchPrefill, team: 'A' | 'B' | '') {
+    const theirs = opponentFaction(prefill, team)
+    if (!theirs) return
+    const name = opponentNameOf(theirs)
+    const previous = prefilledOpponentRef.current
+    setOpponent((current) => (current === '' || current === previous ? name : current))
+    prefilledOpponentRef.current = name
+    setLinkOpponent(theirs.linkedOpponentName === null)
+  }
+
+  function handlePickTeam(team: 'A' | 'B') {
+    if (!analysis) return
+    applyTeamPick(analysis, team)
+    if (analysis.faceitMatch) applyFaceitOpponent(analysis.faceitMatch, team)
+  }
+
+  function handleDemoSelected(file: File) {
+    setAnalysis(null)
+    setSelectedTeam('')
+    analyzeDemo.start(file)
+  }
+
   function handleSubmit(event: React.FormEvent) {
     event.preventDefault()
     setSaved(null)
+    const linkSource = linkOpponent && faction ? linkSourceOf(faction) : null
     addResult.mutate(
       {
         opponent,
@@ -92,9 +120,12 @@ export function AddResultForm() {
         demoRoundsPlayed: analysis?.roundsPlayed,
         demoPlayers: analysis?.players,
         ourTeamSteamIds: selectedTeam && analysis ? (selectedTeam === 'A' ? analysis.teamA : analysis.teamB).steamIds : undefined,
+        pendingTimelineKey: analysis?.pendingTimelineKey ?? undefined,
       },
       {
         onSuccess: (result) => {
+          // Runs as a background job (link + first FACEIT sync); its progress shows on the opponent's report page.
+          if (linkSource) linkFaceit.start(linkSource)
           setOpponent('')
           setOurScore('')
           setOpponentScore('')
@@ -103,8 +134,11 @@ export function AddResultForm() {
           setPlayedAt('')
           setAnalysis(null)
           setSelectedTeam('')
+          setLinkOpponent(false)
+          prefilledOpponentRef.current = ''
           setDemoInputKey((key) => key + 1)
           setSaved(result)
+          onDone?.()
         },
       },
     )
@@ -125,13 +159,7 @@ export function AddResultForm() {
       <h2 className="font-medium">Dodaj wynik</h2>
 
       <div className="flex gap-3">
-        <input
-          required
-          placeholder="Przeciwnik"
-          value={opponent}
-          onChange={(event) => setOpponent(event.target.value)}
-          className={inputClass}
-        />
+        <OpponentNameInput required placeholder="Przeciwnik" value={opponent} onChange={setOpponent} className={inputClass} />
         <input
           type="number"
           min={0}
@@ -167,11 +195,7 @@ export function AddResultForm() {
           ))}
         </select>
 
-        <select
-          value={mapName}
-          onChange={(event) => setMapName(event.target.value as MapName | '')}
-          className={inputClass}
-        >
+        <select value={mapName} onChange={(event) => setMapName(event.target.value as MapName | '')} className={inputClass}>
           <option value="">Mapa (opcjonalnie)</option>
           {mapNames.map((map) => (
             <option key={map} value={map}>
@@ -179,83 +203,28 @@ export function AddResultForm() {
             </option>
           ))}
         </select>
-        <input
-          type="datetime-local"
-          value={playedAt}
-          onChange={(event) => setPlayedAt(event.target.value)}
-          className={inputClass}
-        />
+        <input type="datetime-local" value={playedAt} onChange={(event) => setPlayedAt(event.target.value)} className={inputClass} />
       </div>
 
       {category === 'Tournament' && (
-        <TournamentPicker
-          tournaments={tournaments ?? []}
-          value={tournamentId}
-          onChange={setTournamentId}
-        />
+        <TournamentPicker tournaments={tournaments ?? []} value={tournamentId} onChange={setTournamentId} />
       )}
 
       {category === 'League' && <LeaguePicker leagues={leagues ?? []} value={leagueId} onChange={setLeagueId} />}
 
-      <label className="flex flex-col gap-1 text-sm text-neutral-400">
-        Plik demki (opcjonalnie) — analiza wypełni mapę, wynik i staty graczy z SteamID64 na Waszym koncie
-        <input
-          type="file"
-          accept=".dem"
-          key={demoInputKey}
-          onChange={handleDemoSelected}
-          className="rounded-md border border-neutral-800 bg-neutral-900 px-3 py-2 text-sm text-neutral-200 outline-none file:mr-3 file:rounded file:border-0 file:bg-neutral-800 file:px-3 file:py-1 file:text-sm file:text-neutral-200 focus:border-neutral-500"
-        />
-      </label>
-
-      {analyzeDemo.isPending && (
-        <p className="flex items-center gap-2 text-sm text-neutral-400">
-          <span className="h-3.5 w-3.5 shrink-0 animate-spin rounded-full border-2 border-neutral-600 border-t-neutral-300" />
-          Wgrywanie i analiza demki… ({elapsedSeconds}s) — duży plik może potrwać do minuty, proszę czekać.
-        </p>
-      )}
-
-      {analyzeDemo.isError && (
-        <p className="text-sm text-red-400">
-          {analyzeDemo.error instanceof Error ? analyzeDemo.error.message : 'Nie udało się przeanalizować demki.'}
-        </p>
-      )}
-
-      {analysis && (
-        <div className="flex flex-col gap-2 rounded-md border border-neutral-800 p-3 text-sm">
-          <p className="text-neutral-400">
-            Rund w demce: {analysis.roundsPlayed}
-            {analysis.mapName ? ` · Mapa: ${analysis.mapName}` : ''} — która drużyna to my?
-          </p>
-          <div className="flex flex-col gap-2 sm:flex-row">
-            {(['A', 'B'] as const).map((team) => {
-              const preview = team === 'A' ? analysis.teamA : analysis.teamB
-              return (
-                <label
-                  key={team}
-                  className={`flex-1 cursor-pointer rounded-md border px-3 py-2 transition ${
-                    selectedTeam === team ? 'border-red-500 bg-red-950/30' : 'border-neutral-800 bg-neutral-900'
-                  }`}
-                >
-                  <input
-                    type="radio"
-                    name="demoTeam"
-                    className="sr-only"
-                    checked={selectedTeam === team}
-                    onChange={() => applyTeamPick(analysis, team)}
-                  />
-                  <span className="block text-neutral-200">
-                    {preview.playerNames.join(', ')} — {preview.ourScore}:{preview.opponentScore}
-                  </span>
-                </label>
-              )
-            })}
-          </div>
-          <p className="text-xs text-neutral-500">
-            Wybór wypełnia pola wyniku powyżej — możesz je jeszcze poprawić ręcznie przed zapisem.
-          </p>
-        </div>
-      )}
+      <DemoAnalysisSection
+        inputKey={demoInputKey}
+        onFileSelected={handleDemoSelected}
+        job={analyzeDemo.job}
+        isStarting={analyzeDemo.isStarting}
+        error={analyzeDemo.error}
+        analysis={analysis}
+        selectedTeam={selectedTeam}
+        onPickTeam={handlePickTeam}
+        opponentFaction={faction}
+        linkOpponent={linkOpponent}
+        onLinkOpponentChange={setLinkOpponent}
+      />
 
       <textarea
         placeholder="Notatki pomeczowe (opcjonalnie)"
@@ -265,21 +234,21 @@ export function AddResultForm() {
       />
 
       {addResult.isError && (
-        <p className="text-sm text-red-400">
+        <p className="text-sm text-danger-400">
           {addResult.error instanceof ApiError ? addResult.error.message : 'Nie udało się dodać wyniku.'}
         </p>
       )}
 
       {saved && (
-        <p className="text-sm text-green-400">
+        <p className="text-sm text-success-400">
           Zapisano: {saved.mapName ?? 'bez mapy'}, {saved.ourScore}:{saved.opponentScore}
         </p>
       )}
 
       <button
         type="submit"
-        disabled={addResult.isPending || analyzeDemo.isPending || !canSubmit}
-        className="self-start rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-red-500 disabled:opacity-50"
+        disabled={addResult.isPending || analyzeDemo.isBusy || !canSubmit}
+        className="self-start rounded-md bg-primary-500 px-4 py-2 text-sm font-medium text-primary-950 transition hover:bg-primary-400 disabled:opacity-50"
       >
         {addResult.isPending ? 'Dodawanie…' : 'Dodaj wynik'}
       </button>
