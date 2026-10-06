@@ -70,8 +70,8 @@ public class GetVetoSuggestionHandlerTests
 		var mirage = result.Value.Maps[0];
 		Assert.Equal("Mirage", mirage.MapName);
 		Assert.Equal("Pick", mirage.Recommendation);
-		Assert.Contains("Pewniak w puli map", mirage.Reasons);
-		Assert.Contains("Bilans ogólny 2-0 (100% wygranych)", mirage.Reasons);
+		Assert.Contains("Mapa komfortowa w puli (pewniak)", mirage.Reasons);
+		Assert.Contains("Nasz bilans 2-0 — za mało danych (2 mecze), nie wpływa na rekomendację", mirage.Reasons);
 		Assert.Contains("Z tym przeciwnikiem 1-0", mirage.Reasons);
 		var nuke = result.Value.Maps.Single(m => m.MapName == "Nuke");
 		Assert.Contains("Z tym przeciwnikiem 0-1", nuke.Reasons);

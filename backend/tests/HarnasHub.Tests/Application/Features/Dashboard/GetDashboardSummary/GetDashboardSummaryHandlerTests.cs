@@ -302,6 +302,23 @@ public class GetDashboardSummaryHandlerTests
 		Assert.Equal(0, result.Value.Attendance.AbsentCount);
 	}
 
+	[Fact]
+	public async Task Should_leave_players_hidden_from_the_calendar_out_of_the_daily_lists()
+	{
+		await using var dbContext = TestApplicationDbContext.Create();
+		var viewerId = Guid.NewGuid();
+		AddUser(dbContext, viewerId, "Zenek");
+		var hiddenId = Guid.NewGuid();
+		AddUser(dbContext, hiddenId, "Ukryty");
+		dbContext.Users.Local.Single(user => user.Id == hiddenId).ShowInCalendar = false;
+		await dbContext.SaveChangesAsync(CancellationToken.None);
+
+		var result = await HandleAsync(dbContext, viewerId);
+
+		Assert.Equal(["Zenek"], result.Value.Today.Members.Select(member => member.DisplayName));
+		Assert.Equal(["Zenek"], result.Value.Tomorrow.Members.Select(member => member.DisplayName));
+	}
+
 	#endregion
 
 	#region Private Methods

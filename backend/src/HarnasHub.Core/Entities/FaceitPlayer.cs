@@ -15,6 +15,10 @@ public class FaceitPlayer
 	public DateTime UpdatedAtUtc { get; set; }
 	/// <summary>When the player's match history was last pulled; null until the first sync.</summary>
 	public DateTime? HistorySyncedAtUtc { get; set; }
+	/// <summary>Lifetime per-map CS2 stats from FACEIT ("Map" segments of <c>/players/{id}/stats/cs2</c>) as JSON; null until fetched.</summary>
+	public string? MapStatsJson { get; set; }
+	/// <summary>When <see cref="MapStatsJson"/> was last pulled; refreshed on the profile cadence.</summary>
+	public DateTime? MapStatsSyncedAtUtc { get; set; }
 
 	#endregion
 }

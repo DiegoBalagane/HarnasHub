@@ -28,10 +28,10 @@ public static class IndividualInsightRules
 		&& comfort.AvoidingPlayers * 2 > comfort.RatedPlayers
 		&& comfort.RegularPlayers <= 1;
 
-	/// <summary>Maps they barely play as a team that most players also avoid solo, for which <see cref="SoloAvoidance"/> speaks.</summary>
+	/// <summary>Maps they barely play as a team that most players also avoid solo, for which <see cref="SoloAvoidance"/> speaks; a map the lineup plays a lot lifetime is left out (the data disagree).</summary>
 	public static HashSet<string> SoloAvoidedMaps(InsightInput input) =>
 		(input.Individual?.Theirs.MapComfort ?? [])
-			.Where(c => IsAvoided(c) && TeamGames(input, c.MapName) <= OpponentVetoPredictor.SoloBanMaxTeamGames)
+			.Where(c => IsAvoided(c) && TeamGames(input, c.MapName) <= OpponentVetoPredictor.SoloBanMaxTeamGames && Row(input, c.MapName)?.TheirLifetime?.Experienced != true)
 			.Select(c => c.MapName)
 			.ToHashSet(StringComparer.OrdinalIgnoreCase);
 
@@ -46,7 +46,7 @@ public static class IndividualInsightRules
 			.FirstOrDefault();
 	}
 
-	/// <summary>"4 z 5 graczy unika Ancient także w meczach solo → prawie pewny ban" for the most avoided such map.</summary>
+	/// <summary>"4 z 5 graczy unika Ancient także w meczach solo → prawie pewny ban" for the most avoided such map ("możliwy ban" below <see cref="SampleThresholds.MinTeamGamesForAvoidance"/> team games).</summary>
 	public static IEnumerable<OpponentInsightDto> SoloAvoidance(InsightInput input)
 	{
 		var best = MostAvoidedMap(input);
@@ -56,7 +56,7 @@ public static class IndividualInsightRules
 			yield return new(
 				"SoloAvoidance",
 				"Info",
-				$"{best.AvoidingPlayers} z {best.RatedPlayers} graczy unika {best.MapName} także w meczach solo → prawie pewny ban",
+				$"{best.AvoidingPlayers} z {best.RatedPlayers} graczy unika {best.MapName} także w meczach solo → {(input.TheirTeamGames >= SampleThresholds.MinTeamGamesForAvoidance ? "prawie pewny ban" : "możliwy ban")}",
 				$"drużynowo {TeamGames(input, best.MapName)} z {input.TheirTeamGames} meczów; unikają: {string.Join(", ", best.AvoidingNicknames)}; pewność {(best.RatedPlayers >= 5 ? "wysoka" : "średnia")}");
 		}
 	}
@@ -129,9 +129,12 @@ public static class IndividualInsightRules
 
 	#region Private Methods
 
+	/// <summary>The matrix row of a map, or null when missing.</summary>
+	private static MapComparisonDto? Row(InsightInput input, string map) =>
+		input.Maps.FirstOrDefault(m => string.Equals(m.MapName, map, StringComparison.OrdinalIgnoreCase));
+
 	/// <summary>Their team games on a map from the matrix row (0 when the row is missing).</summary>
-	private static int TeamGames(InsightInput input, string map) =>
-		input.Maps.FirstOrDefault(m => string.Equals(m.MapName, map, StringComparison.OrdinalIgnoreCase))?.TheirGames ?? 0;
+	private static int TeamGames(InsightInput input, string map) => Row(input, map)?.TheirGames ?? 0;
 
 	/// <summary>Win-rate change and sample size behind a form arrow.</summary>
 	private static string FormEvidence(PlayerRecentFormDto f) =>

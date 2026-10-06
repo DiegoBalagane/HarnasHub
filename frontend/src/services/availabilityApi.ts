@@ -32,6 +32,8 @@ export interface MemberWeek {
   isCoach: boolean
   /** Exactly 7 entries, ordered from the requested week start. */
   days: DayEntry[]
+  /** True only in the player's own row when they are hidden from the calendar for everyone else; the row is still editable but excluded from counts. */
+  hiddenFromCalendar?: boolean
 }
 
 export interface WeekAvailability {

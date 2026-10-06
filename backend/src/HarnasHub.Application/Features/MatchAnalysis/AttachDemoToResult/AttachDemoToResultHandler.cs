@@ -2,6 +2,7 @@
 
 using ErrorOr;
 using HarnasHub.Application.Abstractions;
+using HarnasHub.Application.Common.Notifications;
 using HarnasHub.Application.Features.MatchAnalysis.Shared;
 using HarnasHub.Application.Features.Results.Shared;
 using MediatR;
@@ -20,6 +21,7 @@ public class AttachDemoToResultHandler(
 	IFileStorage fileStorage,
 	IDemoParser demoParser,
 	IRealtimeNotifier realtimeNotifier,
+	TeamNotifications notifications,
 	ILogger<AttachDemoToResultHandler> logger) : IRequestHandler<AttachDemoToResultCommand, ErrorOr<MatchDemoAnalysisDto>>
 {
 	#region Public Methods
@@ -54,6 +56,8 @@ public class AttachDemoToResultHandler(
 				dbContext, fileStorage, result.Id, timeline, DemoTimelineSerializer.CurrentParserVersion, ourTeam, cancellationToken);
 
 			await realtimeNotifier.NotifyAsync($"match-analysis:{result.Id}", cancellationToken);
+			// Re-attaching replaces the timeline, so the digest is posted again on purpose.
+			await notifications.NotifyDemoReviewAsync(result.Id, cancellationToken);
 			return new MatchDemoAnalysisDto(result.Id, analysis.RoundsCount, analysis.ParserVersion, ourTeam.Count > 0);
 		}
 		catch (Exception ex) when (ex is not OperationCanceledException)

@@ -15,6 +15,9 @@ export const ReplayCanvas = memo(function ReplayCanvas({ replay, mapName, subscr
   const containerRef = useRef<HTMLDivElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const timeRef = useRef(0)
+  // Lets the radar image re-measure the canvas once it has loaded — until then the container is only as tall as an
+  // empty image, and a canvas sized then would be stretched (blurry, squashed dots) after the image appears.
+  const resizeRef = useRef<() => void>(() => {})
   const scene = useMemo<ReplayScene>(
     () => ({ replay, series: buildSeries(replay), deaths: deathSeconds(replay) }),
     [replay],
@@ -42,6 +45,7 @@ export const ReplayCanvas = memo(function ReplayCanvas({ replay, mapName, subscr
       draw()
     }
 
+    resizeRef.current = resize
     const observer = new ResizeObserver(resize)
     observer.observe(container)
     resize()
@@ -66,6 +70,7 @@ export const ReplayCanvas = memo(function ReplayCanvas({ replay, mapName, subscr
         src={`/maps/${mapName.toLowerCase()}.webp`}
         alt={`Radar mapy ${mapName}`}
         draggable={false}
+        onLoad={() => resizeRef.current()}
         className="block h-auto w-full"
       />
       <canvas ref={canvasRef} className="pointer-events-none absolute inset-0 h-full w-full" />

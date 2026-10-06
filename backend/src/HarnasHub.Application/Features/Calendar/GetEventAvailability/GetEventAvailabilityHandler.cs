@@ -24,7 +24,8 @@ public class GetEventAvailabilityHandler(IApplicationDbContext dbContext)
 		}
 
 		var members = await (
-			from user in dbContext.Users
+			// Players hidden from the calendar in the admin panel are left out here too, like in the weekly grid.
+			from user in dbContext.Users.Where(u => u.ShowInCalendar)
 			join availability in dbContext.Availabilities.Where(a => a.EventId == request.EventId)
 				on user.Id equals availability.UserId into userAvailability
 			from availability in userAvailability.DefaultIfEmpty()

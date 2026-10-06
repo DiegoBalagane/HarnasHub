@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { opponentsApi, type OpponentNotePayload } from '../../../services/opponentsApi'
+import { opponentManagementApi, opponentsApi, type OpponentNotePayload } from '../../../services/opponentsApi'
 
 /** Fetches every known opponent with the head-to-head record, upcoming games first. */
 export function useOpponents() {
@@ -51,6 +51,77 @@ export function useDeleteOpponentNote() {
 
   return useMutation({
     mutationFn: (noteId: string) => opponentsApi.deleteNote(noteId),
+    onSuccess: invalidate,
+  })
+}
+
+/** Fetches every opponent including hidden ones (flagged `isHidden`) — for the "Pokaż ukrytych" view. */
+export function useOpponentsWithHidden(enabled: boolean) {
+  return useQuery({
+    queryKey: ['opponents', 'list', 'with-hidden'],
+    queryFn: opponentManagementApi.getHiddenIncluded,
+    enabled,
+  })
+}
+
+/** Counts what deleting an opponent would remove; fetched only while the dialog is open. */
+export function useOpponentDeletePreview(name: string, enabled: boolean) {
+  return useQuery({
+    queryKey: ['opponents', 'delete-preview', name.trim().toLowerCase()],
+    queryFn: () => opponentManagementApi.getDeletePreview(name),
+    enabled: enabled && name.trim() !== '',
+    gcTime: 0,
+  })
+}
+
+/** Refreshes everything an opponent change can touch: opponents, results, calendar, dashboard, stats and veto. */
+function useInvalidateOpponentData() {
+  const queryClient = useQueryClient()
+  return () =>
+    Promise.all(
+      ['opponents', 'results', 'calendar', 'dashboard', 'stats', 'veto'].map((key) =>
+        queryClient.invalidateQueries({ queryKey: [key] }),
+      ),
+    )
+}
+
+/** Deletes an opponent's scouting data, optionally with its results and events (otherwise it is hidden). */
+export function useDeleteOpponent() {
+  const invalidate = useInvalidateOpponentData()
+
+  return useMutation({
+    mutationFn: ({ name, includeHistory }: { name: string; includeHistory: boolean }) =>
+      opponentManagementApi.remove(name, includeHistory),
+    onSuccess: invalidate,
+  })
+}
+
+/** Hides an opponent from the list and name suggestions. */
+export function useHideOpponent() {
+  const invalidate = useInvalidateOpponentData()
+
+  return useMutation({
+    mutationFn: (name: string) => opponentManagementApi.hide(name),
+    onSuccess: invalidate,
+  })
+}
+
+/** Restores a hidden opponent. */
+export function useUnhideOpponent() {
+  const invalidate = useInvalidateOpponentData()
+
+  return useMutation({
+    mutationFn: (name: string) => opponentManagementApi.unhide(name),
+    onSuccess: invalidate,
+  })
+}
+
+/** Renames an opponent, merging it into the target when that name already exists. */
+export function useRenameOpponent() {
+  const invalidate = useInvalidateOpponentData()
+
+  return useMutation({
+    mutationFn: ({ from, to }: { from: string; to: string }) => opponentManagementApi.rename(from, to),
     onSuccess: invalidate,
   })
 }

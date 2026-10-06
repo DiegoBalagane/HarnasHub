@@ -1,23 +1,18 @@
-using HarnasHub.Core.Enums;
-
 namespace HarnasHub.Application.Features.OpponentReport.Shared;
 
-/// <summary>Short Polish notes about each side of a map, used in the simulated veto step reasons.</summary>
+/// <summary>Short Polish notes about the opponent's side of a map, used in the simulated veto step reasons (our side comes from
+/// the veto score's own note, which names the real driver).</summary>
 public static class VetoNotes
 {
 	#region Public Methods
 
-	/// <summary>Our side of a map in a few words.</summary>
-	public static string Ours(MapPoolStatus? status, double ourWins, int ourTotal) =>
-		status == MapPoolStatus.Ban
-			? "u nas stały ban w puli map"
-			: ourTotal == 0
-				? "my: brak meczów"
-				: $"my: {ourTotal} {MatchNoun(ourTotal)}, {Math.Round(ourWins / ourTotal * 100, 1):0}% wygranych";
-
-	/// <summary>Their side of a map in a few words.</summary>
+	/// <summary>Their side of a map in a few words; the win rate is only quoted from <see cref="SampleThresholds.MinGamesForWinRate"/> games.</summary>
 	public static string Theirs(MapMetrics their) =>
-		their.Games == 0 ? "oni: nie grają" : $"oni: {their.Games} {MatchNoun(their.Games)}, {Math.Round((their.WinRate ?? 0) * 100, 1):0}% wygranych";
+		their.Games == 0
+			? "oni: nie grają"
+			: SampleThresholds.HasWinRateSample(their.Games)
+				? $"oni: {their.Games} {MatchNoun(their.Games)}, {Math.Round((their.WinRate ?? 0) * 100, 1):0}% wygranych"
+				: $"oni: {their.Games} {MatchNoun(their.Games)} (za mało na % wygranych)";
 
 	/// <summary>Polish plural of "mecz": 1 mecz, 2–4 mecze (except 12–14), otherwise meczów.</summary>
 	public static string MatchNoun(int count)

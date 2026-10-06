@@ -19,6 +19,7 @@ public class GetSummaryHandler(IApplicationDbContext dbContext)
 		var members = await dbContext.Users
 			.Where(user => user.AccessLevel != AccessLevel.Guest && user.RosterSlot != RosterSlot.StandIn)
 			.Where(user => user.RosterSlot != null || user.IsCoach)
+			.Where(user => user.ShowInCalendar)
 			.OrderBy(user => user.DisplayName)
 			.Select(user => new { user.Id, Name = user.InGameNickname ?? user.DisplayName })
 			.ToListAsync(cancellationToken);

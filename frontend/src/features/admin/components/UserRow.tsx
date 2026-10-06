@@ -2,7 +2,9 @@ import { memo, useState } from 'react'
 import { Button } from '../../../components/ui/Button'
 import type { AccessLevel, RosterSlot, TeamMember } from '../../../services/rosterApi'
 import {
+  useSetFaceitNickname,
   useSetIsCoach,
+  useSetVisibility,
   useUpdateRole,
   useUpdateRosterSlot,
   useUpdateSteamId64,
@@ -19,7 +21,11 @@ import {
 import { isValidSteamId64 } from '../steamId'
 
 /** Grid template shared by the table header and every row so columns stay aligned. */
-export const userGridColumns = 'grid-cols-[minmax(160px,1fr)_130px_90px_140px_minmax(240px,300px)_90px]'
+export const userGridColumns =
+  'grid-cols-[minmax(160px,1fr)_130px_90px_140px_80px_80px_minmax(240px,300px)_minmax(200px,260px)_90px]'
+
+/** Longest FACEIT nickname the backend accepts. */
+const faceitNicknameMaxLength = 64
 
 const selectClass =
   'w-full rounded-md border border-neutral-800 bg-neutral-900 px-2 py-1 text-sm outline-none focus:border-neutral-500'
@@ -30,7 +36,7 @@ interface UserRowProps {
   onDelete: (member: TeamMember) => void
 }
 
-/** One account in the admin table: access level, Coach tag, roster slot, SteamID64 (explicit save) and delete. */
+/** One account in the admin table: access level, Coach tag, roster slot, visibility toggles (saved at once), SteamID64 and FACEIT nickname (explicit save) and delete. */
 export const UserRow = memo(function UserRow({ member, isSelf, onDelete }: UserRowProps) {
   const updateRole = useUpdateRole()
   const setIsCoach = useSetIsCoach()
@@ -111,7 +117,11 @@ export const UserRow = memo(function UserRow({ member, isSelf, onDelete }: UserR
           ))}
         </select>
 
+        <VisibilityCheckbox member={member} field="showInStats" label="Statystyki" />
+        <VisibilityCheckbox member={member} field="showInCalendar" label="Kalendarz" />
+
         <SteamIdField member={member} />
+        <FaceitNicknameField member={member} />
 
         <div className="flex justify-end">
           {!isSelf && (
@@ -175,6 +185,91 @@ function SteamIdField({ member }: { member: TeamMember }) {
       {!isValid && <span className="text-xs text-danger-400">17 cyfr, zaczyna się od 7656119</span>}
       {updateSteamId64.isError && <span className="text-xs text-danger-400">{updateSteamId64.error.message}</span>}
       {updateSteamId64.isSuccess && <span className="text-xs text-success-400">Zapisano</span>}
+    </div>
+  )
+}
+
+/** Visibility switch that saves at once; shows the value being saved while the request is pending and an error if it fails. */
+function VisibilityCheckbox({
+  member,
+  field,
+  label,
+}: {
+  member: TeamMember
+  field: 'showInStats' | 'showInCalendar'
+  label: string
+}) {
+  const setVisibility = useSetVisibility()
+  const checked = (setVisibility.isPending ? setVisibility.variables?.[field] : undefined) ?? member[field]
+  const name = member.inGameNickname ?? member.displayName
+
+  return (
+    <label
+      title={checked ? `${label}: widoczny — odznacz, aby ukryć (dane zostają)` : `${label}: ukryty — zaznacz, aby pokazać`}
+      className="flex flex-col gap-0.5 text-xs text-neutral-300"
+    >
+      <span className="flex items-center gap-1">
+        <input
+          type="checkbox"
+          checked={checked}
+          disabled={setVisibility.isPending}
+          aria-label={`${label}: ${name}`}
+          onChange={(event) =>
+            setVisibility.mutate({
+              userId: member.id,
+              showInStats: field === 'showInStats' ? event.target.checked : member.showInStats,
+              showInCalendar: field === 'showInCalendar' ? event.target.checked : member.showInCalendar,
+            })
+          }
+        />
+        {checked ? 'Tak' : 'Ukryty'}
+      </span>
+      {setVisibility.isError && <span className="text-danger-400">{setVisibility.error.message}</span>}
+    </label>
+  )
+}
+
+/** Manual FACEIT nickname input (fallback when the SteamID64 isn't linked on FACEIT) with an explicit per-row save; empty clears it. */
+function FaceitNicknameField({ member }: { member: TeamMember }) {
+  const setNickname = useSetFaceitNickname()
+  const [draft, setDraft] = useState<string | null>(null)
+  const saved = member.faceitNickname ?? ''
+  const value = draft ?? saved
+  const trimmed = value.trim()
+  const isDirty = trimmed !== saved
+  const isValid = trimmed.length <= faceitNicknameMaxLength && (value === '' || trimmed !== '')
+
+  function save() {
+    setNickname.mutate(
+      { userId: member.id, nickname: trimmed === '' ? null : trimmed },
+      { onSuccess: () => setDraft(null) },
+    )
+  }
+
+  return (
+    <div className="flex min-w-0 flex-col gap-0.5">
+      <div className="flex items-center gap-2">
+        <input
+          maxLength={faceitNicknameMaxLength}
+          placeholder="Nick FACEIT"
+          value={value}
+          aria-label={`Nick FACEIT: ${member.inGameNickname ?? member.displayName}`}
+          aria-invalid={!isValid}
+          onChange={(event) => {
+            setNickname.reset()
+            setDraft(event.target.value)
+          }}
+          className={`min-w-0 flex-1 rounded-md border bg-neutral-900 px-2 py-1 text-xs outline-none focus:border-neutral-500 ${
+            isValid ? 'border-neutral-800' : 'border-danger-500'
+          }`}
+        />
+        <Button size="sm" disabled={!isDirty || !isValid || setNickname.isPending} onClick={save}>
+          Zapisz
+        </Button>
+      </div>
+      {!isValid && <span className="text-xs text-danger-400">Nick nie może być pusty</span>}
+      {setNickname.isError && <span className="text-xs text-danger-400">{setNickname.error.message}</span>}
+      {setNickname.isSuccess && <span className="text-xs text-success-400">Zapisano</span>}
     </div>
   )
 }

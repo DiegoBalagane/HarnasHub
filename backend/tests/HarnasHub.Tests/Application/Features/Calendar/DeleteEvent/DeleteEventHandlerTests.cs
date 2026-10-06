@@ -53,7 +53,7 @@ public class DeleteEventHandlerTests
 		});
 		await dbContext.SaveChangesAsync(CancellationToken.None);
 
-		var handler = new DeleteEventHandler(dbContext, new TestRealtimeNotifier());
+		var handler = new DeleteEventHandler(dbContext, new TestRealtimeNotifier(), new TestDiscordNotifier());
 
 		var result = await handler.Handle(new DeleteEventCommand(calendarEvent.Id), CancellationToken.None);
 
@@ -69,7 +69,7 @@ public class DeleteEventHandlerTests
 	public async Task Should_return_not_found_for_a_missing_event()
 	{
 		await using var dbContext = TestApplicationDbContext.Create();
-		var handler = new DeleteEventHandler(dbContext, new TestRealtimeNotifier());
+		var handler = new DeleteEventHandler(dbContext, new TestRealtimeNotifier(), new TestDiscordNotifier());
 
 		var result = await handler.Handle(new DeleteEventCommand(Guid.NewGuid()), CancellationToken.None);
 

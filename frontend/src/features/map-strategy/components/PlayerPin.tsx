@@ -1,16 +1,19 @@
 import { memo, type PointerEvent } from 'react'
-import type { MapPosition } from '../../../services/mapStrategyApi'
+import type { SidedMapPosition } from '../../../services/mapStrategyApi'
 import { toInitials } from '../../availability/weekDates'
 import { pinColorSwatch, teamRoleLabels } from '../../roster/labels'
+import { sideStyles } from '../labels'
 import { pinColorFor } from '../pinColors'
 
 interface PlayerPinProps {
-  position: MapPosition
+  position: SidedMapPosition
   /** Radar-relative coordinates to render at — the live drag position, which may differ from the saved one. */
   x: number
   y: number
   canEdit: boolean
   isDragging: boolean
+  /** Horizontal pixel shift that keeps a player's T and CT pins apart when they sit on the same spot. */
+  offsetPx?: number
   onDragStart: (event: PointerEvent<HTMLDivElement>, positionId: string) => void
   onRemove: (positionId: string) => void
 }
@@ -22,30 +25,38 @@ export const PlayerPin = memo(function PlayerPin({
   y,
   canEdit,
   isDragging,
+  offsetPx = 0,
   onDragStart,
   onRemove,
 }: PlayerPinProps) {
   const name = position.inGameNickname ?? position.displayName
   const role = position.teamRole ? teamRoleLabels[position.teamRole] : 'brak roli'
   const details = [position.label, position.note].filter(Boolean).join(' — ')
-  const tooltip = `${name} (${role})${details ? ` · ${details}` : ''}`
+  const tooltip = `${position.side} · ${name} (${role})${details ? ` · ${details}` : ''}`
   // A self-chosen colour (Main roster only) wins; everyone else keeps the automatic per-user colour.
   const colorClass = position.pinColor ? pinColorSwatch[position.pinColor] : pinColorFor(position.userId)
 
   return (
     <div
       className="group absolute -translate-x-1/2 -translate-y-1/2"
-      style={{ left: `${x * 100}%`, top: `${y * 100}%` }}
+      style={{ left: `${x * 100}%`, top: `${y * 100}%`, marginLeft: offsetPx }}
     >
       <div
         title={tooltip}
         onPointerDown={canEdit ? (event) => onDragStart(event, position.id) : undefined}
         className={`flex h-7 w-7 items-center justify-center rounded-full border border-black/40 text-[10px] font-bold text-white shadow-md ${colorClass} ${
           canEdit ? 'cursor-grab touch-none active:cursor-grabbing' : 'cursor-default'
-        } ${isDragging ? 'ring-2 ring-white' : ''}`}
+        } ${isDragging ? 'ring-2 ring-white' : `ring-2 ${sideStyles[position.side].ring}`}`}
       >
         {position.pinMark ?? toInitials(name)}
       </div>
+
+      <span
+        data-testid={`side-badge-${position.id}`}
+        className={`pointer-events-none absolute -bottom-1.5 -left-1.5 rounded px-0.5 text-[8px] font-bold leading-3 text-white ${sideStyles[position.side].badge}`}
+      >
+        {position.side}
+      </span>
 
       {position.note && (
         <span

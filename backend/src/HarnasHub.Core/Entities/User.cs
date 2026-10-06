@@ -21,6 +21,12 @@ public class User
 	/// <summary>Self-reported SteamID64, used to match this player to a CS2 demo's participants when importing stats.
 	/// A string, not a number — like <see cref="DiscordId"/>, it exceeds Number.MAX_SAFE_INTEGER and would lose precision in JS/JSON.</summary>
 	public string? SteamId64 { get; set; }
+	/// <summary>Whether the player appears in team stats (leaderboard, opponent report "our" side, dashboard rankings); hiding never deletes data.</summary>
+	public bool ShowInStats { get; set; } = true;
+	/// <summary>Whether the player appears in the availability calendar, daily status lists and their counts; hiding never deletes data.</summary>
+	public bool ShowInCalendar { get; set; } = true;
+	/// <summary>Manually set FACEIT nickname for players whose SteamID64 is not linked to FACEIT (or who have none); used as a fallback lookup.</summary>
+	public string? FaceitNickname { get; set; }
 	public DateTime CreatedAtUtc { get; set; }
 
 	#endregion

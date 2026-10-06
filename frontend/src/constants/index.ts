@@ -12,6 +12,9 @@ export const FACEIT_LINK_SOURCE_MAX_LENGTH = 1000
 /** Opponent demos: default and server-side max (DownloadOpponentDemosCommand.MaxCount) demos per FACEIT download run. */
 export const OPPONENT_DEMO_DOWNLOAD = { defaultCount: 3, maxCount: 5 } as const
 
+/** FACEIT match room page — where a demo can be downloaded by hand while the Downloads API isn't available. */
+export const faceitMatchRoomUrl = (faceitMatchId: string) => `https://www.faceit.com/en/cs2/room/${encodeURIComponent(faceitMatchId)}`
+
 /** 2D round replay: playback speeds, seconds skipped by ←/→ (Shift = fast) and dot/label sizes in CSS pixels. */
 export const REPLAY_SETTINGS = { speeds: [1, 2, 4], seekStepSeconds: 1, fastSeekStepSeconds: 5, dotRadiusPx: 6, labelFontPx: 11 } as const
 
@@ -38,6 +41,8 @@ export const API_ENDPOINTS = {
     secondaryTeamRoles: (userId: string) => `/api/roster/${userId}/secondary-team-roles`,
     pinColor: (userId: string) => `/api/roster/${userId}/pin-color`,
     steamId64: (userId: string) => `/api/roster/${userId}/steam-id`,
+    visibility: (userId: string) => `/api/roster/${userId}/visibility`,
+    faceitNickname: (userId: string) => `/api/roster/${userId}/faceit-nickname`,
     myNickname: '/api/roster/me/nickname',
     myPinColor: '/api/roster/me/pin-color',
     myPinMark: '/api/roster/me/pin-mark',
@@ -125,6 +130,13 @@ export const API_ENDPOINTS = {
   },
   opponents: {
     list: '/api/opponents',
+    listWithHidden: '/api/opponents?includeHidden=true',
+    deletePreview: (name: string) => `/api/opponents/delete-preview?name=${encodeURIComponent(name)}`,
+    remove: (name: string, includeHistory: boolean) =>
+      `/api/opponents?name=${encodeURIComponent(name)}&includeHistory=${includeHistory}`,
+    hide: '/api/opponents/hide',
+    unhide: '/api/opponents/unhide',
+    rename: '/api/opponents/rename',
     profile: (name: string) => `/api/opponents/profile?name=${encodeURIComponent(name)}`,
     notes: '/api/opponents/notes',
     noteById: (noteId: string) => `/api/opponents/notes/${noteId}`,
@@ -152,11 +164,17 @@ export const API_ENDPOINTS = {
 
 /** Background jobs: status poll interval without a live SignalR connection, and the slower safety poll while connected
  * (pushes on the `job:{id}` topic normally drive the refetches). */
+/** When a new deployed build is checked for and how soon after opening it may be applied without asking. */
+export const PWA_UPDATE_SETTINGS = { checkIntervalMs: 60_000, applyImmediatelyWithinMs: 10_000 } as const
+
 export const JOB_SETTINGS = { pollIntervalMs: 2_000, connectedPollIntervalMs: 10_000 } as const
 
 export const STORAGE_KEYS = {
   accessToken: 'harnashub.accessToken',
 } as const
+
+/** Pozycje tab: localStorage key of the per-viewer T/CT visibility filter. */
+export const MAP_STRATEGY_SETTINGS = { sideFilterStorageKey: 'harnashub.mapSideFilter' } as const
 
 /** Sidebar navigation: localStorage key of the collapsed flag and the two widths (px) the layout offsets content by. */
 export const SIDEBAR_SETTINGS = {

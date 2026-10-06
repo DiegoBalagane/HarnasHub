@@ -31,6 +31,12 @@ export interface TeamMember {
   steamId64: string | null
   /** Backup in-game roles alongside the primary one, e.g. "second AWPer". */
   secondaryTeamRoles: TeamRole[]
+  /** Whether the player appears in team stats (leaderboard, opponent report, rankings); hiding never deletes data. */
+  showInStats: boolean
+  /** Whether the player appears in the availability calendar, daily lists and their counts; hiding never deletes data. */
+  showInCalendar: boolean
+  /** Manual FACEIT nickname used when the SteamID64 is not linked to a FACEIT account; null when unset. */
+  faceitNickname: string | null
 }
 
 export const rosterApi = {
@@ -65,6 +71,12 @@ export const rosterApi = {
   /** Manager only — sets a team member's SteamID64 on their behalf; a null/blank value clears it. */
   updateSteamId64: (userId: string, steamId64: string | null) =>
     apiClient.patch<TeamMember>(API_ENDPOINTS.roster.steamId64(userId), { steamId64 }),
+  /** Manager only; sets whether a member appears in team stats and in the availability calendar (data is kept). */
+  updateVisibility: (userId: string, showInStats: boolean, showInCalendar: boolean) =>
+    apiClient.patch<TeamMember>(API_ENDPOINTS.roster.visibility(userId), { showInStats, showInCalendar }),
+  /** Manager only; sets (or, with null, clears) a member's manual FACEIT nickname. */
+  updateFaceitNickname: (userId: string, nickname: string | null) =>
+    apiClient.patch<TeamMember>(API_ENDPOINTS.roster.faceitNickname(userId), { nickname }),
   /** Manager only; permanently deletes the account and its personal data. Team artifacts they created are kept. */
   deleteMember: (userId: string) => apiClient.delete<void>(API_ENDPOINTS.roster.byId(userId)),
 }

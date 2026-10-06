@@ -1,8 +1,9 @@
 import type { AdminStatus } from '../../../services/adminApi'
+import { DiscordChannelsCard } from './DiscordChannelsCard'
 import { useAdminStatus } from '../hooks/useAdminStatus'
 
 interface IntegrationCard {
-  key: keyof AdminStatus
+  key: Exclude<keyof AdminStatus, 'discordChannels'>
   title: string
   enables: string
   setup: string
@@ -27,12 +28,6 @@ const cards: IntegrationCard[] = [
     title: 'Storage S3',
     enables: 'Wgrywanie dużych plików: demek i teł tablic analizy.',
     setup: 'Ustaw S3__Endpoint, S3__AccessKey, S3__SecretKey i S3__BucketName.',
-  },
-  {
-    key: 'discordWebhookConfigured',
-    title: 'Webhook Discorda',
-    enables: 'Powiadomienia o nowych wydarzeniach i zadaniach na kanale drużyny.',
-    setup: 'Ustaw Discord__WebhookUrl (user-secrets: Discord:WebhookUrl).',
   },
   {
     key: 'frontendBaseUrlConfigured',
@@ -75,6 +70,7 @@ export function IntegrationsTab() {
           </li>
         )
       })}
+      <DiscordChannelsCard channels={status.discordChannels} />
     </ul>
   )
 }

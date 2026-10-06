@@ -24,6 +24,11 @@ export interface MapPosition {
   note: string | null
 }
 
+/** A position tagged with the side it was fetched for — the API itself returns one side per request. */
+export interface SidedMapPosition extends MapPosition {
+  side: MapSide
+}
+
 export interface SetPlayerPositionPayload {
   mapName: MapName
   side: MapSide
@@ -43,6 +48,11 @@ export interface MapTextAnnotation {
   fontSizePx: number
   x: number
   y: number
+}
+
+/** An annotation tagged with the side it was fetched for (the DTO carries no side of its own). */
+export interface SidedMapTextAnnotation extends MapTextAnnotation {
+  side: MapSide
 }
 
 export interface AddTextAnnotationPayload {

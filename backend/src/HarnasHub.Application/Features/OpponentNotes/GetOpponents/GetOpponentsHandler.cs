@@ -34,9 +34,27 @@ public class GetOpponentsHandler(IApplicationDbContext dbContext)
 			.Concat(events.Select(e => new OpponentMention(e.Opponent, e.StartsAtUtc, null, null, IsEvent: true, IsNote: false)))
 			.Where(m => !string.IsNullOrWhiteSpace(m.Name));
 
-		return mentions
+		var hidden = await dbContext.HiddenOpponents
+			.Select(h => new { h.OpponentKey, h.DisplayName })
+			.ToListAsync(cancellationToken);
+		var hiddenKeys = hidden.Select(h => h.OpponentKey).ToHashSet();
+
+		var summaries = mentions
 			.GroupBy(m => OpponentNames.ToKey(m.Name))
-			.Select(group => Summarize(group.ToList(), now))
+			.Where(group => request.IncludeHidden || !hiddenKeys.Contains(group.Key))
+			.Select(group => Summarize(group.ToList(), now) with { IsHidden = hiddenKeys.Contains(group.Key) })
+			.ToList();
+
+		if (request.IncludeHidden)
+		{
+			// A hidden opponent with no history left (e.g. only FACEIT data) is still listed, so it can be restored.
+			var listed = summaries.Select(s => OpponentNames.ToKey(s.Name)).ToHashSet();
+			summaries.AddRange(hidden
+				.Where(h => !listed.Contains(h.OpponentKey))
+				.Select(h => new OpponentSummaryDto(h.DisplayName, 0, 0, 0, 0, null, null, IsHidden: true)));
+		}
+
+		return summaries
 			// Upcoming games first (soonest on top), then everyone else by most recent game played.
 			.OrderBy(s => s.NextEventAtUtc ?? DateTime.MaxValue)
 			.ThenByDescending(s => s.LastPlayedAtUtc ?? DateTime.MinValue)

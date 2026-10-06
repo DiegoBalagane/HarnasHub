@@ -1,19 +1,28 @@
-import { memo } from 'react'
+import { memo, useMemo } from 'react'
+import type { FormGame } from '../../../services/opponentReportApi'
 import { useOpponentDemos } from '../hooks/useOpponentDemos'
 import { DemoUploadPanel } from './DemoUploadPanel'
+import { FaceitMatchLinks } from './FaceitMatchLinks'
 import { OpponentDemoList } from './OpponentDemoList'
 
 interface OpponentDemosSectionProps {
   opponentName: string
   canManage: boolean
+  /** Their latest FACEIT team matches, offered as room links for manual demo downloads. */
+  recentGames?: FormGame[]
 }
 
 /** "Demki rywala": upload / FACEIT download (coach/manager) and the list of analysed demos behind the tendencies. */
 export const OpponentDemosSection = memo(function OpponentDemosSection({
   opponentName,
   canManage,
+  recentGames = [],
 }: OpponentDemosSectionProps) {
   const { data, isLoading, isError } = useOpponentDemos(opponentName)
+  const analysedMatchIds = useMemo(
+    () => new Set((data?.demos ?? []).flatMap((demo) => (demo.faceitMatchId ? [demo.faceitMatchId] : []))),
+    [data?.demos],
+  )
 
   return (
     <section className="flex flex-col gap-3">
@@ -29,6 +38,9 @@ export const OpponentDemosSection = memo(function OpponentDemosSection({
             <p className="text-sm text-neutral-400">
               Magazyn plików nie jest skonfigurowany — wgrywanie demek jest niedostępne.
             </p>
+          )}
+          {canManage && data.storageConfigured && !data.autoDownloadAvailable && (
+            <FaceitMatchLinks games={recentGames} analysedMatchIds={analysedMatchIds} />
           )}
           <OpponentDemoList opponentName={opponentName} demos={data.demos} canManage={canManage} />
         </>

@@ -32,6 +32,12 @@ public class TestFaceitClient(bool isConfigured = true) : IFaceitClient
 	/// <summary>Player ids whose history was requested, in order.</summary>
 	public List<string> HistoryRequests { get; } = [];
 
+	/// <summary>Lifetime per-map stats per player id.</summary>
+	public Dictionary<string, List<FaceitLifetimeMapStats>> LifetimeMapStats { get; } = [];
+
+	/// <summary>Player ids whose lifetime map stats were requested, in order.</summary>
+	public List<string> MapStatsRequests { get; } = [];
+
 	#endregion
 
 	#region Public Methods
@@ -51,11 +57,18 @@ public class TestFaceitClient(bool isConfigured = true) : IFaceitClient
 	public Task<FaceitMatchInfo?> GetMatchAsync(string matchId, CancellationToken cancellationToken) =>
 		Respond(Matches.GetValueOrDefault(matchId));
 
-	public Task<IReadOnlyList<FaceitHistoryItem>> GetPlayerHistoryAsync(string playerId, DateTime fromUtc, int limit, CancellationToken cancellationToken)
+	public Task<IReadOnlyList<FaceitHistoryItem>> GetPlayerHistoryAsync(string playerId, DateTime fromUtc, int limit, CancellationToken cancellationToken, int offset = 0)
 	{
 		HistoryRequests.Add(playerId);
-		IReadOnlyList<FaceitHistoryItem> items = Histories.GetValueOrDefault(playerId)?.Take(limit).ToList() ?? [];
+		IReadOnlyList<FaceitHistoryItem> items = Histories.GetValueOrDefault(playerId)?.Skip(offset).Take(limit).ToList() ?? [];
 		return Respond(items)!;
+	}
+
+	public Task<IReadOnlyList<FaceitLifetimeMapStats>> GetPlayerMapStatsAsync(string playerId, CancellationToken cancellationToken)
+	{
+		MapStatsRequests.Add(playerId);
+		IReadOnlyList<FaceitLifetimeMapStats> maps = LifetimeMapStats.GetValueOrDefault(playerId) ?? [];
+		return Respond(maps)!;
 	}
 
 	public Task<IReadOnlyList<FaceitMapStats>> GetMatchStatsAsync(string matchId, CancellationToken cancellationToken)
