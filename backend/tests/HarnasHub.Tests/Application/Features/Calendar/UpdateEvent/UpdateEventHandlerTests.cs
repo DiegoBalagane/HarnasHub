@@ -27,7 +27,7 @@ public class UpdateEventHandlerTests
 		dbContext.Events.Add(calendarEvent);
 		await dbContext.SaveChangesAsync(CancellationToken.None);
 
-		var handler = new UpdateEventHandler(dbContext, new TestRealtimeNotifier());
+		var handler = new UpdateEventHandler(dbContext, new TestRealtimeNotifier(), new TestDiscordNotifier());
 		var newStart = new DateTime(2026, 9, 20, 19, 0, 0, DateTimeKind.Utc);
 
 		var command = new UpdateEventCommand(
@@ -54,7 +54,7 @@ public class UpdateEventHandlerTests
 	public async Task Should_return_not_found_for_a_missing_event()
 	{
 		await using var dbContext = TestApplicationDbContext.Create();
-		var handler = new UpdateEventHandler(dbContext, new TestRealtimeNotifier());
+		var handler = new UpdateEventHandler(dbContext, new TestRealtimeNotifier(), new TestDiscordNotifier());
 
 		var command = new UpdateEventCommand(
 			Guid.NewGuid(),
@@ -86,7 +86,7 @@ public class UpdateEventHandlerTests
 		};
 		dbContext.Events.Add(calendarEvent);
 		await dbContext.SaveChangesAsync(CancellationToken.None);
-		var handler = new UpdateEventHandler(dbContext, new TestRealtimeNotifier());
+		var handler = new UpdateEventHandler(dbContext, new TestRealtimeNotifier(), new TestDiscordNotifier());
 
 		var withOpponent = await handler.Handle(
 			new UpdateEventCommand(calendarEvent.Id, "Mecz ligowy", EventType.Match, calendarEvent.StartsAtUtc, null, null, null, null, "  Team X  "),

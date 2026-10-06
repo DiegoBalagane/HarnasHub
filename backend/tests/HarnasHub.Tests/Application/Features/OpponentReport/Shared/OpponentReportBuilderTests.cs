@@ -52,11 +52,17 @@ public class OpponentReportBuilderTests
 		Assert.Equal((6, 1, 4, 3, 1), (inferno.TheirGames, inferno.TheirWins, inferno.OurGames, inferno.OurFaceitGames, inferno.OurInternalGames));
 		Assert.True(inferno.Advantage > 0);
 		Assert.Equal("Medium", inferno.Confidence);
-		Assert.Contains(inferno.VetoReasons, r => r.StartsWith("FACEIT: przewaga +"));
+		Assert.Contains(inferno.VetoReasons, r => r.StartsWith("Słabość rywala: ich 17% wygranych przy 6 meczach"));
+		Assert.Contains("Nasz bilans 4-0 — za mało danych (4 mecze), nie wpływa na rekomendację", inferno.VetoReasons);
+		Assert.True(inferno.OurLowSample);
+		Assert.Equal(3, inferno.OurFaceitWins);
 		var mirage = report.Maps.Single(m => m.MapName == "Mirage");
 		Assert.True(mirage.Advantage < 0);
 		Assert.Equal("Pick", mirage.Prediction);
-		Assert.Equal("Ban", report.Maps.Single(m => m.MapName == "Nuke").Prediction);
+		// 12 team games are too few to call "they never play Nuke" a ban.
+		var nuke = report.Maps.Single(m => m.MapName == "Nuke");
+		Assert.Equal("Unknown", nuke.Prediction);
+		Assert.Contains("za mało meczów", nuke.PredictionReason);
 		// Most played by them first; ties broken by how much we played it.
 		Assert.Equal(["Inferno", "Mirage"], report.Maps.Take(2).Select(m => m.MapName));
 	}
@@ -98,7 +104,69 @@ public class OpponentReportBuilderTests
 		Assert.Equal((5, 5, 0), (inferno.RatedPlayers, inferno.RegularPlayers, inferno.AvoidingPlayers));
 		var kacper = Assert.Single(individual.Ours.Players, p => p.Games > 0);
 		Assert.Equal(("nick-u1", 2500, 5), (kacper.Nickname, kacper.Elo ?? 0, kacper.Maps.Single().SoloGames));
-		Assert.Contains("solo: 5/5", report.Maps.Single(m => m.MapName == "Inferno").PredictionReason);
+		// Barely played as a team, but all five play it regularly solo — no ban claim, just "niepewne".
+		var row = report.Maps.Single(m => m.MapName == "Inferno");
+		Assert.Equal("Unknown", row.Prediction);
+		Assert.Contains("ale indywidualnie dużo (5 z 5 graczy gra ją regularnie solo)", row.PredictionReason);
+	}
+
+	[Fact]
+	public void Should_limit_player_facing_numbers_to_the_active_lineup_of_a_team_page()
+	{
+		// A team page with 16 members: 6 play the recent team games (t1–t5 every game, sub "s1" in 3 of 10), "old1"/"old2" only
+		// in games older than 60 days and outside the latest 10, the other 8 never.
+		var actives = new[] { "t1", "t2", "t3", "t4", "s1" };
+		var recent = Enumerable.Range(0, 10)
+			.Select(i => Match("de_mirage", i < 3 ? actives : Them, Strangers(), 13, 6, Now.AddDays(-i - 1)))
+			.ToList();
+		var old = Enumerable.Range(0, 4)
+			.Select(i => Match("de_ancient", ["old1", "old2", "t1", "t2", "t3"], Strangers(), 13, 9, Now.AddDays(-80 - i)))
+			.ToList();
+		var roster = Them.Concat(["s1", "old1", "old2"]).Concat(Enumerable.Range(0, 8).Select(i => $"x{i}")).ToHashSet();
+		var oldSolo = Enumerable.Range(0, 3).Select(i => Match("de_nuke", ["old1", .. Strangers()[..4]], Strangers(), 13, 2, Now.AddDays(-5 - i))).ToList();
+		var stats = recent.Concat(old).SelectMany(g => g.Team1PlayerIds.Where(roster.Contains).Select(id => Stat(g, id, id == "old1" ? 40 : 20, 15, id == "old1" ? 140 : 80)))
+			.Concat(oldSolo.Select(g => Stat(g, "old1", 40, 5, 150)))
+			.ToList();
+		var input = new OpponentReportInput("Team X", null, Now, [.. recent, .. old, .. oldSolo], stats, roster, Us.ToHashSet(), []);
+
+		var report = OpponentReportBuilder.Build(input);
+
+		var lineup = report.ActiveLineup!;
+		Assert.Equal(16, roster.Count);
+		Assert.Equal(["s1", "t1", "t2", "t3", "t4", "t5"], lineup.Active.Select(p => p.PlayerId).Order());
+		Assert.Contains("ostatnich 10 meczów drużynowych", lineup.Basis);
+		Assert.Contains(lineup.Inactive, p => p.PlayerId == "old1" && p.TeamGames == 4 && p.RecentTeamGames == 0);
+		Assert.Equal(14, report.TheirTeamGames);
+		Assert.DoesNotContain(report.PlayersToWatch.SelectMany(m => m.Players), p => p.PlayerId.StartsWith("old"));
+		Assert.DoesNotContain(report.IndividualForm!.Theirs.Players, p => p.PlayerId.StartsWith("old") || p.PlayerId.StartsWith("x"));
+		Assert.DoesNotContain(report.Insights, i => i.Text.Contains("nick-old1"));
+		// The sub who joined in the latest games is a real lineup change; ex-members never are.
+		Assert.Equal(["nick-s1"], report.Form.NewPlayers);
+	}
+
+	[Fact]
+	public void Should_show_lifetime_experience_of_the_active_lineup_and_downgrade_a_contradicted_ban()
+	{
+		// 20 team games, none on Ancient — but the lineup has a lot of lifetime Ancient.
+		var games = Enumerable.Range(0, 20).Select(i => Match(i % 2 == 0 ? "de_mirage" : "de_inferno", Them, Strangers(), 13, 8, Now.AddDays(-i - 1))).ToList();
+		var lifetime = Them.ToDictionary(
+			id => id,
+			id => (IReadOnlyList<HarnasHub.Application.Abstractions.FaceitLifetimeMapStats>)
+			[
+				new("de_ancient", 25, 13, 1.12),
+				new("de_mirage", 28, 14, 1.01),
+				new("de_nuke", 2, 1, 0.9)
+			]);
+		var input = Input(games, [], []) with { TheirLifetime = lifetime };
+
+		var report = OpponentReportBuilder.Build(input);
+
+		var ancient = report.Maps.Single(m => m.MapName == "Ancient");
+		Assert.Equal((5, 125, true), (ancient.TheirLifetime!.Players, ancient.TheirLifetime.Matches, ancient.TheirLifetime.Experienced));
+		Assert.Equal("Unknown", ancient.Prediction);
+		Assert.Contains("125 meczów lifetime składu", ancient.PredictionReason);
+		Assert.Equal("Ban", report.Maps.Single(m => m.MapName == "Nuke").Prediction);
+		Assert.DoesNotContain(report.Insights, i => i.Kind == "LikelyBan" && i.Text.Contains("Ancient"));
 	}
 
 	#endregion

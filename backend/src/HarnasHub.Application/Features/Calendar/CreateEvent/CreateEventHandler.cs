@@ -1,5 +1,6 @@
 using ErrorOr;
 using HarnasHub.Application.Abstractions;
+using HarnasHub.Application.Features.OpponentNotes.Shared;
 using HarnasHub.Application.Features.Calendar.Shared;
 using HarnasHub.Core.Entities;
 using HarnasHub.Core.Enums;
@@ -34,21 +35,10 @@ public class CreateEventHandler(
 		};
 
 		dbContext.Events.Add(calendarEvent);
+		await OpponentRevival.ReviveAsync(dbContext, EventMappings.NormalizeOpponent(request.Opponent), cancellationToken);
 		await dbContext.SaveChangesAsync(cancellationToken);
 
-		var typeLabel = calendarEvent.Type switch
-		{
-			EventType.Training => "Trening",
-			EventType.PickupGame => "Gra luźna",
-			EventType.Match => "Mecz",
-			EventType.Tournament => "Turniej",
-			EventType.Scrim => "Sparing",
-			_ => calendarEvent.Type.ToString()
-		};
-
-		await discordNotifier.SendAsync(
-			$"📅 Nowe wydarzenie: **{calendarEvent.Title}** ({typeLabel}) — {calendarEvent.StartsAtUtc:dd.MM HH:mm}",
-			cancellationToken);
+		await discordNotifier.SendAsync(MatchEventFormatter.ChannelFor(calendarEvent.Type), MatchEventFormatter.Created(calendarEvent), cancellationToken);
 		await realtimeNotifier.NotifyAsync("calendar", cancellationToken);
 		await realtimeNotifier.NotifyAsync("dashboard", cancellationToken);
 

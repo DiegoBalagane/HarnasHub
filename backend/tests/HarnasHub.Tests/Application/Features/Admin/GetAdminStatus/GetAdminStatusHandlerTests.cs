@@ -1,5 +1,6 @@
 using HarnasHub.Application.Abstractions;
 using HarnasHub.Application.Features.Admin.GetAdminStatus;
+using HarnasHub.Core.Enums;
 using HarnasHub.Tests.Common;
 using Xunit;
 
@@ -17,7 +18,7 @@ public class GetAdminStatusHandlerTests
 		var result = await handler.Handle(new GetAdminStatusQuery(), CancellationToken.None);
 
 		Assert.False(result.IsError);
-		Assert.Equal(new AdminStatusDto(true, true, true, true, true), result.Value);
+		Assert.Equal(new AdminStatusDto(true, true, true, true, true, new DiscordChannelsStatusDto(true, true, true, true)), result.Value);
 	}
 
 	[Fact]
@@ -27,7 +28,7 @@ public class GetAdminStatusHandlerTests
 
 		var result = await handler.Handle(new GetAdminStatusQuery(), CancellationToken.None);
 
-		Assert.Equal(new AdminStatusDto(false, false, false, false, false), result.Value);
+		Assert.Equal(new AdminStatusDto(false, false, false, false, false, new DiscordChannelsStatusDto(false, false, false, false)), result.Value);
 	}
 
 	[Fact]
@@ -44,6 +45,18 @@ public class GetAdminStatusHandlerTests
 		Assert.True(result.Value.FrontendBaseUrlConfigured);
 	}
 
+	[Fact]
+	public async Task Should_report_each_discord_channel_separately()
+	{
+		var handler = new GetAdminStatusHandler(
+			new TestFaceitClient(false), new TestFaceitDemoDownloader(false), new TestFileStorage(false),
+			new StubIntegrationSettings(true, false, DiscordChannel.MatchSchedule, DiscordChannel.OpponentScouting));
+
+		var result = await handler.Handle(new GetAdminStatusQuery(), CancellationToken.None);
+
+		Assert.Equal(new DiscordChannelsStatusDto(false, true, false, true), result.Value.DiscordChannels);
+	}
+
 	#endregion
 
 	#region Private Methods
@@ -53,14 +66,16 @@ public class GetAdminStatusHandlerTests
 			new TestFaceitClient(faceit),
 			new TestFaceitDemoDownloader(downloads),
 			new TestFileStorage(s3),
-			new StubIntegrationSettings(discord, frontend));
+			new StubIntegrationSettings(discord, frontend, discord ? Enum.GetValues<DiscordChannel>() : []));
 
 	#endregion
 
-	private sealed class StubIntegrationSettings(bool discord, bool frontend) : IIntegrationSettings
+	private sealed class StubIntegrationSettings(bool discord, bool frontend, params DiscordChannel[] channels) : IIntegrationSettings
 	{
 		public bool IsDiscordWebhookConfigured { get; } = discord;
 
 		public bool IsFrontendBaseUrlConfigured { get; } = frontend;
+
+		public bool IsDiscordChannelConfigured(DiscordChannel channel) => channels.Contains(channel);
 	}
 }

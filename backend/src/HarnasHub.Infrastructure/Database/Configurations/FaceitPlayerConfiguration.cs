@@ -17,6 +17,7 @@ public class FaceitPlayerConfiguration : IEntityTypeConfiguration<FaceitPlayer>
 		builder.Property(p => p.Id).HasMaxLength(64).ValueGeneratedNever();
 		builder.Property(p => p.Nickname).IsRequired().HasMaxLength(64);
 		builder.Property(p => p.SteamId64).HasMaxLength(20);
+		builder.Property(p => p.MapStatsJson).HasColumnType("jsonb");
 
 		builder.HasIndex(p => p.SteamId64);
 	}

@@ -1,8 +1,9 @@
 import { memo, type PointerEvent } from 'react'
-import type { MapTextAnnotation } from '../../../services/mapStrategyApi'
+import type { SidedMapTextAnnotation } from '../../../services/mapStrategyApi'
+import { sideStyles } from '../labels'
 
 interface TextAnnotationPinProps {
-  annotation: MapTextAnnotation
+  annotation: SidedMapTextAnnotation
   /** Radar-relative coordinates to render at — the live drag position, which may differ from the saved one. */
   x: number
   y: number
@@ -36,6 +37,13 @@ export const TextAnnotationPin = memo(function TextAnnotationPin({
         } ${isDragging ? 'opacity-70' : ''}`}
       >
         {annotation.text}
+      </span>
+
+      <span
+        title={`Notatka strony ${annotation.side}`}
+        className={`pointer-events-none absolute -top-2 left-0 text-[8px] font-bold opacity-80 ${sideStyles[annotation.side].text}`}
+      >
+        {annotation.side}
       </span>
 
       {canEdit && !isDragging && (

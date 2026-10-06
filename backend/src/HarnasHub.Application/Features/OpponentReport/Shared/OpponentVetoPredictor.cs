@@ -7,8 +7,9 @@ namespace HarnasHub.Application.Features.OpponentReport.Shared;
 public record VetoPrediction(MapName Map, string Prediction, string Reason, double Preference);
 
 /// <summary>Guesses the opponent's veto from what they play — FACEIT doesn't expose ban order, only the map that was played.
-/// Team games decide; the players' solo comfort (<see cref="MapComfort"/>) is blended in with <see cref="IndividualSignal"/>
-/// shrinkage, so it matters with few team games and fades away with many.</summary>
+/// Trust order: recent team games (recency-weighted) › the active lineup's recent solo games (<see cref="IndividualSignal"/>
+/// shrinkage) › their lifetime numbers (<see cref="LifetimeMapCalculator"/>, lowest weight). "They don't play X → ban" needs
+/// <see cref="SampleThresholds.MinTeamGamesForAvoidance"/> team games and must not contradict the individual data.</summary>
 public static class OpponentVetoPredictor
 {
 	#region Public Fields
@@ -30,11 +31,12 @@ public static class OpponentVetoPredictor
 	#region Public Methods
 
 	/// <summary>A prediction for every map in <paramref name="theirs"/>, given <paramref name="totalGames"/> team games overall and
-	/// optionally the players' solo <paramref name="comfort"/> per map.</summary>
+	/// optionally the active lineup's solo <paramref name="comfort"/> and <paramref name="lifetime"/> numbers per map.</summary>
 	public static Dictionary<MapName, VetoPrediction> Predict(
 		IReadOnlyDictionary<MapName, MapMetrics> theirs,
 		int totalGames,
-		IReadOnlyDictionary<MapName, MapComfort>? comfort = null)
+		IReadOnlyDictionary<MapName, MapComfort>? comfort = null,
+		IReadOnlyDictionary<MapName, MapLifetime>? lifetime = null)
 	{
 		var usable = theirs.Keys
 			.Select(map => comfort?.GetValueOrDefault(map))
@@ -57,66 +59,122 @@ public static class OpponentVetoPredictor
 		return theirs.Values.ToDictionary(m => m.Map, m =>
 		{
 			var solo = usable.GetValueOrDefault(m.Map);
-			var preference = IndividualSignal.BlendPreference(Preference(m), m.Games, totalGames, theirs.Count, solo);
+			var life = lifetime?.GetValueOrDefault(m.Map);
+			var evidence = Math.Max(m.Games, theirs.Count == 0 ? 0 : (double)totalGames / theirs.Count);
+			var preference = LifetimeMapCalculator.Blend(
+				IndividualSignal.BlendPreference(Preference(m), m.Games, totalGames, theirs.Count, solo),
+				evidence + (solo is null ? 0 : IndividualSignal.PriorGames),
+				life);
+			var context = new MapContext(m, totalGames, solo, life, preference);
 
 			return totalGames < MinGamesForPrediction
-				? FewTeamGames(m, totalGames, solo, soloPicks.Contains(m.Map), preference)
-				: FromTeamGames(m, totalGames, solo, likelyPicks.Contains(m.Map), preference);
+				? FewTeamGames(context, soloPicks.Contains(m.Map))
+				: FromTeamGames(context, likelyPicks.Contains(m.Map));
 		});
 	}
 
-	/// <summary>How much they like a map from team games: share of their games plus smoothed win rate; 0 for a map they never play.</summary>
+	/// <summary>How much they like a map from team games: recency-weighted share plus smoothed win rate; 0 for a map they never play.</summary>
 	public static double Preference(MapMetrics metrics) =>
-		metrics.Games == 0 ? 0 : metrics.Share + metrics.SmoothedWinRate;
+		metrics.Games == 0 ? 0 : metrics.DecisionShare + metrics.SmoothedWinRate;
+
+	/// <summary>Whether the individual data says they do play the map — regulars solo or a lot of lifetime matches — so "they
+	/// don't play it" from team games alone would be a contradiction.</summary>
+	public static bool PlayedIndividually(MapComfort? solo, MapLifetime? lifetime) =>
+		(solo is not null && !solo.IsAvoided && solo.RegularPlayers >= 2) || lifetime is { IsExperienced: true };
 
 	#endregion
 
 	#region Private Methods
 
-	/// <summary>Enough team games: the original rules, plus a ban upgrade for a barely played map that most players avoid solo too.</summary>
-	private static VetoPrediction FromTeamGames(MapMetrics m, int totalGames, MapComfort? solo, bool likelyPick, double preference)
+	/// <summary>Everything one map's prediction is built from.</summary>
+	private sealed record MapContext(MapMetrics Metrics, int TotalGames, MapComfort? Solo, MapLifetime? Lifetime, double Preference);
+
+	/// <summary>Enough team games for picks; "they don't play it" still needs the larger sample and no individual contradiction.</summary>
+	private static VetoPrediction FromTeamGames(MapContext c, bool likelyPick)
 	{
-		var note = SoloNote(solo);
+		var (m, total, solo, life) = (c.Metrics, c.TotalGames, c.Solo, c.Lifetime);
+		var note = SoloNote(solo) + LifetimeNote(life);
 
 		if (m.Games <= RarelyPlayedGames)
 		{
-			return new VetoPrediction(m.Map, "Ban", $"Prawie jej nie grają ({m.Games} z {totalGames} meczów) — prawdopodobny ban{note}", preference);
+			if (PlayedIndividually(solo, life))
+			{
+				return new VetoPrediction(m.Map, "Unknown", $"Rzadko grają drużynowo ({m.Games} z {total}), ale indywidualnie dużo ({IndividualEvidence(solo, life)}) → niepewne", c.Preference);
+			}
+
+			if (total >= SampleThresholds.MinTeamGamesForAvoidance)
+			{
+				return new VetoPrediction(m.Map, "Ban", $"Prawie jej nie grają ({m.Games} z {total} meczów) — prawdopodobny ban{note}", c.Preference);
+			}
+
+			if (solo is { IsAvoided: true })
+			{
+				return new VetoPrediction(m.Map, "Ban", $"Rzadko grają ją drużynowo ({m.Games} z {total} meczów), a {solo.AvoidingPlayers} z {solo.RatedPlayers} graczy unika jej także solo — możliwy ban", c.Preference);
+			}
+
+			return new VetoPrediction(m.Map, "Unknown", $"Rzadko grają drużynowo ({m.Games} z {total}) — za mało meczów (< {SampleThresholds.MinTeamGamesForAvoidance}), by mówić o banie{note}", c.Preference);
 		}
 
 		if (likelyPick)
 		{
-			return new VetoPrediction(m.Map, "Pick", $"Jedna z ich ulubionych map ({Percent(m.Share)}% meczów, {Percent(m.WinRate ?? 0)}% wygranych) — prawdopodobny pick{note}", preference);
+			return new VetoPrediction(m.Map, "Pick", $"Jedna z ich ulubionych map ({Percent(m.Share)}% meczów{WinRateNote(m)}) — prawdopodobny pick{note}", c.Preference);
 		}
 
-		if (solo is { IsAvoided: true } && m.Games <= SoloBanMaxTeamGames)
+		if (solo is { IsAvoided: true } && m.Games <= SoloBanMaxTeamGames && life is not { IsExperienced: true })
 		{
-			return new VetoPrediction(m.Map, "Ban", $"Rzadko grają ją drużynowo ({m.Games} z {totalGames} meczów), a {solo.AvoidingPlayers} z {solo.RatedPlayers} graczy unika jej także solo — prawdopodobny ban", preference);
+			return new VetoPrediction(m.Map, "Ban", $"Rzadko grają ją drużynowo ({m.Games} z {total} meczów), a {solo.AvoidingPlayers} z {solo.RatedPlayers} graczy unika jej także solo — prawdopodobny ban", c.Preference);
 		}
 
-		return new VetoPrediction(m.Map, "Neutral", $"Grają ją okazjonalnie ({m.Games} meczów, {Percent(m.WinRate ?? 0)}% wygranych){note}", preference);
+		return new VetoPrediction(m.Map, "Neutral", $"Grają ją okazjonalnie ({m.Games} {VetoNotes.MatchNoun(m.Games)}{WinRateNote(m)}){note}", c.Preference);
 	}
 
 	/// <summary>Too few team games: a call only from solo comfort (avoided → ban, top comfortable → pick), otherwise unknown.</summary>
-	private static VetoPrediction FewTeamGames(MapMetrics m, int totalGames, MapComfort? solo, bool soloPick, double preference)
+	private static VetoPrediction FewTeamGames(MapContext c, bool soloPick)
 	{
-		var prefix = $"Mało meczów drużynowych ({totalGames}) — wg meczów solo";
+		var (m, total, solo, life) = (c.Metrics, c.TotalGames, c.Solo, c.Lifetime);
+		var prefix = $"Mało meczów drużynowych ({total}) — wg meczów solo";
 
-		if (solo is { IsAvoided: true } && m.Games <= RarelyPlayedGames)
+		if (solo is { IsAvoided: true } && m.Games <= RarelyPlayedGames && life is not { IsExperienced: true })
 		{
-			return new VetoPrediction(m.Map, "Ban", $"{prefix}: {solo.AvoidingPlayers} z {solo.RatedPlayers} graczy jej unika — możliwy ban", preference);
+			return new VetoPrediction(m.Map, "Ban", $"{prefix}: {solo.AvoidingPlayers} z {solo.RatedPlayers} graczy jej unika — możliwy ban", c.Preference);
 		}
 
 		if (solo is not null && soloPick)
 		{
-			return new VetoPrediction(m.Map, "Pick", $"{prefix}: {solo.RegularPlayers} z {solo.RatedPlayers} graczy gra ją regularnie ({Percent(solo.AvgWinRate ?? 0)}% wygranych) — możliwy pick", preference);
+			return new VetoPrediction(m.Map, "Pick", $"{prefix}: {solo.RegularPlayers} z {solo.RatedPlayers} graczy gra ją regularnie ({Percent(solo.AvgWinRate ?? 0)}% wygranych) — możliwy pick", c.Preference);
 		}
 
-		return new VetoPrediction(m.Map, "Unknown", $"Za mało meczów drużynowych ({totalGames}), by przewidzieć ich veto{SoloNote(solo)}", preference);
+		return new VetoPrediction(m.Map, "Unknown", $"Za mało meczów drużynowych ({total}), by przewidzieć ich veto{SoloNote(solo)}{LifetimeNote(life)}", c.Preference);
+	}
+
+	/// <summary>", 58% wygranych" from <see cref="SampleThresholds.MinGamesForWinRate"/> games on the map, otherwise nothing.</summary>
+	private static string WinRateNote(MapMetrics m) =>
+		SampleThresholds.HasWinRateSample(m.Games) ? $", {Percent(m.WinRate ?? 0)}% wygranych" : "";
+
+	/// <summary>What the individual data says, for the "niepewne" reason.</summary>
+	private static string IndividualEvidence(MapComfort? solo, MapLifetime? life)
+	{
+		var parts = new List<string>();
+		if (life is { IsExperienced: true })
+		{
+			parts.Add($"{life.Matches} meczów lifetime składu");
+		}
+
+		if (solo is not null && !solo.IsAvoided && solo.RegularPlayers >= 2)
+		{
+			parts.Add($"{solo.RegularPlayers} z {solo.RatedPlayers} graczy gra ją regularnie solo");
+		}
+
+		return string.Join(", ", parts);
 	}
 
 	/// <summary>A short " · solo: …" suffix describing the comfort; empty without usable comfort.</summary>
 	private static string SoloNote(MapComfort? solo) =>
 		solo is null ? "" : $" · solo: {solo.RegularPlayers}/{solo.RatedPlayers} grają regularnie, {solo.AvoidingPlayers} unika";
+
+	/// <summary>A short " · lifetime: …" suffix; empty without lifetime matches.</summary>
+	private static string LifetimeNote(MapLifetime? life) =>
+		life is not { Matches: > 0 } ? "" : $" · lifetime: {life.Matches} meczów składu";
 
 	/// <summary>A fraction as a whole percentage.</summary>
 	private static int Percent(double fraction) => (int)Math.Round(fraction * 100);

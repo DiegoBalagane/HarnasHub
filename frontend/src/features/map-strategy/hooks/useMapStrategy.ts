@@ -1,18 +1,31 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQueries, useQueryClient } from '@tanstack/react-query'
 import {
   mapStrategyApi,
   type AddTextAnnotationPayload,
-  type MapSide,
   type SetPlayerPositionPayload,
+  type SidedMapPosition,
+  type SidedMapTextAnnotation,
   type UpdateTextAnnotationPayload,
 } from '../../../services/mapStrategyApi'
 import type { MapName } from '../../../services/nadesApi'
+import { mapSides } from '../labels'
 
-/** Fetches every player's starting spot for one map and side. */
-export function useMapPositions(mapName: MapName, side: MapSide) {
-  return useQuery({
-    queryKey: ['map-strategy', mapName, side],
-    queryFn: () => mapStrategyApi.getPositions(mapName, side),
+/** Fetches every player's starting spot for one map, both sides merged, each tagged with its side. */
+export function useMapPositions(mapName: MapName) {
+  return useQueries({
+    queries: mapSides.map((side) => ({
+      queryKey: ['map-strategy', mapName, side],
+      queryFn: () => mapStrategyApi.getPositions(mapName, side),
+    })),
+    combine: (results) => ({
+      data: results.every((result) => result.data)
+        ? results.flatMap((result, index): SidedMapPosition[] =>
+            (result.data ?? []).map((position) => ({ ...position, side: mapSides[index] })),
+          )
+        : undefined,
+      isLoading: results.some((result) => result.isLoading),
+      isError: results.some((result) => result.isError),
+    }),
   })
 }
 
@@ -40,11 +53,17 @@ export function useRemovePlayerPosition() {
   })
 }
 
-/** Fetches every free-floating text annotation for one map and side. */
-export function useMapTextAnnotations(mapName: MapName, side: MapSide) {
-  return useQuery({
-    queryKey: ['map-strategy', 'text-annotations', mapName, side],
-    queryFn: () => mapStrategyApi.getTextAnnotations(mapName, side),
+/** Fetches every free-floating text annotation for one map, both sides merged, each tagged with its side. */
+export function useMapTextAnnotations(mapName: MapName) {
+  return useQueries({
+    queries: mapSides.map((side) => ({
+      queryKey: ['map-strategy', 'text-annotations', mapName, side],
+      queryFn: () => mapStrategyApi.getTextAnnotations(mapName, side),
+    })),
+    combine: (results) =>
+      results.flatMap((result, index): SidedMapTextAnnotation[] =>
+        (result.data ?? []).map((annotation) => ({ ...annotation, side: mapSides[index] })),
+      ),
   })
 }
 

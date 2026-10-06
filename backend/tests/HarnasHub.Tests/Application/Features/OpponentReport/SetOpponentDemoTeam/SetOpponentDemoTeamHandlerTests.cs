@@ -74,7 +74,7 @@ public class SetOpponentDemoTeamHandlerTests
 	#region Private Methods
 
 	private static SetOpponentDemoTeamHandler Handler(TestApplicationDbContext dbContext, TestFileStorage storage) =>
-		new(dbContext, storage, NullLogger<SetOpponentDemoTeamHandler>.Instance);
+		new(dbContext, storage, TestTeamNotifications.Create(dbContext, storage), NullLogger<SetOpponentDemoTeamHandler>.Instance);
 
 	#endregion
 }

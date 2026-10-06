@@ -10,8 +10,9 @@ export function App() {
     <QueryProvider>
       <SessionRefresh />
       <RealtimeSync />
-      <PwaUpdatePrompt />
       <BrowserRouter>
+        {/* Inside the router so a waiting update can be applied on the next navigation. */}
+        <PwaUpdatePrompt />
         <AppRouter />
       </BrowserRouter>
     </QueryProvider>

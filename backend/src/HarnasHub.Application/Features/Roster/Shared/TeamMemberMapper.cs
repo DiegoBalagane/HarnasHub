@@ -20,7 +20,10 @@ public static class TeamMemberMapper
 		user.PinMark,
 		user.InGameNickname,
 		user.SteamId64,
-		secondaryTeamRoles?.ToList() ?? []);
+		secondaryTeamRoles?.ToList() ?? [],
+		user.ShowInStats,
+		user.ShowInCalendar,
+		user.FaceitNickname);
 
 	#endregion
 }

@@ -65,21 +65,44 @@ public static class OpponentReportSnapshots
 		}
 	}
 
-	/// <summary>Feeds each map's FACEIT advantage from <paramref name="report"/> into the matching veto input.</summary>
-	public static List<MapVetoInput> ApplyFaceitAdvantage(IEnumerable<MapVetoInput> inputs, OpponentReportDto report)
+	/// <summary>Feeds each map's FACEIT numbers from <paramref name="report"/> (their team games, our FACEIT team games, our solo
+	/// prior) into the matching veto input.</summary>
+	public static List<MapVetoInput> ApplyFaceit(IEnumerable<MapVetoInput> inputs, OpponentReportDto report)
 	{
 		var rows = report.Maps.ToDictionary(m => m.MapName, StringComparer.OrdinalIgnoreCase);
 		return inputs
 			.Select(input => rows.TryGetValue(input.MapName.ToString(), out var row)
-				? WithFaceit(input, row.TheirGames, row.OurGames, row.Advantage / 100)
+				? WithFaceit(
+					input,
+					row.TheirGames,
+					row.TheirWins,
+					row.TheirSmoothedWinRate is { } rate ? rate / 100 : MapAdvantage.SmoothedWinRate(row.TheirWins, row.TheirGames),
+					row.OurFaceitWins.HasValue ? row.OurFaceitGames : 0,
+					row.OurFaceitWins ?? 0,
+					row.OurSoloPrior)
 				: input)
 			.ToList();
 	}
 
-	/// <summary>Adds the advantage to a veto input — only when the opponent has team games on the map, since an edge
-	/// "over them" with no data about them is just our own record again.</summary>
-	public static MapVetoInput WithFaceit(MapVetoInput input, int theirGames, int ourGames, double advantage) =>
-		theirGames == 0 ? input : input with { FaceitAdvantage = advantage, FaceitMinGames = Math.Min(theirGames, ourGames) };
+	/// <summary>Adds the FACEIT numbers to a veto input; <paramref name="theirWinRate"/> is their recency-weighted smoothed win rate
+	/// (0–1). Older snapshots without our FACEIT wins pass 0 games, so only the internal record counts.</summary>
+	public static MapVetoInput WithFaceit(
+		MapVetoInput input,
+		int theirGames,
+		int theirWins,
+		double theirWinRate,
+		int ourFaceitGames,
+		int ourFaceitWins,
+		double? ourSoloPrior) =>
+		input with
+		{
+			TheirGames = theirGames,
+			TheirWins = theirWins,
+			TheirWinRate = theirGames == 0 ? null : theirWinRate,
+			OurFaceitGames = ourFaceitGames,
+			OurFaceitWins = ourFaceitWins,
+			OurSoloPrior = ourSoloPrior
+		};
 
 	#endregion
 }

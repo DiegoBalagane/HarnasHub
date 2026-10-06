@@ -17,6 +17,7 @@ import {
 } from '../weekDates'
 import { DayAvailabilityEditor } from './DayAvailabilityEditor'
 import { DayStatusBadge } from './DayStatusBadge'
+import { AvailabilityLegend } from './AvailabilityLegend'
 import { NoteHint } from './NoteHint'
 
 const dayNumberFormatter = new Intl.DateTimeFormat('pl-PL', { day: '2-digit', month: '2-digit' })
@@ -153,7 +154,7 @@ export function WeeklyCalendar() {
 
       {!isLoading && !isError && members.length > 0 && (
         <div className="overflow-x-auto overflow-y-visible">
-          <div className="grid min-w-[900px] grid-cols-[minmax(150px,180px)_repeat(7,minmax(0,1fr))] gap-1">
+          <div className="grid min-w-[680px] grid-cols-[minmax(96px,140px)_repeat(7,minmax(0,1fr))] gap-1">
             <div />
             {weekDates.map((date) => {
               const summary = computeDaySummary(members, date)
@@ -162,7 +163,7 @@ export function WeeklyCalendar() {
                 <div
                   key={date}
                   className={`rounded-md border px-2 py-1 text-center ${
-                    date === todayIso ? 'border-info-500' : 'border-neutral-800'
+                    date === todayIso ? 'border-primary-500 bg-primary-500/10' : 'border-neutral-800'
                   }`}
                 >
                   <p className="text-xs font-medium text-neutral-200">{weekdayLabelFor(date)}</p>
@@ -223,17 +224,22 @@ export function WeeklyCalendar() {
                   )}
 
                   <div
-                    className={`flex items-center gap-2 truncate rounded-l-md px-2 py-1 text-sm ${rowHighlight} ${sectionDivider}`}
+                    className={`sticky left-0 z-10 flex items-center gap-2 truncate rounded-l-md px-2 py-1 text-sm ${isMyRow ? '' : 'bg-surface-page'} ${rowHighlight} ${sectionDivider}`}
                   >
                     <span className={`truncate ${isMyRow ? 'font-semibold text-white' : 'text-neutral-200'}`}>
                       {member.inGameNickname ?? member.displayName}
                     </span>
                     {isMyRow && <span className="text-[10px] text-primary-400">(Ty)</span>}
+                    {member.hiddenFromCalendar && (
+                      <span className="text-[10px] text-neutral-500" title="Manager ukrył Cię w kalendarzu — widzisz tylko Ty">
+                        (ukryty)
+                      </span>
+                    )}
                   </div>
                   {weekDates.map((date, index) => {
                     const entry = entryFor(member, date)
                     const isLastColumn = index === weekDates.length - 1
-                    const roundedEnd = isLastColumn ? 'rounded-r-md' : ''
+                    const roundedEnd = `${isLastColumn ? 'rounded-r-md' : ''} ${date === todayIso ? 'bg-primary-500/10' : ''}`
 
                     if (!entry) {
                       return <div key={date} className={`${rowHighlight} ${roundedEnd} ${sectionDivider}`} />
@@ -265,7 +271,9 @@ export function WeeklyCalendar() {
 
             <div className="mt-2 border-t border-neutral-800 px-2 pt-2 text-xs text-neutral-500">Nie gra</div>
             {weekDates.map((date) => {
-              const absentMembers = members.filter((member) => entryFor(member, date)?.status === 'Off')
+              const absentMembers = members.filter(
+                (member) => !member.hiddenFromCalendar && entryFor(member, date)?.status === 'Off',
+              )
 
               return (
                 <div key={date} className="mt-2 flex flex-wrap gap-1 border-t border-neutral-800 pt-2">
@@ -286,6 +294,8 @@ export function WeeklyCalendar() {
           </div>
         </div>
       )}
+
+      {!isLoading && !isError && members.length > 0 && <AvailabilityLegend />}
 
       {editingDate !== null && myRow && (
         <DayAvailabilityEditor

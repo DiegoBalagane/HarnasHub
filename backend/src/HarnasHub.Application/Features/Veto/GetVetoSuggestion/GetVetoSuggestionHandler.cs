@@ -8,7 +8,7 @@ using MediatR;
 namespace HarnasHub.Application.Features.Veto.GetVetoSuggestion;
 
 /// <summary>Handles <see cref="GetVetoSuggestionQuery"/> by gathering the per-map inputs and handing them to <see cref="VetoScoring"/>;
-/// when an opponent report snapshot exists, its FACEIT advantage per map is fed in as an extra input.</summary>
+/// when an opponent report snapshot exists, its per-map FACEIT numbers (their team games, our FACEIT games, our solo prior) are fed in.</summary>
 public class GetVetoSuggestionHandler(IApplicationDbContext dbContext)
 	: IRequestHandler<GetVetoSuggestionQuery, ErrorOr<VetoSuggestionDto>>
 {
@@ -20,7 +20,7 @@ public class GetVetoSuggestionHandler(IApplicationDbContext dbContext)
 
 		var data = await VetoInputLoader.LoadAsync(dbContext, key, cancellationToken);
 		var report = await OpponentReportSnapshots.LoadAsync(dbContext, key, cancellationToken);
-		var inputs = report is null ? data.Inputs : OpponentReportSnapshots.ApplyFaceitAdvantage(data.Inputs, report);
+		var inputs = report is null ? data.Inputs : OpponentReportSnapshots.ApplyFaceit(data.Inputs, report);
 
 		return new VetoSuggestionDto(
 			request.OpponentName.Trim(),

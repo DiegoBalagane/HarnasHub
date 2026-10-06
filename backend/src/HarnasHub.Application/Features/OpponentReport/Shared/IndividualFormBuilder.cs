@@ -13,17 +13,19 @@ public static class IndividualFormBuilder
 {
 	#region Public Methods
 
-	/// <summary>Player form and map comfort for their linked roster and our linked players over the cached window.</summary>
-	public static IndividualFormResult Build(OpponentReportInput input)
+	/// <summary>Player form and map comfort for their active lineup (<paramref name="theirActive"/>; the full linked roster still
+	/// decides team vs solo) and our linked players over the cached window; comfort rates are recency-weighted.</summary>
+	public static IndividualFormResult Build(OpponentReportInput input, IReadOnlySet<string> theirActive)
 	{
-		var theirLines = IndividualGameLines.Build(input.Matches, input.TheirStats, input.TheirRoster);
+		var theirLines = IndividualGameLines.Build(input.Matches, input.TheirStats, input.TheirRoster, theirActive);
 		var ourLines = IndividualGameLines.Build(input.Matches, input.OurStats ?? [], input.OurRoster);
-		var theirComfort = MapComfortCalculator.Calculate(theirLines);
-		var ourComfort = MapComfortCalculator.Calculate(ourLines);
+		var theirComfort = MapComfortCalculator.Calculate(theirLines, input.GeneratedAtUtc);
+		var ourComfort = MapComfortCalculator.Calculate(ourLines, input.GeneratedAtUtc);
+		var theirProfiles = (input.Link?.Players ?? []).Where(p => theirActive.Contains(p.PlayerId)).ToList();
 
 		var form = new IndividualFormDto(
 			new TeamIndividualFormDto(
-				PlayerFormCalculator.Calculate(theirLines, input.Link?.Players ?? []),
+				PlayerFormCalculator.Calculate(theirLines, theirProfiles),
 				MapComfortCalculator.ToDtos(theirComfort)),
 			new TeamIndividualFormDto(
 				PlayerFormCalculator.Calculate(ourLines, input.OurPlayers ?? []),

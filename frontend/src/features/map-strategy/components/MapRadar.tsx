@@ -1,11 +1,12 @@
-import { useRef, useState, type PointerEvent } from 'react'
-import type { MapPosition, MapSide, MapTextAnnotation } from '../../../services/mapStrategyApi'
+import { useMemo, useRef, useState, type PointerEvent } from 'react'
+import type { SidedMapPosition, SidedMapTextAnnotation } from '../../../services/mapStrategyApi'
 import type { MapName } from '../../../services/nadesApi'
 import { useAnnotationDrag } from '../hooks/useAnnotationDrag'
 import { useMapZoom } from '../hooks/useMapZoom'
 import { usePinDrag } from '../hooks/usePinDrag'
 import { useUndoableNoteDelete } from '../hooks/useUndoableNoteDelete'
 import { useRemovePlayerPosition, useRemoveTextAnnotation, useSetPlayerPosition, useUpdateTextAnnotation } from '../hooks/useMapStrategy'
+import { overlapOffsets } from '../pinLayout'
 import { PlayerPin } from './PlayerPin'
 import { PositionNoteEditor } from './PositionNoteEditor'
 import { TextAnnotationEditor } from './TextAnnotationEditor'
@@ -13,16 +14,16 @@ import { TextAnnotationPin } from './TextAnnotationPin'
 
 interface MapRadarProps {
   mapName: MapName
-  side: MapSide
-  positions: MapPosition[]
-  annotations: MapTextAnnotation[]
+  /** Already filtered to the visible sides; each pin carries its own side. */
+  positions: SidedMapPosition[]
+  annotations: SidedMapTextAnnotation[]
   /** Only Coach/Manager may drag pins/annotations around, edit annotations, or delete either. */
   canEdit: boolean
 }
 
 /** Radar image with the team's pins and text annotations on top; Coach/Manager can drag either, zoom/pan the image
  * with the scroll wheel, and edit or delete annotations. A drag's new spot is saved on pointer-up. */
-export function MapRadar({ mapName, side, positions, annotations, canEdit }: MapRadarProps) {
+export function MapRadar({ mapName, positions, annotations, canEdit }: MapRadarProps) {
   const viewportRef = useRef<HTMLDivElement>(null)
   const contentRef = useRef<HTMLDivElement>(null)
   const zoom = useMapZoom(viewportRef)
@@ -33,16 +34,17 @@ export function MapRadar({ mapName, side, positions, annotations, canEdit }: Map
   const updateTextAnnotation = useUpdateTextAnnotation()
   const removeTextAnnotation = useRemoveTextAnnotation()
 
-  const pin = usePinDrag(positions, mapName, side, contentRef, (id) =>
+  const pin = usePinDrag(positions, mapName, contentRef, (id) =>
     setEditingNoteId((current) => (current === id ? null : id)),
   )
   const annotation = useAnnotationDrag(annotations, contentRef, (id) =>
     setEditingAnnotationId((current) => (current === id ? null : id)),
   )
   const { deletedNote, deleteNote, undoDelete } = useUndoableNoteDelete((position, note) =>
-    setPlayerPosition.mutate({ mapName, side, userId: position.userId, label: position.label, x: position.x, y: position.y, note }),
+    setPlayerPosition.mutate({ mapName, side: position.side, userId: position.userId, label: position.label, x: position.x, y: position.y, note }),
   )
 
+  const offsets = useMemo(() => overlapOffsets(positions), [positions])
   const editingPosition = positions.find((position) => position.id === editingNoteId) ?? null
   const editingAnnotation = annotations.find((candidate) => candidate.id === editingAnnotationId) ?? null
 
@@ -89,6 +91,7 @@ export function MapRadar({ mapName, side, positions, annotations, canEdit }: Map
               y={pin.draft?.positionId === position.id ? pin.draft.y : position.y}
               canEdit={canEdit}
               isDragging={pin.draft?.positionId === position.id}
+              offsetPx={offsets.get(position.id)}
               onDragStart={pin.dragStart}
               onRemove={removePlayerPosition.mutate}
             />
@@ -126,7 +129,7 @@ export function MapRadar({ mapName, side, positions, annotations, canEdit }: Map
           onSave={(note) =>
             setPlayerPosition.mutate({
               mapName,
-              side,
+              side: editingPosition.side,
               userId: editingPosition.userId,
               label: editingPosition.label,
               x: editingPosition.x,

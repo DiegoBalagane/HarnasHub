@@ -61,7 +61,8 @@ public class GetOpponentProfileHandler(IApplicationDbContext dbContext)
 			BuildMapRecords(matches),
 			matches,
 			notes,
-			upcomingEvents);
+			upcomingEvents,
+			await dbContext.HiddenOpponents.AnyAsync(h => h.OpponentKey == key, cancellationToken));
 	}
 
 	#endregion

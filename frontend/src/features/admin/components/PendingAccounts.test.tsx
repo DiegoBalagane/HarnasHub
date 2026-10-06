@@ -17,6 +17,9 @@ const guest: TeamMember = {
   pinMark: null,
   inGameNickname: null,
   steamId64: null,
+  showInStats: true,
+  showInCalendar: true,
+  faceitNickname: null,
   secondaryTeamRoles: [],
 }
 

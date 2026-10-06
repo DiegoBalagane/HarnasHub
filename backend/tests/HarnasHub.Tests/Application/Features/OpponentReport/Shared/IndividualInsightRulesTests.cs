@@ -21,6 +21,24 @@ public class IndividualInsightRulesTests
 	}
 
 	[Fact]
+	public void SoloAvoidance_should_only_say_possible_ban_with_a_small_team_sample()
+	{
+		var input = Input([Row("Ancient", 0, "Ban")], theirComfort: [Comfort("Ancient", 5, 0, 4)], teamGames: 12);
+
+		var insight = Assert.Single(IndividualInsightRules.SoloAvoidance(input));
+
+		Assert.Equal("4 z 5 graczy unika Ancient także w meczach solo → możliwy ban", insight.Text);
+	}
+
+	[Fact]
+	public void SoloAvoidance_should_stay_silent_when_the_lineup_plays_the_map_a_lot_lifetime()
+	{
+		var ancient = Row("Ancient", 0, "Ban") with { TheirLifetime = new MapLifetimeDto(5, 113, 52, 1.12, 22.6, true) };
+
+		Assert.Empty(IndividualInsightRules.SoloAvoidance(Input([ancient], theirComfort: [Comfort("Ancient", 5, 0, 4)])));
+	}
+
+	[Fact]
 	public void SoloAvoidance_should_stay_silent_when_they_play_the_map_as_a_team()
 	{
 		Assert.Empty(IndividualInsightRules.SoloAvoidance(Input([Row("Ancient", 6)], theirComfort: [Comfort("Ancient", 5, 0, 4)])));
@@ -90,8 +108,9 @@ public class IndividualInsightRulesTests
 		List<MapComparisonDto> maps,
 		List<MapComfortDto>? theirComfort = null,
 		List<PlayerFormDto>? theirPlayers = null,
-		List<PlayerFormDto>? ourPlayers = null) =>
-		new(20, maps, [], new OpponentFormDto([], null, []),
+		List<PlayerFormDto>? ourPlayers = null,
+		int teamGames = 20) =>
+		new(teamGames, maps, [], new OpponentFormDto([], null, []),
 			new IndividualFormDto(new TeamIndividualFormDto(theirPlayers ?? [], theirComfort ?? []), new TeamIndividualFormDto(ourPlayers ?? [], [])));
 
 	private static MapComparisonDto Row(string map, int theirGames, string prediction = "Neutral") =>

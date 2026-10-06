@@ -17,9 +17,9 @@ public class OpponentNotesEndpoints : IEndpoint
 	{
 		var group = app.MapGroup("/api/opponents").WithTags("OpponentNotes").RequireAuthorization(AuthorizationPolicies.TeamMember);
 
-		group.MapGet("/", async (ISender sender, CancellationToken cancellationToken) =>
+		group.MapGet("/", async (bool? includeHidden, ISender sender, CancellationToken cancellationToken) =>
 		{
-			var result = await sender.Send(new GetOpponentsQuery(), cancellationToken);
+			var result = await sender.Send(new GetOpponentsQuery(includeHidden ?? false), cancellationToken);
 			return result.Match(success => Results.Ok(success), errors => errors.ToProblemResult());
 		});
 

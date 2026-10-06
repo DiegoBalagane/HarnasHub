@@ -8,7 +8,9 @@ using HarnasHub.Application.Features.Roster.UpdateOwnSteamId64;
 using HarnasHub.Application.Features.Roster.SetIsCoach;
 using HarnasHub.Application.Features.Roster.SetPinColor;
 using HarnasHub.Application.Features.Roster.SetSecondaryTeamRoles;
+using HarnasHub.Application.Features.Roster.SetFaceitNickname;
 using HarnasHub.Application.Features.Roster.SetSteamId64;
+using HarnasHub.Application.Features.Roster.SetVisibility;
 using HarnasHub.Application.Features.Roster.UpdateAccessLevel;
 using HarnasHub.Application.Features.Roster.UpdateRosterSlot;
 using HarnasHub.Application.Features.Roster.UpdateTeamRole;
@@ -163,6 +165,32 @@ public class RosterEndpoints : IEndpoint
 				errors => errors.ToProblemResult());
 		}).RequireAuthorization(policy => policy.RequireRole("Manager"));
 
+		group.MapPatch("/{userId:guid}/visibility", async (
+			Guid userId,
+			SetVisibilityRequest request,
+			ISender sender,
+			CancellationToken cancellationToken) =>
+		{
+			var result = await sender.Send(new SetVisibilityCommand(userId, request.ShowInStats, request.ShowInCalendar), cancellationToken);
+
+			return result.Match(
+				success => Results.Ok(success),
+				errors => errors.ToProblemResult());
+		}).RequireAuthorization(policy => policy.RequireRole("Manager"));
+
+		group.MapPatch("/{userId:guid}/faceit-nickname", async (
+			Guid userId,
+			SetFaceitNicknameRequest request,
+			ISender sender,
+			CancellationToken cancellationToken) =>
+		{
+			var result = await sender.Send(new SetFaceitNicknameCommand(userId, request.Nickname), cancellationToken);
+
+			return result.Match(
+				success => Results.Ok(success),
+				errors => errors.ToProblemResult());
+		}).RequireAuthorization(policy => policy.RequireRole("Manager"));
+
 		group.MapDelete("/{userId:guid}", async (Guid userId, ISender sender, CancellationToken cancellationToken) =>
 		{
 			var result = await sender.Send(new DeleteTeamMemberCommand(userId), cancellationToken);
@@ -221,3 +249,9 @@ public record SetSteamId64Request(string? SteamId64);
 
 /// <summary>Request body for PATCH /api/roster/{userId}/secondary-team-roles; replaces the full set.</summary>
 public record SetSecondaryTeamRolesRequest(List<TeamRole> TeamRoles);
+
+/// <summary>Request body for PATCH /api/roster/{userId}/visibility; both flags are always sent.</summary>
+public record SetVisibilityRequest(bool ShowInStats, bool ShowInCalendar);
+
+/// <summary>Request body for PATCH /api/roster/{userId}/faceit-nickname; a null value clears it.</summary>
+public record SetFaceitNicknameRequest(string? Nickname);

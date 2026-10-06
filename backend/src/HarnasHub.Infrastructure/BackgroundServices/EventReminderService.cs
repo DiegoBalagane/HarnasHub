@@ -19,7 +19,6 @@ namespace HarnasHub.Infrastructure.BackgroundServices;
 public class EventReminderService(
 	IServiceScopeFactory scopeFactory,
 	IOptions<ReminderSettings> settings,
-	IOptions<FrontendSettings> frontend,
 	ILogger<EventReminderService> logger) : BackgroundService
 {
 	#region Protected Methods
@@ -64,10 +63,10 @@ public class EventReminderService(
 		foreach (var calendarEvent in dueEvents)
 		{
 			var minutesUntil = (int)(calendarEvent.StartsAtUtc - now).TotalMinutes;
-			var location = string.IsNullOrWhiteSpace(calendarEvent.Location) ? "" : $" @ {calendarEvent.Location}";
 
 			await discordNotifier.SendAsync(
-				$"⏰ **{calendarEvent.Title}** zaczyna się za {minutesUntil} min{location}",
+				MatchEventFormatter.ChannelFor(calendarEvent.Type),
+				MatchEventFormatter.Reminder(calendarEvent, minutesUntil),
 				cancellationToken);
 
 			calendarEvent.ReminderSentAtUtc = now;
@@ -117,10 +116,9 @@ public class EventReminderService(
 				continue;
 			}
 
-			var baseUrl = frontend.Value.BaseUrl.Trim().TrimEnd('/');
-			var url = baseUrl.Length == 0 ? null : $"{baseUrl}/opponents/report?name={Uri.EscapeDataString(opponent)}";
+			var url = scope.ServiceProvider.GetRequiredService<IFrontendLinks>().OpponentReport(opponent);
 
-			await discordNotifier.SendAsync(MatchBriefingFormatter.Format(calendarEvent.Title, opponent, report, url), cancellationToken);
+			await discordNotifier.SendAsync(DiscordChannel.OpponentScouting, MatchBriefingFormatter.Format(calendarEvent.Title, opponent, report, url), cancellationToken);
 			calendarEvent.BriefingSentAtUtc = now;
 			sent = true;
 		}

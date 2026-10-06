@@ -53,13 +53,19 @@ public class FaceitClient(HttpClient httpClient, IOptions<FaceitOptions> options
 		string playerId,
 		DateTime fromUtc,
 		int limit,
-		CancellationToken cancellationToken)
+		CancellationToken cancellationToken,
+		int offset = 0)
 	{
-		// "from" must be explicit — FACEIT defaults it to one month ago. The endpoint caps a page at 100 items.
+		// "from" must be explicit — FACEIT defaults it to one month ago. The endpoint caps a page at 100 items. No "type"
+		// filter on purpose: championship (ESEA League), hub and matchmaking rooms all come back.
 		var from = new DateTimeOffset(DateTime.SpecifyKind(fromUtc, DateTimeKind.Utc)).ToUnixTimeSeconds();
-		var path = $"players/{Uri.EscapeDataString(playerId)}/history?game={Game}&from={from}&offset=0&limit={Math.Clamp(limit, 1, 100)}";
+		var path = $"players/{Uri.EscapeDataString(playerId)}/history?game={Game}&from={from}&offset={Math.Max(0, offset)}&limit={Math.Clamp(limit, 1, 100)}";
 		return await GetAsync(path, FaceitJson.ReadHistory, cancellationToken) ?? [];
 	}
+
+	/// <inheritdoc />
+	public async Task<IReadOnlyList<FaceitLifetimeMapStats>> GetPlayerMapStatsAsync(string playerId, CancellationToken cancellationToken) =>
+		await GetAsync($"players/{Uri.EscapeDataString(playerId)}/stats/{Game}", FaceitJson.ReadLifetimeMapStats, cancellationToken) ?? [];
 
 	/// <inheritdoc />
 	public async Task<IReadOnlyList<FaceitMapStats>> GetMatchStatsAsync(string matchId, CancellationToken cancellationToken) =>

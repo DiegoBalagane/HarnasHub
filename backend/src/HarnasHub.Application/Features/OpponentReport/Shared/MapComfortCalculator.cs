@@ -43,8 +43,9 @@ public static class MapComfortCalculator
 
 	#region Public Methods
 
-	/// <summary>Comfort for every pool map; all zeros when no player has enough solo games.</summary>
-	public static Dictionary<MapName, MapComfort> Calculate(IEnumerable<IndividualGameLine> lines)
+	/// <summary>Comfort for every pool map; all zeros when no player has enough solo games. Regular/avoiding use raw counts; with
+	/// <paramref name="nowUtc"/> the solo share and smoothed win rate (the inputs of the veto blend) are recency-weighted.</summary>
+	public static Dictionary<MapName, MapComfort> Calculate(IEnumerable<IndividualGameLine> lines, DateTime? nowUtc = null)
 	{
 		var rated = lines
 			.Where(l => !l.TeamGame && l.Map.HasValue)
@@ -53,7 +54,7 @@ public static class MapComfortCalculator
 			.Where(g => g.Count >= MinSoloGamesToRate)
 			.ToList();
 
-		return Enum.GetValues<MapName>().ToDictionary(map => map, map => ForMap(map, rated));
+		return Enum.GetValues<MapName>().ToDictionary(map => map, map => ForMap(map, rated, nowUtc));
 	}
 
 	/// <summary>The DTO form: fractions as percentages, only maps when someone is rated.</summary>
@@ -80,8 +81,10 @@ public static class MapComfortCalculator
 	#region Private Methods
 
 	/// <summary>One map's comfort from the rated players' solo lines (each list oldest first, one player per list).</summary>
-	private static MapComfort ForMap(MapName map, List<List<IndividualGameLine>> rated)
+	private static MapComfort ForMap(MapName map, List<List<IndividualGameLine>> rated, DateTime? nowUtc)
 	{
+		double Weight(IEnumerable<IndividualGameLine> lines) => lines.Sum(l => RecencyWeight.Of(l.PlayedAtUtc, nowUtc));
+
 		var perPlayer = rated
 			.Select(all => (All: all, OnMap: all.Where(l => l.Map == map).ToList(), Nickname: all[^1].Nickname))
 			.ToList();
@@ -93,9 +96,9 @@ public static class MapComfortCalculator
 			perPlayer.Count,
 			regulars.Count,
 			avoiding.Count,
-			perPlayer.Count == 0 ? 0 : perPlayer.Average(p => (double)p.OnMap.Count / p.All.Count),
+			perPlayer.Count == 0 ? 0 : perPlayer.Average(p => Weight(p.OnMap) / Math.Max(Weight(p.All), double.Epsilon)),
 			regulars.Count == 0 ? null : regulars.Average(p => (double)p.OnMap.Count(l => l.Won) / p.OnMap.Count),
-			regulars.Count == 0 ? null : regulars.Average(p => MapAdvantage.SmoothedWinRate(p.OnMap.Count(l => l.Won), p.OnMap.Count)),
+			regulars.Count == 0 ? null : regulars.Average(p => MapAdvantage.SmoothedWinRate(Weight(p.OnMap.Where(l => l.Won)), Weight(p.OnMap))),
 			regulars.Count == 0 ? null : regulars.Average(p => PlayerFormCalculator.Kd(p.OnMap)),
 			Names(regulars.Select(p => p.Nickname)),
 			Names(avoiding.Select(p => p.Nickname)));

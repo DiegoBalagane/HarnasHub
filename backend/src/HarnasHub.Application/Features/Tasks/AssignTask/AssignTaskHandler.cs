@@ -56,7 +56,7 @@ public class AssignTaskHandler(
 		dbContext.Tasks.Add(task);
 		await dbContext.SaveChangesAsync(cancellationToken);
 
-		await discordNotifier.SendAsync($"📋 Nowe zadanie dla **{assignee.DisplayName}**: {task.Title}", cancellationToken);
+		await discordNotifier.SendAsync(DiscordChannel.Announcements, $"📋 Nowe zadanie dla **{assignee.DisplayName}**: {task.Title}", cancellationToken);
 		await realtimeNotifier.NotifyAsync("tasks", cancellationToken);
 		await realtimeNotifier.NotifyAsync("dashboard", cancellationToken);
 

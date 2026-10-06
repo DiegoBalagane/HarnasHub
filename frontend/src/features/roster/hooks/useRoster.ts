@@ -147,6 +147,35 @@ export function useUpdateSteamId64() {
   })
 }
 
+/** Manager-only: shows or hides a member in team stats and the availability calendar; refreshes every view that lists players. */
+export function useSetVisibility() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ userId, showInStats, showInCalendar }: { userId: string; showInStats: boolean; showInCalendar: boolean }) =>
+      rosterApi.updateVisibility(userId, showInStats, showInCalendar),
+    onSuccess: () => {
+      for (const key of ['roster', 'availability', 'dashboard', 'stats', 'opponent-report']) {
+        queryClient.invalidateQueries({ queryKey: [key] })
+      }
+    },
+  })
+}
+
+/** Manager-only: saves (or clears) a member's manual FACEIT nickname; refreshes the roster and opponent reports. */
+export function useSetFaceitNickname() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ userId, nickname }: { userId: string; nickname: string | null }) =>
+      rosterApi.updateFaceitNickname(userId, nickname),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['roster'] })
+      queryClient.invalidateQueries({ queryKey: ['opponent-report'] })
+    },
+  })
+}
+
 /** Permanently deletes a team member's account and personal data (Manager only); refreshes every view that could lose a row. */
 export function useDeleteMember() {
   const queryClient = useQueryClient()

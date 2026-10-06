@@ -95,6 +95,24 @@ internal static class FaceitJson
 				Str(i, "status")))
 			.ToList();
 
+	/// <summary>Reads the "Map" segments of GET /players/{id}/stats/cs2 (only 5v5 when a mode is given) as lifetime per-map numbers.</summary>
+	public static List<FaceitLifetimeMapStats> ReadLifetimeMapStats(JsonElement root) =>
+		Items(root, "segments")
+			.Where(s => string.Equals(Str(s, "type"), "Map", StringComparison.OrdinalIgnoreCase)
+				&& (Str(s, "mode") is not { } mode || mode.Equals("5v5", StringComparison.OrdinalIgnoreCase))
+				&& !string.IsNullOrWhiteSpace(Str(s, "label")))
+			.Select(s =>
+			{
+				var stats = Prop(s, "stats");
+				return new FaceitLifetimeMapStats(
+					Str(s, "label")!,
+					NullableInt(stats, "Matches") ?? 0,
+					NullableInt(stats, "Wins") ?? 0,
+					Dbl(stats, "Average K/D Ratio") ?? Dbl(stats, "K/D Ratio"));
+			})
+			.Where(m => m.Matches > 0)
+			.ToList();
+
 	/// <summary>Reads per-map scoreboards (GET /matches/{id}/stats) — one "round" of the response is one map.</summary>
 	public static List<FaceitMapStats> ReadMatchStats(JsonElement root) =>
 		Items(root, "rounds")

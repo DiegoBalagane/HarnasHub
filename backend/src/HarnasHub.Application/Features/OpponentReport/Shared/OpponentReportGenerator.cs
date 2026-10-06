@@ -38,14 +38,9 @@ public static class OpponentReportGenerator
 				link.LinkedAtUtc,
 				link.LastSyncedAtUtc);
 
-		var ourSteamIds = await dbContext.Users.AsNoTracking()
-			.Where(u => u.SteamId64 != null && u.SteamId64 != "")
-			.Select(u => u.SteamId64!.Trim())
-			.ToListAsync(cancellationToken);
-		var ourPlayers = await dbContext.FaceitPlayers.AsNoTracking()
-			.Where(p => p.SteamId64 != null && ourSteamIds.Contains(p.SteamId64))
+		var ourPlayers = (await OurRosterFaceit.LoadCachedAsync(dbContext, cancellationToken)).Players
 			.Select(p => new FaceitPlayerDto(p.Id, p.Nickname, p.Elo, p.SkillLevel))
-			.ToListAsync(cancellationToken);
+			.ToList();
 		var ourIds = ourPlayers.Select(p => p.PlayerId).Distinct().ToList();
 
 		var since = nowUtc - FaceitSync.HistoryWindow;
@@ -73,7 +68,26 @@ public static class OpponentReportGenerator
 			ourIds.ToHashSet(),
 			vetoData.Inputs,
 			ourStats,
-			ourPlayers));
+			ourPlayers,
+			await FaceitLifetimeStats.LoadAsync(dbContext, theirIds, cancellationToken),
+			await FaceitLifetimeStats.LoadAsync(dbContext, ourIds, cancellationToken)));
+	}
+
+	/// <summary>The opponent's active lineup ids (<see cref="ActiveLineupResolver"/>) from the cached team games of the linked
+	/// <paramref name="playerIds"/> — used by the sync to fetch lifetime stats only for players who actually play.</summary>
+	public static async Task<IReadOnlySet<string>> ActiveLineupIdsAsync(
+		IApplicationDbContext dbContext,
+		IReadOnlyCollection<string> playerIds,
+		DateTime nowUtc,
+		CancellationToken cancellationToken)
+	{
+		var since = nowUtc - FaceitSync.HistoryWindow;
+		var matches = await dbContext.FaceitMatches.AsNoTracking()
+			.Where(m => m.PlayedAtUtc >= since)
+			.ToListAsync(cancellationToken);
+		var roster = playerIds.ToHashSet();
+		var games = TeamMatchDetector.Detect(matches, roster);
+		return ActiveLineupResolver.Resolve(games, roster, nowUtc, new Dictionary<string, string>(), []).ActiveIds;
 	}
 
 	/// <summary>Fills the fields that must reflect the present rather than the snapshot: whether FACEIT is configured and the next
@@ -93,13 +107,15 @@ public static class OpponentReportGenerator
 			.FirstOrDefaultAsync(cancellationToken);
 
 		var tendencies = await OpponentTendencyLoader.LoadAsync(dbContext, key, cancellationToken);
+		var unresolved = (await OurRosterFaceit.LoadCachedAsync(dbContext, cancellationToken)).Unresolved;
 
 		return report with
 		{
 			FaceitConfigured = faceitConfigured,
 			NextEventId = nextEvent?.Id,
 			NextEventAtUtc = nextEvent?.StartsAtUtc,
-			Tendencies = tendencies
+			Tendencies = tendencies,
+			UnresolvedOurPlayers = unresolved
 		};
 	}
 

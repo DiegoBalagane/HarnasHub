@@ -12,4 +12,8 @@ public record AdminStatusDto(
 	bool FaceitDownloadsTokenConfigured,
 	bool S3Configured,
 	bool DiscordWebhookConfigured,
-	bool FrontendBaseUrlConfigured);
+	bool FrontendBaseUrlConfigured,
+	DiscordChannelsStatusDto DiscordChannels);
+
+/// <summary>Per-channel Discord webhook flags (true when the channel has its own webhook or the <c>Discord:WebhookUrl</c> fallback).</summary>
+public record DiscordChannelsStatusDto(bool Announcements, bool MatchSchedule, bool DemoReview, bool OpponentScouting);

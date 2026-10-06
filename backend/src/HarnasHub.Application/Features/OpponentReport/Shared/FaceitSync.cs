@@ -13,8 +13,15 @@ public static class FaceitSync
 	/// <summary>How far back match history is pulled and reported on.</summary>
 	public static readonly TimeSpan HistoryWindow = TimeSpan.FromDays(120);
 
-	/// <summary>Most history entries per player and run.</summary>
+	/// <summary>Most matchmaking history entries per player and run whose scoreboards are fetched; championship/hub rooms are
+	/// always taken from the whole paged history (see <see cref="MaxHistoryPages"/>).</summary>
 	public const int HistoryLimit = 50;
+
+	/// <summary>FACEIT's maximum history page size.</summary>
+	public const int HistoryPageSize = 100;
+
+	/// <summary>How many history pages per player are read, so league games older than the latest PUGs are still found.</summary>
+	public const int MaxHistoryPages = 3;
 
 	/// <summary>A player's history pulled more recently than this is skipped — dedupes our roster across several opponent syncs.</summary>
 	public static readonly TimeSpan PlayerResyncInterval = TimeSpan.FromMinutes(10);
@@ -55,46 +62,14 @@ public static class FaceitSync
 		return player;
 	}
 
-	/// <summary>Our roster's FACEIT ids, resolved from every user's SteamID64 (cached profiles are reused while fresh).</summary>
-	public static async Task<List<string>> ResolveOurPlayersAsync(
+	/// <summary>Our roster's FACEIT ids, resolved from each shown-in-stats user's SteamID64, then their manual FACEIT nickname
+	/// (see <see cref="OurRosterFaceit"/>); cached profiles are reused while fresh.</summary>
+	public static Task<List<string>> ResolveOurPlayersAsync(
 		IApplicationDbContext dbContext,
 		IFaceitClient client,
 		DateTime nowUtc,
-		CancellationToken cancellationToken)
-	{
-		var steamIds = (await dbContext.Users
-				.Where(u => u.SteamId64 != null && u.SteamId64 != "")
-				.Select(u => u.SteamId64!)
-				.ToListAsync(cancellationToken))
-			.Select(s => s.Trim())
-			.Distinct()
-			.ToList();
-
-		var cached = await dbContext.FaceitPlayers
-			.Where(p => p.SteamId64 != null && steamIds.Contains(p.SteamId64))
-			.ToListAsync(cancellationToken);
-
-		var ids = new List<string>();
-		foreach (var steamId in steamIds)
-		{
-			var player = cached.FirstOrDefault(p => p.SteamId64 == steamId);
-			if (player is null || player.UpdatedAtUtc < nowUtc - ProfileMaxAge)
-			{
-				var info = await client.GetPlayerBySteamIdAsync(steamId, cancellationToken);
-				player = info is null
-					? player
-					: await UpsertPlayerAsync(dbContext, info.PlayerId, info.Nickname, steamId, info.Elo, info.SkillLevel, nowUtc, cancellationToken);
-			}
-
-			if (player is not null)
-			{
-				ids.Add(player.Id);
-			}
-		}
-
-		await dbContext.SaveChangesAsync(cancellationToken);
-		return ids.Distinct().ToList();
-	}
+		CancellationToken cancellationToken) =>
+		OurRosterFaceit.ResolveAsync(dbContext, client, nowUtc, cancellationToken);
 
 	/// <summary>Refreshes stale cached profiles (elo, nickname) of the given players.</summary>
 	public static async Task RefreshProfilesAsync(
@@ -153,8 +128,8 @@ public static class FaceitSync
 				continue;
 			}
 
-			var history = await client.GetPlayerHistoryAsync(playerId, since, HistoryLimit, cancellationToken);
-			foreach (var item in history.Where(h => IsFinished(h.Status) && !known.Contains(h.MatchId)))
+			var history = await FaceitHistoryPager.LoadAsync(client, playerId, since, cancellationToken);
+			foreach (var item in FaceitHistoryPager.SelectToFetch(history).Where(h => IsFinished(h.Status) && !known.Contains(h.MatchId)))
 			{
 				if (fetched >= MaxNewMatchesPerRun)
 				{
