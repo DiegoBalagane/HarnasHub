@@ -1,4 +1,7 @@
 import { useState } from 'react'
+import { DateTimePicker } from '../../../components/ui/DateTimePicker'
+import { useModalGuard } from '../../../components/ModalGuardContext'
+import { isoUtcToLocalValue, localValueToIsoUtc } from '../../../components/ui/dateTime'
 import type { CreateEventPayload, EventType } from '../../../services/calendarApi'
 import { OpponentNameInput } from '../../opponents/components/OpponentNameInput'
 import { eventTypeLabels } from '../labels'
@@ -8,13 +11,6 @@ const eventTypes: EventType[] = ['Training', 'PickupGame', 'Match', 'Tournament'
 const opponentEventTypes: EventType[] = ['Match', 'Tournament', 'Scrim']
 const inputClass =
   'rounded-md border border-neutral-800 bg-neutral-900 px-3 py-2 text-sm outline-none focus:border-neutral-500'
-
-/** Converts a UTC ISO string to the local yyyy-MM-ddTHH:mm shape a datetime-local input expects. */
-function toLocalInputValue(isoUtc: string): string {
-  const date = new Date(isoUtc)
-  const offsetMs = date.getTimezoneOffset() * 60_000
-  return new Date(date.getTime() - offsetMs).toISOString().slice(0, 16)
-}
 
 export interface EventFormInitialValues {
   title: string
@@ -40,23 +36,27 @@ export function EventForm({ initialValues, onSubmit, onCancel, isPending, isErro
   const [title, setTitle] = useState(initialValues?.title ?? '')
   const [type, setType] = useState<EventType>(initialValues?.type ?? 'Training')
   const [startsAt, setStartsAt] = useState(
-    initialValues ? toLocalInputValue(initialValues.startsAtUtc) : '',
+    isoUtcToLocalValue(initialValues?.startsAtUtc),
   )
   const [endsAt, setEndsAt] = useState(
-    initialValues?.endsAtUtc ? toLocalInputValue(initialValues.endsAtUtc) : '',
+    isoUtcToLocalValue(initialValues?.endsAtUtc),
   )
   const [location, setLocation] = useState(initialValues?.location ?? '')
   const [url, setUrl] = useState(initialValues?.url ?? '')
   const [opponent, setOpponent] = useState(initialValues?.opponent ?? '')
   const hasOpponent = opponentEventTypes.includes(type)
 
+  const fieldsSnapshot = JSON.stringify([title, type, startsAt, endsAt, location, url, opponent])
+  const [initialSnapshot] = useState(fieldsSnapshot)
+  useModalGuard({ isBusy: isPending, isDirty: fieldsSnapshot !== initialSnapshot })
+
   function handleSubmit(event: React.FormEvent) {
     event.preventDefault()
     onSubmit({
       title,
       type,
-      startsAtUtc: new Date(startsAt).toISOString(),
-      endsAtUtc: endsAt ? new Date(endsAt).toISOString() : null,
+      startsAtUtc: localValueToIsoUtc(startsAt) ?? new Date().toISOString(),
+      endsAtUtc: localValueToIsoUtc(endsAt),
       location: location || undefined,
       url: url || undefined,
       opponent: hasOpponent && opponent.trim() ? opponent : null,
@@ -85,22 +85,11 @@ export function EventForm({ initialValues, onSubmit, onCancel, isPending, isErro
       <div className="flex flex-wrap gap-3">
         <label className="flex flex-1 flex-col gap-1 text-xs text-neutral-500">
           Początek
-          <input
-            required
-            type="datetime-local"
-            value={startsAt}
-            onChange={(event) => setStartsAt(event.target.value)}
-            className={inputClass}
-          />
+          <DateTimePicker label="Początek" placeholder="Wybierz termin" value={startsAt} onChange={setStartsAt} className={inputClass} />
         </label>
         <label className="flex flex-1 flex-col gap-1 text-xs text-neutral-500">
           Koniec (opcjonalnie)
-          <input
-            type="datetime-local"
-            value={endsAt}
-            onChange={(event) => setEndsAt(event.target.value)}
-            className={inputClass}
-          />
+          <DateTimePicker label="Koniec" placeholder="Brak końca" clearable value={endsAt} onChange={setEndsAt} className={inputClass} />
         </label>
       </div>
 
@@ -133,7 +122,7 @@ export function EventForm({ initialValues, onSubmit, onCancel, isPending, isErro
       <div className="flex gap-2">
         <button
           type="submit"
-          disabled={isPending}
+          disabled={isPending || startsAt === ''}
           className="self-start rounded-md bg-primary-500 px-4 py-2 text-sm font-medium text-primary-950 transition hover:bg-primary-400 disabled:opacity-50"
         >
           {isPending ? 'Zapisywanie…' : submitLabel}

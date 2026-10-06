@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { DatePicker } from '../../../components/ui/DateTimePicker'
 import { useRoster } from '../../roster/hooks/useRoster'
 import type { AttendanceIncidentType } from '../../../services/attendanceApi'
 import { useAddIncident } from '../hooks/useAttendance'
@@ -69,13 +70,7 @@ export function AddIncidentForm({ onDone }: AddIncidentFormProps) {
 
       <label className="flex flex-col gap-1 text-xs text-neutral-400">
         Data
-        <input
-          required
-          type="date"
-          value={occurredOn}
-          onChange={(event) => setOccurredOn(event.target.value)}
-          className="rounded-md border border-neutral-800 bg-neutral-900 px-3 py-2 text-sm text-neutral-100 outline-none focus:border-neutral-500"
-        />
+        <DatePicker label="Data" value={occurredOn} onChange={setOccurredOn} />
       </label>
 
       <label className="flex flex-1 min-w-[10rem] flex-col gap-1 text-xs text-neutral-400">

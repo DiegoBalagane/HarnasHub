@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { DatePicker } from '../../../components/ui/DateTimePicker'
 import { useMaterials } from '../../materials/hooks/useMaterials'
 import { useRoster } from '../../roster/hooks/useRoster'
 import { useAssignTask } from '../hooks/useTasks'
@@ -110,12 +111,7 @@ export function AssignTaskForm({ onDone }: AssignTaskFormProps) {
         </select>
         <label className="flex items-center gap-2 text-sm text-neutral-400">
           Termin (opcjonalnie)
-          <input
-            type="date"
-            value={dueAtUtc}
-            onChange={(event) => setDueAtUtc(event.target.value)}
-            className="rounded-md border border-neutral-800 bg-neutral-900 px-3 py-2 text-sm outline-none focus:border-neutral-500"
-          />
+          <DatePicker label="Termin" placeholder="Brak terminu" clearable value={dueAtUtc} onChange={setDueAtUtc} />
         </label>
       </div>
 

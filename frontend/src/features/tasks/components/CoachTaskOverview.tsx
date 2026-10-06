@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { DatePicker } from '../../../components/ui/DateTimePicker'
 import { useMaterials } from '../../materials/hooks/useMaterials'
 import type { TeamTaskWithAssignee } from '../../../services/tasksApi'
 import { taskStatusColors, taskStatusLabels } from '../labels'
@@ -175,12 +176,7 @@ function TaskEditRow({ task, onDone }: TaskEditRowProps) {
               </option>
             ))}
           </select>
-          <input
-            type="date"
-            value={dueAtUtc}
-            onChange={(event) => setDueAtUtc(event.target.value)}
-            className="rounded-md border border-neutral-800 bg-neutral-900 px-3 py-2 text-sm outline-none focus:border-neutral-500"
-          />
+          <DatePicker label="Termin" placeholder="Brak terminu" clearable value={dueAtUtc} onChange={setDueAtUtc} />
         </div>
 
         {updateTask.isError && <p className="text-sm text-danger-400">Nie udało się zapisać zmian.</p>}

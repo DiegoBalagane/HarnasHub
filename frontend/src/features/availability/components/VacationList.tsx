@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { DatePicker } from '../../../components/ui/DateTimePicker'
 import { useDeleteVacation, useUpdateVacation, useVacations } from '../hooks/useAvailability'
 import { vacationIcon } from '../labels'
 import { parseIsoDate } from '../weekDates'
@@ -107,22 +108,8 @@ function VacationEditRow({ vacation, onDone }: VacationEditRowProps) {
     <li className="flex flex-col gap-2 rounded-md border border-neutral-700 bg-neutral-950 px-3 py-2">
       <form onSubmit={handleSubmit} className="flex flex-col gap-2">
         <div className="flex flex-wrap gap-2">
-          <input
-            required
-            type="date"
-            aria-label="Początek urlopu"
-            value={startDate}
-            onChange={(event) => setStartDate(event.target.value)}
-            className={`flex-1 ${inputClass}`}
-          />
-          <input
-            required
-            type="date"
-            aria-label="Koniec urlopu"
-            value={endDate}
-            onChange={(event) => setEndDate(event.target.value)}
-            className={`flex-1 ${inputClass}`}
-          />
+          <DatePicker label="Początek urlopu" value={startDate} onChange={setStartDate} className="flex-1" />
+          <DatePicker label="Koniec urlopu" value={endDate} onChange={setEndDate} className="flex-1" />
         </div>
 
         <input

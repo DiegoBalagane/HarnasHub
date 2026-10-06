@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useModalGuard } from '../../../../components/ModalGuardContext'
 import type { DemoNades } from '../../../../services/tacticsApi'
 import { JobProgress } from '../../../jobs/components/JobProgress'
 import { useExtractDemoNades } from '../../hooks/useDemoTacticImport'
@@ -12,6 +13,7 @@ interface DemoUploadStepProps {
 export function DemoUploadStep({ onExtracted }: DemoUploadStepProps) {
   const [file, setFile] = useState<File | null>(null)
   const extract = useExtractDemoNades(onExtracted)
+  useModalGuard({ isBusy: extract.isBusy, isDirty: file !== null })
 
   function handleSubmit(event: React.FormEvent) {
     event.preventDefault()
