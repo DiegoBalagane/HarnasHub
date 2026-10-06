@@ -1,4 +1,5 @@
 using FluentValidation;
+using HarnasHub.Application.Features.MatchAnalysis.Shared;
 using HarnasHub.Core.Enums;
 
 namespace HarnasHub.Application.Features.Results.AddResult;
@@ -37,6 +38,11 @@ public class AddResultCommandValidator : AbstractValidator<AddResultCommand>
 		RuleFor(x => x.LeagueId)
 			.NotNull().WithMessage("Wybierz ligę.").When(x => x.Category == MatchCategory.League, ApplyConditionTo.CurrentValidator)
 			.Null().WithMessage("Ligę można wybrać tylko dla kategorii Liga.").When(x => x.Category != MatchCategory.League, ApplyConditionTo.CurrentValidator);
+
+		// Only a key the analyse step handed out may come back — never an arbitrary object in the bucket.
+		RuleFor(x => x.PendingTimelineKey)
+			.Must(MatchTimelineStorage.IsPendingKey).WithMessage("Nieprawidłowy identyfikator osi czasu demki.")
+			.When(x => x.PendingTimelineKey is not null);
 	}
 
 	#endregion

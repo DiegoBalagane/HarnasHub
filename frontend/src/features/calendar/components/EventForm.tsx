@@ -1,8 +1,11 @@
 import { useState } from 'react'
 import type { CreateEventPayload, EventType } from '../../../services/calendarApi'
+import { OpponentNameInput } from '../../opponents/components/OpponentNameInput'
 import { eventTypeLabels } from '../labels'
 
 const eventTypes: EventType[] = ['Training', 'PickupGame', 'Match', 'Tournament', 'Scrim']
+/** Event types played against a specific opposing team — only these get an opponent field. */
+const opponentEventTypes: EventType[] = ['Match', 'Tournament', 'Scrim']
 const inputClass =
   'rounded-md border border-neutral-800 bg-neutral-900 px-3 py-2 text-sm outline-none focus:border-neutral-500'
 
@@ -20,6 +23,7 @@ export interface EventFormInitialValues {
   endsAtUtc: string | null
   location: string | null
   url: string | null
+  opponent: string | null
 }
 
 interface EventFormProps {
@@ -43,6 +47,8 @@ export function EventForm({ initialValues, onSubmit, onCancel, isPending, isErro
   )
   const [location, setLocation] = useState(initialValues?.location ?? '')
   const [url, setUrl] = useState(initialValues?.url ?? '')
+  const [opponent, setOpponent] = useState(initialValues?.opponent ?? '')
+  const hasOpponent = opponentEventTypes.includes(type)
 
   function handleSubmit(event: React.FormEvent) {
     event.preventDefault()
@@ -53,6 +59,7 @@ export function EventForm({ initialValues, onSubmit, onCancel, isPending, isErro
       endsAtUtc: endsAt ? new Date(endsAt).toISOString() : null,
       location: location || undefined,
       url: url || undefined,
+      opponent: hasOpponent && opponent.trim() ? opponent : null,
     })
   }
 
@@ -97,6 +104,15 @@ export function EventForm({ initialValues, onSubmit, onCancel, isPending, isErro
         </label>
       </div>
 
+      {hasOpponent && (
+        <OpponentNameInput
+          value={opponent}
+          onChange={setOpponent}
+          placeholder="Przeciwnik (opcjonalnie) — podepnie profil przeciwnika"
+          className={inputClass}
+        />
+      )}
+
       <input
         placeholder="Lokalizacja (opcjonalnie)"
         value={location}
@@ -112,13 +128,13 @@ export function EventForm({ initialValues, onSubmit, onCancel, isPending, isErro
         className={inputClass}
       />
 
-      {isError && <p className="text-sm text-red-400">Nie udało się zapisać wydarzenia.</p>}
+      {isError && <p className="text-sm text-danger-400">Nie udało się zapisać wydarzenia.</p>}
 
       <div className="flex gap-2">
         <button
           type="submit"
           disabled={isPending}
-          className="self-start rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-red-500 disabled:opacity-50"
+          className="self-start rounded-md bg-primary-500 px-4 py-2 text-sm font-medium text-primary-950 transition hover:bg-primary-400 disabled:opacity-50"
         >
           {isPending ? 'Zapisywanie…' : submitLabel}
         </button>

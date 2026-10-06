@@ -63,7 +63,7 @@ export function ConfirmDialog({
             onClick={onConfirm}
             disabled={isConfirming}
             className={`rounded-md px-3 py-1.5 text-sm font-medium text-white transition disabled:opacity-50 ${
-              isDanger ? 'bg-red-600 hover:bg-red-500' : 'bg-neutral-700 hover:bg-neutral-600'
+              isDanger ? 'bg-danger-600 hover:bg-danger-500' : 'bg-neutral-700 hover:bg-neutral-600'
             }`}
           >
             {isConfirming ? 'Usuwanie…' : confirmLabel}

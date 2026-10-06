@@ -27,7 +27,7 @@ public class CalendarEndpoints : IEndpoint
 
 		group.MapPost("/events", async (CreateEventRequest request, ISender sender, CancellationToken cancellationToken) =>
 		{
-			var command = new CreateEventCommand(request.Title, request.Type, request.StartsAtUtc, request.EndsAtUtc, request.Location, request.Url, request.Notes);
+			var command = new CreateEventCommand(request.Title, request.Type, request.StartsAtUtc, request.EndsAtUtc, request.Location, request.Url, request.Notes, request.Opponent);
 			var result = await sender.Send(command, cancellationToken);
 			return result.Match(success => Results.Ok(success), errors => errors.ToProblemResult());
 		}).RequireAuthorization(policy => policy.RequireRole("Coach", "Manager"));
@@ -46,7 +46,8 @@ public class CalendarEndpoints : IEndpoint
 				request.EndsAtUtc,
 				request.Location,
 				request.Url,
-				request.Notes);
+				request.Notes,
+				request.Opponent);
 			var result = await sender.Send(command, cancellationToken);
 			return result.Match(success => Results.Ok(success), errors => errors.ToProblemResult());
 		}).RequireAuthorization(policy => policy.RequireRole("Coach", "Manager"));
@@ -85,10 +86,10 @@ public class CalendarEndpoints : IEndpoint
 }
 
 /// <summary>Request body for POST /api/calendar/events.</summary>
-public record CreateEventRequest(string Title, EventType Type, DateTime StartsAtUtc, DateTime? EndsAtUtc, string? Location, string? Url, string? Notes);
+public record CreateEventRequest(string Title, EventType Type, DateTime StartsAtUtc, DateTime? EndsAtUtc, string? Location, string? Url, string? Notes, string? Opponent);
 
 /// <summary>Request body for PUT /api/calendar/events/{eventId}.</summary>
-public record UpdateEventRequest(string Title, EventType Type, DateTime StartsAtUtc, DateTime? EndsAtUtc, string? Location, string? Url, string? Notes);
+public record UpdateEventRequest(string Title, EventType Type, DateTime StartsAtUtc, DateTime? EndsAtUtc, string? Location, string? Url, string? Notes, string? Opponent);
 
 /// <summary>Request body for POST /api/calendar/events/{eventId}/availability.</summary>
 public record SetAvailabilityRequest(AvailabilityStatus Status);

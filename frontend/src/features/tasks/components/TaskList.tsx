@@ -13,7 +13,7 @@ export function TaskList() {
   }
 
   if (isError) {
-    return <p className="text-red-400">Nie udało się pobrać zadań.</p>
+    return <p className="text-danger-400">Nie udało się pobrać zadań.</p>
   }
 
   if (tasks?.length === 0) {
@@ -21,7 +21,7 @@ export function TaskList() {
   }
 
   return (
-    <ul className="flex w-full max-w-xl flex-col gap-3">
+    <ul className="flex w-full flex-col gap-3">
       {tasks?.map((task) => (
         <li
           key={task.id}
@@ -40,7 +40,7 @@ export function TaskList() {
                 href={task.trainingMaterialUrl}
                 target="_blank"
                 rel="noreferrer"
-                className="mt-1 inline-block text-sm text-red-400 hover:text-red-300"
+                className="mt-1 inline-block text-sm text-primary-400 hover:text-primary-300"
               >
                 📎 {task.trainingMaterialTitle}
               </a>

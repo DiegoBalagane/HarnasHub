@@ -12,5 +12,24 @@ services:
     volumes:
       - postgres-data:/var/lib/postgresql/data
 
+  # Local S3-compatible storage for demo uploads and match timelines — stands in for Cloudflare R2 in development.
+  # Starts the server, creates the bucket the app expects once the master answers, then keeps running.
+  s3:
+    image: chrislusf/seaweedfs:latest
+    container_name: harnashub-s3
+    entrypoint: >
+      /bin/sh -c "
+      weed server -dir=/data -s3 -s3.port=9000 -s3.config=/etc/seaweedfs/s3.json &
+      sleep 5;
+      until echo 's3.bucket.create -name harnashub' | weed shell; do sleep 2; done;
+      wait
+      "
+    ports:
+      - "9000:9000"
+    volumes:
+      - s3-data:/data
+      - ./docker/seaweedfs/s3.json:/etc/seaweedfs/s3.json:ro
+
 volumes:
   postgres-data:
+  s3-data:

@@ -1,8 +1,12 @@
 using HarnasHub.Api.Common;
+using HarnasHub.Application.Features.Jobs.StartJob;
 using HarnasHub.Application.Features.Tactics.CreateTactic;
 using HarnasHub.Application.Features.Tactics.DeleteTactic;
+using HarnasHub.Application.Features.Tactics.ExtractDemoNades;
+using HarnasHub.Application.Features.Tactics.ImportTacticFromDemo;
 using HarnasHub.Application.Features.Tactics.GetTacticDetail;
 using HarnasHub.Application.Features.Tactics.GetTactics;
+using HarnasHub.Application.Features.Tactics.GetTacticEffectiveness;
 using HarnasHub.Application.Features.Tactics.Shared;
 using HarnasHub.Application.Features.Tactics.UpdateTactic;
 using HarnasHub.Core.Enums;
@@ -28,6 +32,12 @@ public class TacticsEndpoints : IEndpoint
 			CancellationToken cancellationToken) =>
 		{
 			var result = await sender.Send(new GetTacticsQuery(mapName, side, economy), cancellationToken);
+			return result.Match(success => Results.Ok(success), errors => errors.ToProblemResult());
+		});
+
+		group.MapGet("/effectiveness", async (MapName mapName, ISender sender, CancellationToken cancellationToken) =>
+		{
+			var result = await sender.Send(new GetTacticEffectivenessQuery(mapName), cancellationToken);
 			return result.Match(success => Results.Ok(success), errors => errors.ToProblemResult());
 		});
 
@@ -60,6 +70,27 @@ public class TacticsEndpoints : IEndpoint
 			var result = await sender.Send(new DeleteTacticCommand(tacticId), cancellationToken);
 			return result.Match(success => Results.NoContent(), errors => errors.ToProblemResult());
 		}).RequireAuthorization(policy => policy.RequireRole(coachOrManager));
+
+		// The demo itself is uploaded via POST /api/results/analyze-demo/presign; only its object key comes here.
+		group.MapPost("/import-demo/extract", async (
+			ExtractDemoNadesRequest request,
+			ISender sender,
+			CancellationToken cancellationToken) =>
+		{
+			var result = await sender.Send(new StartJobCommand(new ExtractDemoNadesCommand(request.ObjectKey)), cancellationToken);
+			return result.ToAcceptedJob();
+		}).RequireAuthorization(policy => policy.RequireRole(coachOrManager));
+
+		group.MapPost("/import-demo", async (
+			ImportTacticFromDemoRequest request,
+			ISender sender,
+			CancellationToken cancellationToken) =>
+		{
+			var command = new ImportTacticFromDemoCommand(
+				request.MapName, request.Side, request.Name, request.Economy, request.Note, request.Grenades, request.AddToNadeLibrary);
+			var result = await sender.Send(command, cancellationToken);
+			return result.Match(success => Results.Ok(success), errors => errors.ToProblemResult());
+		}).RequireAuthorization(policy => policy.RequireRole(coachOrManager));
 	}
 
 	#endregion
@@ -70,3 +101,16 @@ public record CreateTacticRequest(MapName MapName, MapSide Side, string Name, Ec
 
 /// <summary>Request body for PUT /api/tactics/{tacticId}.</summary>
 public record UpdateTacticRequest(string Name, EconomyType Economy, string? Note, List<TacticPointInput> Points);
+
+/// <summary>Request body for POST /api/tactics/import-demo/extract.</summary>
+public record ExtractDemoNadesRequest(string ObjectKey);
+
+/// <summary>Request body for POST /api/tactics/import-demo.</summary>
+public record ImportTacticFromDemoRequest(
+	MapName MapName,
+	MapSide Side,
+	string Name,
+	EconomyType Economy,
+	string? Note,
+	List<ImportedNadeInput> Grenades,
+	bool AddToNadeLibrary);

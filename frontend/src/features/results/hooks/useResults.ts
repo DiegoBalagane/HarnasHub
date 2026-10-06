@@ -1,6 +1,14 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { DEMO_DIRECT_UPLOAD_MAX_BYTES } from '../../../constants'
-import { resultsApi, uploadFileToPresignedUrl, type AddResultPayload, type UpdateResultPayload } from '../../../services/resultsApi'
+import type { JobAccepted } from '../../../services/jobsApi'
+import {
+  resultsApi,
+  uploadFileToPresignedUrl,
+  type AddResultPayload,
+  type AnalyzeDemoResult,
+  type UpdateResultPayload,
+} from '../../../services/resultsApi'
+import { useBackgroundJob } from '../../jobs/hooks/useBackgroundJob'
 
 /** Fetches every logged result, most recent first. */
 export function useResults() {
@@ -22,21 +30,23 @@ export function useAddResult() {
   })
 }
 
-/** Parses an uploaded demo into a map/score/team-split preview — nothing is saved until addResult is submitted.
- * Demos over DEMO_DIRECT_UPLOAD_MAX_BYTES go through object storage instead of this app's own server, since the
- * hosting platform's edge proxy rejects large request bodies well before our own (much higher) server-side limit. */
-export function useAnalyzeDemo() {
-  return useMutation({
-    mutationFn: async (demoFile: File) => {
-      if (demoFile.size <= DEMO_DIRECT_UPLOAD_MAX_BYTES) {
-        return resultsApi.analyzeDemo(demoFile)
-      }
+/** Uploads a demo and starts its background analysis. Demos over DEMO_DIRECT_UPLOAD_MAX_BYTES go through object storage
+ * instead of this app's own server, since the hosting platform's edge proxy rejects large request bodies well before our
+ * own (much higher) server-side limit. The original file name travels along for FACEIT match recognition. */
+async function startDemoAnalysis(demoFile: File): Promise<JobAccepted> {
+  if (demoFile.size <= DEMO_DIRECT_UPLOAD_MAX_BYTES) {
+    return resultsApi.analyzeDemo(demoFile)
+  }
 
-      const { uploadUrl, objectKey } = await resultsApi.presignDemoUpload()
-      await uploadFileToPresignedUrl(uploadUrl, demoFile)
-      return resultsApi.analyzeDemoFromStorage(objectKey)
-    },
-  })
+  const { uploadUrl, objectKey } = await resultsApi.presignDemoUpload()
+  await uploadFileToPresignedUrl(uploadUrl, demoFile)
+  return resultsApi.analyzeDemoFromStorage(objectKey, demoFile.name)
+}
+
+/** Parses an uploaded demo (as a background job) into a map/score/team-split preview, delivered to `onAnalyzed` —
+ * nothing is saved until addResult is submitted. */
+export function useAnalyzeDemo(onAnalyzed: (result: AnalyzeDemoResult) => void) {
+  return useBackgroundJob<File, AnalyzeDemoResult>(startDemoAnalysis, { onSucceeded: onAnalyzed })
 }
 
 /** Edits a logged result's metadata and refreshes the results list. */

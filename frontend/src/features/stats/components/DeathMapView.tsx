@@ -13,8 +13,8 @@ interface DeathMapViewProps {
 }
 
 const sideColor: Record<MapSide, string> = {
-  CT: 'bg-blue-500',
-  T: 'bg-orange-500',
+  CT: 'bg-side-ct',
+  T: 'bg-side-t',
 }
 
 type SideFilter = MapSide | ''

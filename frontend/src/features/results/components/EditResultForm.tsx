@@ -3,6 +3,7 @@ import type { MapName } from '../../../services/nadesApi'
 import { ApiError } from '../../../services/apiClient'
 import type { MatchCategory, MatchResult } from '../../../services/resultsApi'
 import { mapNames } from '../../nades/labels'
+import { OpponentNameInput } from '../../opponents/components/OpponentNameInput'
 import { useLeagues } from '../hooks/useLeagues'
 import { useTournaments } from '../hooks/useTournaments'
 import { useUpdateResult } from '../hooks/useResults'
@@ -87,13 +88,7 @@ export function EditResultForm({ result, onClose }: EditResultFormProps) {
       </div>
 
       <div className="flex flex-wrap gap-3">
-        <input
-          required
-          placeholder="Przeciwnik"
-          value={opponent}
-          onChange={(event) => setOpponent(event.target.value)}
-          className={inputClass}
-        />
+        <OpponentNameInput required placeholder="Przeciwnik" value={opponent} onChange={setOpponent} className={inputClass} />
         <input
           required
           type="number"
@@ -173,7 +168,7 @@ export function EditResultForm({ result, onClose }: EditResultFormProps) {
       />
 
       {updateResult.isError && (
-        <p className="text-sm text-red-400">
+        <p className="text-sm text-danger-400">
           {updateResult.error instanceof ApiError ? updateResult.error.message : 'Nie udało się zapisać zmian.'}
         </p>
       )}
@@ -181,7 +176,7 @@ export function EditResultForm({ result, onClose }: EditResultFormProps) {
       <button
         type="submit"
         disabled={updateResult.isPending || !canSubmit}
-        className="self-start rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-red-500 disabled:opacity-50"
+        className="self-start rounded-md bg-primary-500 px-4 py-2 text-sm font-medium text-primary-950 transition hover:bg-primary-400 disabled:opacity-50"
       >
         {updateResult.isPending ? 'Zapisywanie…' : 'Zapisz zmiany'}
       </button>

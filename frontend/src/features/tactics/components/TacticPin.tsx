@@ -31,7 +31,7 @@ export const TacticPin = memo(function TacticPin({
         onPointerDown={(event) => onDragStart(event, pointId)}
         className={`flex h-7 w-7 items-center justify-center rounded-full border border-black/40 text-[11px] font-bold text-white shadow-md bg-red-600 ${
           canEdit ? 'cursor-grab touch-none active:cursor-grabbing' : 'cursor-pointer'
-        } ${isDragging ? 'ring-2 ring-white' : ''} ${isSelected ? 'ring-2 ring-amber-300' : ''}`}
+        } ${isDragging ? 'ring-2 ring-white' : ''} ${isSelected ? 'ring-2 ring-primary-300' : ''}`}
       >
         {displayNumber}
       </div>

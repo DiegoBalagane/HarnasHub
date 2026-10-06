@@ -27,6 +27,16 @@ public class DeleteEventHandler(IApplicationDbContext dbContext, IRealtimeNotifi
 			.ToListAsync(cancellationToken);
 		dbContext.Availabilities.RemoveRange(declarations);
 
+		var vetoSteps = await dbContext.EventVetoSteps
+			.Where(s => s.EventId == request.EventId)
+			.ToListAsync(cancellationToken);
+		dbContext.EventVetoSteps.RemoveRange(vetoSteps);
+
+		dbContext.EventGamePlans.RemoveRange(
+			await dbContext.EventGamePlans.Where(p => p.EventId == request.EventId).ToListAsync(cancellationToken));
+		dbContext.EventGamePlanItems.RemoveRange(
+			await dbContext.EventGamePlanItems.Where(i => i.EventId == request.EventId).ToListAsync(cancellationToken));
+
 		dbContext.Events.Remove(calendarEvent);
 		await dbContext.SaveChangesAsync(cancellationToken);
 

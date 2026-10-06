@@ -12,7 +12,8 @@ namespace HarnasHub.Application.Features.Results.AddResult;
 /// <paramref name="DemoPlayers"/>/<paramref name="DemoRoundsPlayed"/> are the same analysis's raw per-player totals, carried back so a stat
 /// line can be saved for every one of them without re-uploading the demo file a second time. <paramref name="OurTeamSteamIds"/> is the
 /// SteamID64 set of whichever of the analysis's two team splits the coach picked — a stat line is imported for exactly those players,
-/// connected to a roster account when one matches and left unconnected (identified only by their demo name) otherwise.</summary>
+/// connected to a roster account when one matches and left unconnected (identified only by their demo name) otherwise.
+/// <paramref name="PendingTimelineKey"/> is the analysis's parked timeline, moved to the new match once it's saved.</summary>
 public record AddResultCommand(
 	string Opponent,
 	int? OurScore,
@@ -26,4 +27,5 @@ public record AddResultCommand(
 	Guid? LeagueId,
 	int? DemoRoundsPlayed = null,
 	IReadOnlyList<AnalyzedDemoPlayerDto>? DemoPlayers = null,
-	IReadOnlyList<string>? OurTeamSteamIds = null) : IRequest<ErrorOr<MatchResultDto>>;
+	IReadOnlyList<string>? OurTeamSteamIds = null,
+	string? PendingTimelineKey = null) : IRequest<ErrorOr<MatchResultDto>>;

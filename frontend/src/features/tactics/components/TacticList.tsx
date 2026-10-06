@@ -1,19 +1,25 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import type { MapSide } from '../../../services/mapStrategyApi'
 import type { MapName } from '../../../services/nadesApi'
 import type { EconomyType } from '../../../services/tacticsApi'
 import { mapNames } from '../../nades/labels'
 import { mapSideLabels, mapSides } from '../../map-strategy/labels'
 import { useTactics } from '../hooks/useTactics'
-import { economyLabels, economyTypes } from '../labels'
+import { useTacticEffectiveness } from '../hooks/useTacticMatching'
+import { economyLabels, economyTypes, formatEffectiveness, UNCALIBRATED_MAP_MESSAGE } from '../labels'
 
 interface TacticListProps {
   onSelect: (tacticId: string) => void
+  /** Map pre-selected in the filter, e.g. when arriving from the map pool page. */
+  initialMapName?: MapName
+  /** Map chosen by the host page (Playbook); when set, the built-in map selector is hidden. */
+  mapName?: MapName
 }
 
 /** Filterable grid of saved tactics — pick a map, side and/or economy, click a card to open its radar. */
-export function TacticList({ onSelect }: TacticListProps) {
-  const [mapName, setMapName] = useState<MapName | ''>('')
+export function TacticList({ onSelect, initialMapName, mapName: controlledMapName }: TacticListProps) {
+  const [ownMapName, setMapName] = useState<MapName | ''>(initialMapName ?? '')
+  const mapName = controlledMapName ?? ownMapName
   const [side, setSide] = useState<MapSide | ''>('')
   const [economy, setEconomy] = useState<EconomyType | ''>('')
   const {
@@ -21,28 +27,35 @@ export function TacticList({ onSelect }: TacticListProps) {
     isLoading,
     isError,
   } = useTactics({ mapName: mapName || undefined, side: side || undefined, economy: economy || undefined })
+  const { data: effectiveness } = useTacticEffectiveness(mapName || undefined)
+  const effectivenessById = useMemo(
+    () => new Map((effectiveness?.tactics ?? []).map((item) => [item.tacticId, item])),
+    [effectiveness],
+  )
 
   return (
-    <div className="flex w-full max-w-3xl flex-col gap-4">
+    <div className="flex w-full flex-col gap-4">
       <div className="flex flex-wrap gap-3">
-        <select
-          value={mapName}
-          onChange={(event) => setMapName(event.target.value as MapName | '')}
-          className="rounded-md border border-neutral-800 bg-neutral-900 px-3 py-2 text-sm outline-none focus:border-neutral-500"
-        >
-          <option value="">Wszystkie mapy</option>
-          {mapNames.map((map) => (
-            <option key={map} value={map}>
-              {map}
-            </option>
-          ))}
-        </select>
+        {controlledMapName === undefined && (
+          <select
+            value={mapName}
+            onChange={(event) => setMapName(event.target.value as MapName | '')}
+            className="rounded-md border border-neutral-800 bg-neutral-900 px-3 py-2 text-sm outline-none focus:border-neutral-500"
+          >
+            <option value="">Wszystkie mapy</option>
+            {mapNames.map((map) => (
+              <option key={map} value={map}>
+                {map}
+              </option>
+            ))}
+          </select>
+        )}
 
         <div className="flex overflow-hidden rounded-md border border-neutral-800">
           <button
             type="button"
             onClick={() => setSide('')}
-            className={`px-3 py-2 text-sm ${side === '' ? 'bg-neutral-100 text-neutral-900' : 'text-neutral-400 hover:text-white'}`}
+            className={`px-3 py-2 text-sm ${side === '' ? 'bg-primary-500 text-primary-950' : 'text-neutral-400 hover:text-white'}`}
           >
             Obie strony
           </button>
@@ -52,7 +65,7 @@ export function TacticList({ onSelect }: TacticListProps) {
               type="button"
               onClick={() => setSide(option)}
               className={`px-3 py-2 text-sm ${
-                side === option ? 'bg-neutral-100 text-neutral-900' : 'text-neutral-400 hover:text-white'
+                side === option ? 'bg-primary-500 text-primary-950' : 'text-neutral-400 hover:text-white'
               }`}
             >
               {mapSideLabels[option]}
@@ -75,8 +88,9 @@ export function TacticList({ onSelect }: TacticListProps) {
       </div>
 
       {isLoading && <p className="text-neutral-400">Ładowanie…</p>}
-      {isError && <p className="text-red-400">Nie udało się pobrać taktyk.</p>}
+      {isError && <p className="text-danger-400">Nie udało się pobrać taktyk.</p>}
       {tactics?.length === 0 && <p className="text-neutral-400">Brak taktyk spełniających filtry.</p>}
+      {effectiveness && !effectiveness.mapCalibrated && <p className="text-xs text-warning-300">{UNCALIBRATED_MAP_MESSAGE}</p>}
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         {tactics?.map((tactic) => (
@@ -97,6 +111,9 @@ export function TacticList({ onSelect }: TacticListProps) {
               {tactic.pointCount === 1 ? 'punkt' : 'punktów'}
             </p>
             {tactic.note && <p className="mt-1 line-clamp-2 text-sm text-neutral-500">{tactic.note}</p>}
+            {effectiveness?.mapCalibrated && (
+              <p className="text-xs text-info-300">{formatEffectiveness(effectivenessById.get(tactic.id))}</p>
+            )}
           </button>
         ))}
       </div>

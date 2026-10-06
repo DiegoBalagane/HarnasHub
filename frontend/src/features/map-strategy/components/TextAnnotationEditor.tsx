@@ -70,7 +70,7 @@ export function TextAnnotationEditor({ annotation, onSave, onDelete, onClose, is
             onSave(text.trim(), color, fontSizePx)
             onClose()
           }}
-          className="self-start rounded-md bg-red-600 px-3 py-1.5 text-xs font-medium text-white transition hover:bg-red-500 disabled:opacity-50"
+          className="self-start rounded-md bg-primary-500 px-3 py-1.5 text-xs font-medium text-primary-950 transition hover:bg-primary-400 disabled:opacity-50"
         >
           Zapisz
         </button>

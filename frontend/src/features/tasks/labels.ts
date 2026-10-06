@@ -9,7 +9,7 @@ export const taskStatusLabels: Record<TaskStatus, string> = {
 
 export const taskStatusColors: Record<TaskStatus, string> = {
   Todo: 'text-neutral-400',
-  PendingReview: 'text-yellow-400',
-  Done: 'text-green-400',
-  NeedsRework: 'text-red-400',
+  PendingReview: 'text-warning-400',
+  Done: 'text-success-400',
+  NeedsRework: 'text-danger-400',
 }

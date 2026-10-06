@@ -225,7 +225,7 @@ export function MatchStatsPanel({ matchResultId, mapName }: MatchStatsPanelProps
           <button
             type="submit"
             disabled={addStat.isPending}
-            className="rounded-md bg-red-600 px-3 py-1 text-xs font-medium text-white hover:bg-red-500 disabled:opacity-50"
+            className="rounded-md bg-primary-500 px-3 py-1 text-xs font-medium text-primary-950 hover:bg-primary-400 disabled:opacity-50"
           >
             Dodaj
           </button>

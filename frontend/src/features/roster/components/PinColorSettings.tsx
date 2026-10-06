@@ -32,7 +32,7 @@ export function PinColorSettings() {
         disabled={!isMain || updatePinColor.isPending}
       />
 
-      {updatePinColor.isError && <p className="text-sm text-red-400">{updatePinColor.error.message}</p>}
+      {updatePinColor.isError && <p className="text-sm text-danger-400">{updatePinColor.error.message}</p>}
     </div>
   )
 }

@@ -9,11 +9,13 @@ import { economyLabels, economyTypes } from '../labels'
 
 interface AddTacticFormProps {
   onCreated: (tacticId: string) => void
+  /** Pre-selected map, e.g. the map picked on the Playbook page. */
+  defaultMapName?: MapName
 }
 
 /** Coach/Manager form for starting a new, empty tactic — points are added afterwards in the editor. */
-export function AddTacticForm({ onCreated }: AddTacticFormProps) {
-  const [mapName, setMapName] = useState<MapName>(mapNames[0])
+export function AddTacticForm({ onCreated, defaultMapName }: AddTacticFormProps) {
+  const [mapName, setMapName] = useState<MapName>(defaultMapName ?? mapNames[0])
   const [side, setSide] = useState<MapSide>(mapSides[0])
   const [economy, setEconomy] = useState<EconomyType>(economyTypes[0])
   const [name, setName] = useState('')
@@ -61,7 +63,7 @@ export function AddTacticForm({ onCreated }: AddTacticFormProps) {
               type="button"
               onClick={() => setSide(option)}
               className={`px-3 py-2 text-sm ${
-                side === option ? 'bg-neutral-100 text-neutral-900' : 'text-neutral-400 hover:text-white'
+                side === option ? 'bg-primary-500 text-primary-950' : 'text-neutral-400 hover:text-white'
               }`}
             >
               {mapSideLabels[option]}
@@ -97,12 +99,12 @@ export function AddTacticForm({ onCreated }: AddTacticFormProps) {
         className="rounded-md border border-neutral-800 bg-neutral-900 px-3 py-2 text-sm outline-none focus:border-neutral-500"
       />
 
-      {createTactic.isError && <p className="text-sm text-red-400">Nie udało się utworzyć taktyki.</p>}
+      {createTactic.isError && <p className="text-sm text-danger-400">Nie udało się utworzyć taktyki.</p>}
 
       <button
         type="submit"
         disabled={createTactic.isPending}
-        className="self-start rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-red-500 disabled:opacity-50"
+        className="self-start rounded-md bg-primary-500 px-4 py-2 text-sm font-medium text-primary-950 transition hover:bg-primary-400 disabled:opacity-50"
       >
         {createTactic.isPending ? 'Tworzenie…' : 'Utwórz i edytuj'}
       </button>

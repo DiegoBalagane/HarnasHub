@@ -5,9 +5,16 @@ import { grenadeTypeLabels, mapNames } from '../labels'
 
 const grenadeTypes: GrenadeType[] = ['Smoke', 'Flash', 'Molotov', 'Frag']
 
+interface AddNadeFormProps {
+  /** Called after saving, e.g. to close the modal hosting the form. */
+  onDone?: () => void
+  /** Pre-selected map, e.g. the map picked on the Playbook page. */
+  defaultMapName?: MapName
+}
+
 /** Form for any team member to add a nade lineup entry. */
-export function AddNadeForm() {
-  const [mapName, setMapName] = useState<MapName>(mapNames[0])
+export function AddNadeForm({ onDone, defaultMapName }: AddNadeFormProps) {
+  const [mapName, setMapName] = useState<MapName>(defaultMapName ?? mapNames[0])
   const [type, setType] = useState<GrenadeType>('Smoke')
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
@@ -23,6 +30,7 @@ export function AddNadeForm() {
           setTitle('')
           setDescription('')
           setYoutubeUrl('')
+          onDone?.()
         },
       },
     )
@@ -83,12 +91,12 @@ export function AddNadeForm() {
         className="rounded-md border border-neutral-800 bg-neutral-900 px-3 py-2 text-sm outline-none focus:border-neutral-500"
       />
 
-      {addNade.isError && <p className="text-sm text-red-400">Nie udało się dodać granatu.</p>}
+      {addNade.isError && <p className="text-sm text-danger-400">Nie udało się dodać granatu.</p>}
 
       <button
         type="submit"
         disabled={addNade.isPending}
-        className="self-start rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-red-500 disabled:opacity-50"
+        className="self-start rounded-md bg-primary-500 px-4 py-2 text-sm font-medium text-primary-950 transition hover:bg-primary-400 disabled:opacity-50"
       >
         {addNade.isPending ? 'Dodawanie…' : 'Dodaj granat'}
       </button>

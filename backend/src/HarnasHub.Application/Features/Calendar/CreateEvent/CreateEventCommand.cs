@@ -13,4 +13,5 @@ public record CreateEventCommand(
 	DateTime? EndsAtUtc,
 	string? Location,
 	string? Url,
-	string? Notes) : IRequest<ErrorOr<EventDto>>;
+	string? Notes,
+	string? Opponent = null) : IRequest<ErrorOr<EventDto>>;

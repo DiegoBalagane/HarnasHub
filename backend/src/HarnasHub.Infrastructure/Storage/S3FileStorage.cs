@@ -40,6 +40,15 @@ public class S3FileStorage : IFileStorage
 
 	#endregion
 
+	#region Private Properties
+
+	// GetPreSignedURL signs https:// links regardless of ServiceURL, which breaks a plain-http endpoint such as the local
+	// docker-compose S3 — follow whatever scheme the configured endpoint actually uses.
+	private Protocol PresignProtocol =>
+		_settings.Endpoint.StartsWith("http://", StringComparison.OrdinalIgnoreCase) ? Protocol.HTTP : Protocol.HTTPS;
+
+	#endregion
+
 	#region Public Properties
 
 	public bool IsConfigured =>
@@ -61,6 +70,7 @@ public class S3FileStorage : IFileStorage
 			BucketName = _settings.BucketName,
 			Key = objectKey,
 			Verb = HttpVerb.PUT,
+			Protocol = PresignProtocol,
 			Expires = DateTime.UtcNow.Add(expiry),
 			// Left unset deliberately: the browser's PUT must not send a Content-Type the signature didn't
 			// account for, and demo files have no single canonical MIME type worth pinning here anyway.
@@ -77,6 +87,7 @@ public class S3FileStorage : IFileStorage
 			BucketName = _settings.BucketName,
 			Key = objectKey,
 			Verb = HttpVerb.GET,
+			Protocol = PresignProtocol,
 			Expires = DateTime.UtcNow.Add(expiry)
 		};
 
@@ -92,6 +103,51 @@ public class S3FileStorage : IFileStorage
 	public async Task DeleteAsync(string objectKey, CancellationToken cancellationToken)
 	{
 		await _client.Value.DeleteObjectAsync(_settings.BucketName, objectKey, cancellationToken);
+	}
+
+	public async Task UploadAsync(string objectKey, Stream content, string contentType, CancellationToken cancellationToken)
+	{
+		var request = new PutObjectRequest
+		{
+			BucketName = _settings.BucketName,
+			Key = objectKey,
+			InputStream = content,
+			ContentType = contentType,
+			AutoCloseStream = false,
+			// R2 rejects the AWS SDK's default streaming (chunked) signature payloads. The SDK only allows an unsigned
+			// payload over HTTPS, so a plain-http endpoint (local docker-compose S3) signs the whole body instead.
+			DisablePayloadSigning = PresignProtocol == Protocol.HTTPS,
+			UseChunkEncoding = false
+		};
+
+		await _client.Value.PutObjectAsync(request, cancellationToken);
+	}
+
+	public async Task<int> DeleteOlderThanAsync(string keyPrefix, DateTime olderThanUtc, CancellationToken cancellationToken)
+	{
+		var deleted = 0;
+		var request = new ListObjectsV2Request { BucketName = _settings.BucketName, Prefix = keyPrefix };
+
+		ListObjectsV2Response response;
+		do
+		{
+			response = await _client.Value.ListObjectsV2Async(request, cancellationToken);
+
+			var stale = (response.S3Objects ?? [])
+				.Where(o => o.LastModified is { } modified && modified.ToUniversalTime() < olderThanUtc)
+				.ToList();
+
+			foreach (var staleObject in stale)
+			{
+				await _client.Value.DeleteObjectAsync(_settings.BucketName, staleObject.Key, cancellationToken);
+				deleted++;
+			}
+
+			request.ContinuationToken = response.NextContinuationToken;
+		}
+		while (response.IsTruncated == true);
+
+		return deleted;
 	}
 
 	#endregion

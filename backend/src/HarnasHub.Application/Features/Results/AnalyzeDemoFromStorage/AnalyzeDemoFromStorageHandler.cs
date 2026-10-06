@@ -38,7 +38,7 @@ public class AnalyzeDemoFromStorageHandler(IFileStorage fileStorage, ISender sen
 			}
 
 			await using var seekableStream = new FileStream(tempFilePath, FileMode.Open, FileAccess.Read, FileShare.Read);
-			return await sender.Send(new AnalyzeDemoCommand(seekableStream), cancellationToken);
+			return await sender.Send(new AnalyzeDemoCommand(seekableStream, request.FileName), cancellationToken);
 		}
 		catch (Exception ex)
 		{

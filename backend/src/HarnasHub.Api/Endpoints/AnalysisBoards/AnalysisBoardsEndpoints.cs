@@ -1,5 +1,6 @@
 using HarnasHub.Api.Common;
 using HarnasHub.Application.Features.AnalysisBoards.CreateBoard;
+using HarnasHub.Application.Features.AnalysisBoards.CreateBoardFromRound;
 using HarnasHub.Application.Features.AnalysisBoards.DeleteBoard;
 using HarnasHub.Application.Features.AnalysisBoards.GetBoards;
 using HarnasHub.Application.Features.AnalysisBoards.PresignBoardImageUpload;
@@ -27,6 +28,14 @@ public class AnalysisBoardsEndpoints : IEndpoint
 		group.MapPost("/", async (CreateBoardRequest request, ISender sender, CancellationToken cancellationToken) =>
 		{
 			var command = new CreateBoardCommand(request.MapName, request.Title, request.BackgroundImageObjectKey, request.StrokesJson);
+			var result = await sender.Send(command, cancellationToken);
+			return result.Match(success => Results.Ok(success), errors => errors.ToProblemResult());
+		}).RequireAuthorization(policy => policy.RequireRole("Coach", "Manager"));
+
+		// Snapshot of a replayed round (match or opponent demo) at one second, drawn server-side as board strokes.
+		group.MapPost("/from-round", async (CreateBoardFromRoundRequest request, ISender sender, CancellationToken cancellationToken) =>
+		{
+			var command = new CreateBoardFromRoundCommand(request.Source, request.SourceId, request.RoundNumber, request.Second);
 			var result = await sender.Send(command, cancellationToken);
 			return result.Match(success => Results.Ok(success), errors => errors.ToProblemResult());
 		}).RequireAuthorization(policy => policy.RequireRole("Coach", "Manager"));
@@ -59,3 +68,6 @@ public record CreateBoardRequest(MapName MapName, string Title, string? Backgrou
 
 /// <summary>Request body for PATCH /api/analysis-boards/{boardId}.</summary>
 public record UpdateBoardRequest(string Title, string? BackgroundImageObjectKey, string StrokesJson);
+
+/// <summary>Request body for POST /api/analysis-boards/from-round.</summary>
+public record CreateBoardFromRoundRequest(ReplaySource Source, Guid SourceId, int RoundNumber, int Second);

@@ -3,6 +3,18 @@
 // request bodies well before this app's own (much higher) Kestrel limit ever comes into play.
 export const DEMO_DIRECT_UPLOAD_MAX_BYTES = 250 * 1024 * 1024
 
+/** Server-side cap on an event game plan's notes (SetEventGamePlanCommandValidator). */
+export const GAME_PLAN_NOTES_MAX_LENGTH = 4000
+
+/** Server-side cap on the pasted FACEIT link source (LinkOpponentFaceitCommandValidator). */
+export const FACEIT_LINK_SOURCE_MAX_LENGTH = 1000
+
+/** Opponent demos: default and server-side max (DownloadOpponentDemosCommand.MaxCount) demos per FACEIT download run. */
+export const OPPONENT_DEMO_DOWNLOAD = { defaultCount: 3, maxCount: 5 } as const
+
+/** 2D round replay: playback speeds, seconds skipped by ←/→ (Shift = fast) and dot/label sizes in CSS pixels. */
+export const REPLAY_SETTINGS = { speeds: [1, 2, 4], seekStepSeconds: 1, fastSeekStepSeconds: 5, dotRadiusPx: 6, labelFontPx: 11 } as const
+
 export const API_SETTINGS = {
   // Empty string = same-origin relative requests. That's the production default: the backend
   // serves this built frontend itself (see docs/DEPLOYMENT.md), so there's no separate API host.
@@ -31,6 +43,9 @@ export const API_ENDPOINTS = {
     myPinMark: '/api/roster/me/pin-mark',
     mySteamId64: '/api/roster/me/steam-id',
   },
+  admin: {
+    status: '/api/admin/status',
+  },
   dashboard: '/api/dashboard',
   calendar: {
     events: '/api/calendar/events',
@@ -54,6 +69,14 @@ export const API_ENDPOINTS = {
   },
   results: '/api/results',
   resultById: (matchResultId: string) => `/api/results/${matchResultId}`,
+  matchTimeline: (matchResultId: string) => `/api/results/${matchResultId}/timeline`,
+  matchInsights: (matchResultId: string) => `/api/results/${matchResultId}/insights`,
+  matchAnalysis: (matchResultId: string) => `/api/results/${matchResultId}/analysis`,
+  mapAnalytics: (mapName: string) => `/api/maps/${mapName}/analytics`,
+  roundReplay: (matchResultId: string, roundNumber: number) =>
+    `/api/results/${matchResultId}/rounds/${roundNumber}/replay`,
+  matchTacticMatches: (matchResultId: string) => `/api/results/${matchResultId}/tactic-matches`,
+  attachResultDemo: (matchResultId: string) => `/api/results/${matchResultId}/demo`,
   analyzeResultDemo: '/api/results/analyze-demo',
   presignResultDemo: '/api/results/analyze-demo/presign',
   analyzeResultDemoFromStorage: '/api/results/analyze-demo/from-storage',
@@ -75,11 +98,15 @@ export const API_ENDPOINTS = {
   tactics: {
     list: '/api/tactics',
     byId: (tacticId: string) => `/api/tactics/${tacticId}`,
+    importDemoExtract: '/api/tactics/import-demo/extract',
+    importDemo: '/api/tactics/import-demo',
+    effectiveness: (mapName: string) => `/api/tactics/effectiveness?mapName=${mapName}`,
   },
   analysisBoards: {
     list: (mapName?: string) => (mapName ? `/api/analysis-boards?mapName=${mapName}` : '/api/analysis-boards'),
     byId: (boardId: string) => `/api/analysis-boards/${boardId}`,
     presignImageUpload: '/api/analysis-boards/presign-image-upload',
+    fromRound: '/api/analysis-boards/from-round',
   },
   trainingMaterials: '/api/training-materials',
   matchStats: (matchResultId: string) => `/api/matches/${matchResultId}/stats`,
@@ -87,15 +114,53 @@ export const API_ENDPOINTS = {
   teamTrend: '/api/stats/team-trend',
   statsLeaderboard: (category?: string) =>
     category ? `/api/stats/leaderboard?category=${category}` : '/api/stats/leaderboard',
-  opponents: '/api/opponents',
+  gamePlan: (eventId: string) => `/api/game-plans/${eventId}`,
+  veto: {
+    suggestion: (opponent: string) => `/api/veto/suggestion?opponent=${encodeURIComponent(opponent)}`,
+    event: (eventId: string) => `/api/veto/events/${eventId}`,
+  },
+  mapPool: {
+    list: (category?: string) => (category ? `/api/map-pool?category=${category}` : '/api/map-pool'),
+    byMap: (mapName: string) => `/api/map-pool/${mapName}`,
+  },
+  opponents: {
+    list: '/api/opponents',
+    profile: (name: string) => `/api/opponents/profile?name=${encodeURIComponent(name)}`,
+    notes: '/api/opponents/notes',
+    noteById: (noteId: string) => `/api/opponents/notes/${noteId}`,
+    report: (name: string) => `/api/opponents/report?name=${encodeURIComponent(name)}`,
+    reportLink: '/api/opponents/report/link',
+    reportRefresh: (name: string) => `/api/opponents/report/refresh?name=${encodeURIComponent(name)}`,
+    demos: (name: string) => `/api/opponents/report/demos?name=${encodeURIComponent(name)}`,
+    analyzeDemo: '/api/opponents/report/demos',
+    demoById: (demoId: string) => `/api/opponents/report/demos/${demoId}`,
+    demoTeam: (demoId: string) => `/api/opponents/report/demos/${demoId}/team`,
+    demoReplay: (demoId: string, roundNumber: number) =>
+      `/api/opponents/report/demos/${demoId}/rounds/${roundNumber}/replay`,
+    faceitDemoDownload: '/api/opponents/report/demos/faceit-download',
+  },
   attendance: {
     summary: '/api/attendance/summary',
     incidents: (userId?: string) =>
       userId ? `/api/attendance/incidents?userId=${userId}` : '/api/attendance/incidents',
     incidentById: (incidentId: string) => `/api/attendance/incidents/${incidentId}`,
   },
+  jobs: {
+    byId: (jobId: string) => `/api/jobs/${jobId}`,
+  },
 } as const
+
+/** Background jobs: status poll interval without a live SignalR connection, and the slower safety poll while connected
+ * (pushes on the `job:{id}` topic normally drive the refetches). */
+export const JOB_SETTINGS = { pollIntervalMs: 2_000, connectedPollIntervalMs: 10_000 } as const
 
 export const STORAGE_KEYS = {
   accessToken: 'harnashub.accessToken',
+} as const
+
+/** Sidebar navigation: localStorage key of the collapsed flag and the two widths (px) the layout offsets content by. */
+export const SIDEBAR_SETTINGS = {
+  storageKey: 'harnashub.sidebarCollapsed',
+  expandedWidthPx: 240,
+  collapsedWidthPx: 64,
 } as const
