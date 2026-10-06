@@ -10,7 +10,7 @@ public class GetVetoSuggestionFaceitTests
 	#region Public Methods
 
 	[Fact]
-	public async Task Should_feed_the_faceit_advantage_from_the_report_snapshot_into_the_score()
+	public async Task Should_feed_the_opponent_strength_from_the_report_snapshot_into_the_score()
 	{
 		await using var dbContext = TestApplicationDbContext.Create();
 		var handler = new GetVetoSuggestionHandler(dbContext);
@@ -19,7 +19,13 @@ public class GetVetoSuggestionFaceitTests
 		var report = OpponentReportBuilder.Build(new OpponentReportInput(
 			"Team X", null, DateTime.UtcNow, [], [], new HashSet<string>(), new HashSet<string>(), []));
 		var maps = report.Maps
-			.Select(m => m.MapName == "Mirage" ? m with { TheirGames = 12, OurGames = 12, Advantage = 25 } : m)
+			.Select(m => m.MapName switch
+			{
+				"Mirage" => m with { TheirGames = 10, TheirWins = 2, TheirSmoothedWinRate = 30 },
+				// An older snapshot row: no smoothed rate and no FACEIT wins of ours — falls back, our FACEIT games are skipped.
+				"Nuke" => m with { TheirGames = 3, TheirWins = 3, OurFaceitGames = 4, OurFaceitWins = null, TheirSmoothedWinRate = null },
+				_ => m
+			})
 			.ToList();
 		await OpponentReportSnapshots.SaveAsync(dbContext, "team x", report with { Maps = maps }, CancellationToken.None);
 		await dbContext.SaveChangesAsync(CancellationToken.None);
@@ -28,11 +34,11 @@ public class GetVetoSuggestionFaceitTests
 
 		var mirageBefore = before.Value.Maps.Single(m => m.MapName == "Mirage");
 		var mirageAfter = after.Value.Maps.Single(m => m.MapName == "Mirage");
-		Assert.Equal(mirageBefore.Score + 20, mirageAfter.Score);
-		Assert.Contains(mirageAfter.Reasons, r => r.StartsWith("FACEIT: przewaga +25 pp"));
-		Assert.Equal(
-			before.Value.Maps.Single(m => m.MapName == "Nuke").Score,
-			after.Value.Maps.Single(m => m.MapName == "Nuke").Score);
+		Assert.Equal(mirageBefore.Score + 12, mirageAfter.Score);
+		Assert.Contains("Słabość rywala: ich 20% wygranych przy 10 meczach", mirageAfter.Reasons);
+		var nukeAfter = after.Value.Maps.Single(m => m.MapName == "Nuke");
+		Assert.Equal(before.Value.Maps.Single(m => m.MapName == "Nuke").Score, nukeAfter.Score);
+		Assert.Contains("Brak naszych meczów na tej mapie", nukeAfter.Reasons);
 	}
 
 	#endregion

@@ -10,7 +10,7 @@ import { VacationList } from '../../features/availability/components/VacationLis
 import { WeeklyCalendar } from '../../features/availability/components/WeeklyCalendar'
 import { useIsCoachOrManager } from '../../features/auth/hooks/useIsCoachOrManager'
 import { CreateEventForm } from '../../features/calendar/components/CreateEventForm'
-import { EventList } from '../../features/calendar/components/EventList'
+import { EventCalendar } from '../../features/calendar/components/EventCalendar'
 
 type CalendarTab = 'events' | 'availability'
 
@@ -19,7 +19,7 @@ const calendarTabs: readonly TabItem<CalendarTab>[] = [
   { id: 'availability', label: 'Dostępność' },
 ]
 
-/** Merged calendar: events first (list + create), then the weekly availability grid; vacations live behind a button. The `?event=<id>` deep link opens the event on the events tab. */
+/** Merged calendar: events first (month/week/agenda calendar + create), then the weekly availability grid; vacations live behind a button. The `?event=<id>` deep link opens the event on the events tab. */
 export function CalendarPage() {
   const canManage = useIsCoachOrManager()
   const [searchParams, setSearchParams] = useSearchParams()
@@ -53,7 +53,7 @@ export function CalendarPage() {
 
       <Tabs tabs={calendarTabs} value={tab} onChange={selectTab} />
 
-      {tab === 'events' ? <EventList /> : <WeeklyCalendar />}
+      {tab === 'events' ? <EventCalendar /> : <WeeklyCalendar />}
 
       {isVacationsOpen && (
         <Modal title="Urlopy" onClose={() => setIsVacationsOpen(false)}>

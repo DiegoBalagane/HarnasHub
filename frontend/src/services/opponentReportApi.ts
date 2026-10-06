@@ -58,6 +58,55 @@ export interface MapComparison {
   vetoScore: number
   recommendation: VetoRecommendation
   vetoReasons: string[]
+  /** Our win rate smoothed towards 50%; absent in older reports. */
+  ourSmoothedWinRate?: number | null
+  /** Their recency-weighted, smoothed win rate the decisions use; absent in older reports. */
+  theirSmoothedWinRate?: number | null
+  /** True when our sample is too small to decide anything ("za mało danych"). */
+  ourLowSample?: boolean
+  /** True when their sample on the map is too small to quote a win rate. */
+  theirLowSample?: boolean
+  /** Lifetime FACEIT numbers of their active lineup on the map. */
+  theirLifetime?: MapLifetime | null
+  /** Lifetime FACEIT numbers of our linked players on the map. */
+  ourLifetime?: MapLifetime | null
+}
+
+/** A lineup's summed lifetime FACEIT numbers on one map (like the FACEIT match room); rates and share in percent. */
+export interface MapLifetime {
+  players: number
+  matches: number
+  winRate: number | null
+  avgKdRatio: number | null
+  share: number
+  /** The lineup plays this map a lot individually. */
+  experienced: boolean
+}
+
+/** One linked opponent player in the lineup header. */
+export interface LineupPlayer {
+  playerId: string
+  nickname: string
+  elo: number | null
+  skillLevel: number | null
+  recentTeamGames: number
+  teamGames: number
+  lastTeamGameAtUtc: string | null
+}
+
+/** A roster player whose FACEIT account could not be found, with the Polish reason. */
+export interface UnresolvedRosterPlayer {
+  userId: string
+  displayName: string
+  reason: string
+}
+
+/** Who the report treats as the active lineup and why; inactive = ex-members and subs left out of player numbers. */
+export interface ActiveLineup {
+  basis: string
+  windowGames: number
+  active: LineupPlayer[]
+  inactive: LineupPlayer[]
 }
 
 /** One step of a simulated veto. */
@@ -205,6 +254,10 @@ export interface OpponentReport {
   tendencies: MapTendencies[]
   /** Individual form (team + solo games) of both rosters; null/absent in reports generated before it existed. */
   individualForm?: IndividualForm | null
+  /** The opponent's active lineup; null/absent in reports generated before it existed. */
+  activeLineup?: ActiveLineup | null
+  /** Roster players without a FACEIT account found, with the reason; absent in older payloads. */
+  unresolvedOurPlayers?: UnresolvedRosterPlayer[] | null
 }
 
 export const opponentReportApi = {

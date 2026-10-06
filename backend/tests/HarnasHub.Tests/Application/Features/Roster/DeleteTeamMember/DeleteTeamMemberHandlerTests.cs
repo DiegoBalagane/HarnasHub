@@ -62,6 +62,25 @@ public class DeleteTeamMemberHandlerTests
 	}
 
 	[Fact]
+	public async Task Should_keep_match_stat_lines_but_unlink_them_from_the_deleted_account()
+	{
+		await using var dbContext = TestApplicationDbContext.Create();
+		var userId = Guid.NewGuid();
+		dbContext.Users.Add(CreateUser(userId, "Zenek"));
+		var stat = new PlayerMatchStat { Id = Guid.NewGuid(), MatchResultId = Guid.NewGuid(), UserId = userId, DemoPlayerName = "zenek", CreatedAtUtc = DateTime.UtcNow };
+		dbContext.PlayerMatchStats.Add(stat);
+		await dbContext.SaveChangesAsync(CancellationToken.None);
+
+		var handler = new DeleteTeamMemberHandler(dbContext, new TestCurrentUserService(Guid.NewGuid(), "Manager"), new TestRealtimeNotifier());
+		var result = await handler.Handle(new DeleteTeamMemberCommand(userId), CancellationToken.None);
+
+		Assert.False(result.IsError);
+		var kept = Assert.Single(dbContext.PlayerMatchStats);
+		Assert.Null(kept.UserId);
+		Assert.Equal("zenek", kept.DemoPlayerName);
+	}
+
+	[Fact]
 	public async Task Should_reject_deleting_your_own_account()
 	{
 		await using var dbContext = TestApplicationDbContext.Create();

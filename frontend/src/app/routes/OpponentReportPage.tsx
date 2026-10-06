@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { useIsCoachOrManager } from '../../features/auth/hooks/useIsCoachOrManager'
+import { useAuthStore } from '../../features/auth/stores/useAuthStore'
+import { ActiveLineupSection } from '../../features/opponentReport/components/ActiveLineupSection'
 import { FaceitLinkForm } from '../../features/opponentReport/components/FaceitLinkForm'
 import { IndividualFormSection } from '../../features/opponentReport/components/IndividualFormSection'
 import { InsightList } from '../../features/opponentReport/components/InsightList'
@@ -19,6 +21,7 @@ export function OpponentReportPage() {
   const [searchParams] = useSearchParams()
   const name = searchParams.get('name') ?? ''
   const canManage = useIsCoachOrManager()
+  const isManager = useAuthStore((state) => state.role === 'Manager')
   const [format, setFormat] = useState<VetoFormat>('Bo1')
   const { data: report, isLoading, isError } = useOpponentReport(name)
 
@@ -36,10 +39,14 @@ export function OpponentReportPage() {
         <>
           <header className="flex flex-col gap-1">
             <h1 className="text-2xl font-semibold">Raport: {report.opponentName}</h1>
-            {report.link && (
-              <p className="text-sm text-neutral-400">
-                FACEIT: {report.link.players.map((player) => player.nickname).join(', ')}
-              </p>
+            {report.activeLineup ? (
+              <ActiveLineupSection lineup={report.activeLineup} />
+            ) : (
+              report.link && (
+                <p className="text-sm text-neutral-400">
+                  FACEIT: {report.link.players.map((player) => player.nickname).join(', ')}
+                </p>
+              )
             )}
           </header>
 
@@ -56,9 +63,17 @@ export function OpponentReportPage() {
           <VetoPlanSection plans={report.vetoPlans} format={format} onFormatChange={setFormat} />
           <PlayersToWatch maps={report.playersToWatch} />
           <TeamFormSection form={report.form} />
-          <IndividualFormSection form={report.individualForm} />
+          <IndividualFormSection
+            form={report.individualForm}
+            unresolved={report.unresolvedOurPlayers}
+            canSetNickname={isManager}
+          />
           <MapTendenciesSection opponentName={report.opponentName} tendencies={report.tendencies ?? []} canManage={canManage} />
-          <OpponentDemosSection opponentName={report.opponentName} canManage={canManage} />
+          <OpponentDemosSection
+            opponentName={report.opponentName}
+            canManage={canManage}
+            recentGames={report.form?.lastGames}
+          />
         </>
       )}
     </div>

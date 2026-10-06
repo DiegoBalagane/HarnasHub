@@ -41,7 +41,51 @@ public record MapComparisonDto(
 	string PredictionReason,
 	int VetoScore,
 	string Recommendation,
-	List<string> VetoReasons);
+	List<string> VetoReasons)
+{
+	/// <summary>Our win rate smoothed towards 50% (percent) — shown next to the raw one; null without games.</summary>
+	public double? OurSmoothedWinRate { get; init; }
+
+	/// <summary>Their recency-weighted, smoothed win rate (percent) the decisions use; null without games.</summary>
+	public double? TheirSmoothedWinRate { get; init; }
+
+	/// <summary>Our FACEIT team-game wins on the map (part of <see cref="MapComparisonDto.OurWins"/>); null in older snapshots.</summary>
+	public int? OurFaceitWins { get; init; }
+
+	/// <summary>Our players' solo-form win-rate prior (0.4–0.6) fed to the veto score as a small secondary term; null without data.</summary>
+	public double? OurSoloPrior { get; init; }
+
+	/// <summary>True when our sample is below <see cref="SampleThresholds.MinGamesForWinRate"/> — "za mało danych", not used to decide.</summary>
+	public bool OurLowSample { get; init; }
+
+	/// <summary>True when their sample is below <see cref="SampleThresholds.MinGamesForWinRate"/>.</summary>
+	public bool TheirLowSample { get; init; }
+
+	/// <summary>Lifetime FACEIT numbers of their active lineup on the map; null without data (and in older snapshots).</summary>
+	public MapLifetimeDto? TheirLifetime { get; init; }
+
+	/// <summary>Lifetime FACEIT numbers of our linked players on the map; null without data.</summary>
+	public MapLifetimeDto? OurLifetime { get; init; }
+}
+
+/// <summary>A lineup's summed lifetime FACEIT numbers on one map, like the match room's aggregate: <paramref name="Matches"/> of all
+/// <paramref name="Players"/>, win rate and share (percent of their lifetime pool matches), average K/D; <paramref name="Experienced"/>
+/// marks a map they play a lot individually.</summary>
+public record MapLifetimeDto(int Players, int Matches, double? WinRate, double? AvgKdRatio, double Share, bool Experienced);
+
+/// <summary>One linked opponent player in the lineup header: team games in the lineup window and overall, last team game.</summary>
+public record LineupPlayerDto(
+	string PlayerId,
+	string Nickname,
+	int? Elo,
+	int? SkillLevel,
+	int RecentTeamGames,
+	int TeamGames,
+	DateTime? LastTeamGameAtUtc);
+
+/// <summary>Who the report treats as the opponent's active lineup and why (<paramref name="Basis"/>); <paramref name="Inactive"/> are
+/// linked ex-members and subs, excluded from every player-facing number.</summary>
+public record ActiveLineupDto(string Basis, int WindowGames, List<LineupPlayerDto> Active, List<LineupPlayerDto> Inactive);
 
 /// <summary>One step of a simulated veto; <paramref name="Actor"/>/<paramref name="Action"/> use the <c>VetoActor</c>/<c>VetoAction</c> names.</summary>
 public record VetoPlanStepDto(int Order, string Actor, string Action, string MapName, string Reason);
@@ -103,6 +147,12 @@ public record OpponentReportDto(
 	/// <summary>Individual form of both rosters (team and solo games) with per-map comfort; null in snapshots generated before
 	/// it existed, so old snapshots stay readable.</summary>
 	public IndividualFormDto? IndividualForm { get; init; }
+
+	/// <summary>The opponent's active lineup and the linked players left out of it; null in snapshots generated before it existed.</summary>
+	public ActiveLineupDto? ActiveLineup { get; init; }
+
+	/// <summary>Roster players without a FACEIT account found (with the reason), filled live on every read; null in older payloads.</summary>
+	public List<UnresolvedRosterPlayerDto>? UnresolvedOurPlayers { get; init; }
 }
 
 /// <summary>Outcome of a sync run: how many map games were newly cached and whether the per-run fetch cap cut it short.</summary>

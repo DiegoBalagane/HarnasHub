@@ -38,9 +38,34 @@ public class OpponentInsightRulesTests
 	[Fact]
 	public void LikelyBans_should_combine_predicted_bans()
 	{
-		var insight = Assert.Single(OpponentInsightRules.LikelyBans(Input(10, [Row("Nuke", 0, prediction: "Ban"), Row("Anubis", 1, prediction: "Ban")])));
+		var insight = Assert.Single(OpponentInsightRules.LikelyBans(Input(20, [Row("Nuke", 0, prediction: "Ban"), Row("Anubis", 1, prediction: "Ban")])));
 
 		Assert.Equal("Nie grają Nuke i Anubis — prawie pewne bany", insight.Text);
+	}
+
+	[Fact]
+	public void LikelyBans_should_need_the_larger_team_sample()
+	{
+		Assert.Empty(OpponentInsightRules.LikelyBans(Input(SampleThresholds.MinTeamGamesForAvoidance - 3, [Row("Ancient", 1, prediction: "Ban")])));
+	}
+
+	[Fact]
+	public void LikelyBans_should_skip_a_map_the_lineup_plays_a_lot_lifetime()
+	{
+		var ancient = Row("Ancient", 1, prediction: "Ban") with { TheirLifetime = new MapLifetimeDto(5, 113, 52, 1.12, 22.6, true) };
+
+		Assert.Empty(OpponentInsightRules.LikelyBans(Input(20, [ancient])));
+	}
+
+	[Fact]
+	public void Dangers_should_need_enough_of_their_games_and_flag_our_thin_sample()
+	{
+		var thin = Row("Mirage", 4, theirWinRate: 75, ourWinRate: 0, advantage: -30, confidence: "Medium");
+		var solid = Row("Nuke", 9, theirWinRate: 78, ourWinRate: 0, advantage: -25, confidence: "Medium") with { OurGames = 2, OurWins = 0 };
+
+		var insight = Assert.Single(OpponentInsightRules.Dangers(Input(20, [thin, solid])));
+
+		Assert.Equal("Uwaga na Nuke: oni 78%, my za mało danych (2 mecze) — kandydat do bana", insight.Text);
 	}
 
 	[Fact]

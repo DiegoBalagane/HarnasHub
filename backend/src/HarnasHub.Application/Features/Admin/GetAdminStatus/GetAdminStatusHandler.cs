@@ -1,5 +1,6 @@
 using ErrorOr;
 using HarnasHub.Application.Abstractions;
+using HarnasHub.Core.Enums;
 using MediatR;
 
 namespace HarnasHub.Application.Features.Admin.GetAdminStatus;
@@ -21,7 +22,12 @@ public class GetAdminStatusHandler(
 			demoDownloader.IsConfigured,
 			fileStorage.IsConfigured,
 			integrationSettings.IsDiscordWebhookConfigured,
-			integrationSettings.IsFrontendBaseUrlConfigured);
+			integrationSettings.IsFrontendBaseUrlConfigured,
+			new DiscordChannelsStatusDto(
+				integrationSettings.IsDiscordChannelConfigured(DiscordChannel.Announcements),
+				integrationSettings.IsDiscordChannelConfigured(DiscordChannel.MatchSchedule),
+				integrationSettings.IsDiscordChannelConfigured(DiscordChannel.DemoReview),
+				integrationSettings.IsDiscordChannelConfigured(DiscordChannel.OpponentScouting)));
 
 		return Task.FromResult(status);
 	}

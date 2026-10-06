@@ -1,4 +1,5 @@
 using HarnasHub.Application.Abstractions;
+using HarnasHub.Core.Enums;
 using HarnasHub.Core.Options;
 using Microsoft.Extensions.Options;
 
@@ -10,10 +11,17 @@ public class IntegrationSettings(IOptions<DiscordSettings> discord, IOptions<Fro
 	#region Public Properties
 
 	/// <inheritdoc />
-	public bool IsDiscordWebhookConfigured => !string.IsNullOrWhiteSpace(discord.Value.WebhookUrl);
+	public bool IsDiscordWebhookConfigured => Enum.GetValues<DiscordChannel>().Any(IsDiscordChannelConfigured);
 
 	/// <inheritdoc />
 	public bool IsFrontendBaseUrlConfigured => !string.IsNullOrWhiteSpace(frontend.Value.BaseUrl);
+
+	#endregion
+
+	#region Public Methods
+
+	/// <inheritdoc />
+	public bool IsDiscordChannelConfigured(DiscordChannel channel) => discord.Value.IsConfigured(channel);
 
 	#endregion
 }

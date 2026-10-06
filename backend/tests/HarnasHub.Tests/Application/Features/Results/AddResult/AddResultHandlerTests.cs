@@ -194,12 +194,26 @@ public class AddResultHandlerTests
 		Assert.Empty(dbContext.MatchDemoAnalyses);
 	}
 
+	[Fact]
+	public async Task Should_post_the_result_to_the_match_schedule_channel_but_no_demo_review_without_a_timeline()
+	{
+		await using var dbContext = TestApplicationDbContext.Create();
+
+		await Handler(dbContext).Handle(Command(), CancellationToken.None);
+
+		var (channel, message) = Assert.Single(Discord.Sent);
+		Assert.Equal(DiscordChannel.MatchSchedule, channel);
+		Assert.Contains("16:10", message);
+	}
+
 	#endregion
 
 	#region Private Methods
 
 	private AddResultHandler Handler(IApplicationDbContext dbContext, TestFileStorage? fileStorage = null) =>
-		new(dbContext, new TestCurrentUserService(_userId), new TestRealtimeNotifier(), fileStorage ?? new TestFileStorage(), NullLogger<AddResultHandler>.Instance);
+		new(dbContext, new TestCurrentUserService(_userId), new TestRealtimeNotifier(), fileStorage ?? new TestFileStorage(), TestTeamNotifications.Create(dbContext, fileStorage, Discord), NullLogger<AddResultHandler>.Instance);
+
+	private TestDiscordNotifier Discord { get; } = new();
 
 	private static AddResultCommand Command(
 		MatchCategory category = MatchCategory.Scrimmage,

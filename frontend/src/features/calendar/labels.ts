@@ -39,3 +39,12 @@ export const availabilityColors: Record<AvailabilityStatus | 'NotSet', string> =
   Unavailable: 'text-danger-400',
   NotSet: 'text-neutral-500',
 }
+
+/** Tinted block background + border per event type, for month chips and week blocks. */
+export const eventTypeBlockColors: Record<EventType, string> = {
+  Training: 'border-purple-400/40 bg-purple-400/15 hover:bg-purple-400/25',
+  PickupGame: 'border-info-400/40 bg-info-400/15 hover:bg-info-400/25',
+  Match: 'border-primary-400/40 bg-primary-400/15 hover:bg-primary-400/25',
+  Tournament: 'border-warning-400/40 bg-warning-400/15 hover:bg-warning-400/25',
+  Scrim: 'border-success-400/40 bg-success-400/15 hover:bg-success-400/25',
+}

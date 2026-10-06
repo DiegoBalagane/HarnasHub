@@ -117,5 +117,27 @@ public class GetSummaryHandlerTests
 		Assert.Empty(result.Value);
 	}
 
+	[Fact]
+	public async Task Should_leave_out_players_hidden_from_the_calendar()
+	{
+		await using var dbContext = TestApplicationDbContext.Create();
+		var hiddenId = Guid.NewGuid();
+		dbContext.Users.Add(new User
+		{
+			Id = hiddenId,
+			DiscordId = hiddenId.ToString(),
+			DisplayName = "Ukryty",
+			AccessLevel = AccessLevel.Player,
+			RosterSlot = RosterSlot.Main,
+			ShowInCalendar = false,
+			CreatedAtUtc = DateTime.UtcNow
+		});
+		await dbContext.SaveChangesAsync(CancellationToken.None);
+
+		var result = await new GetSummaryHandler(dbContext).Handle(new GetSummaryQuery(), CancellationToken.None);
+
+		Assert.Empty(result.Value);
+	}
+
 	#endregion
 }

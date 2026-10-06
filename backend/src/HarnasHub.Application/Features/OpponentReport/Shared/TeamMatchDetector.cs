@@ -49,10 +49,10 @@ public static class TeamMatchDetector
 			.OrderByDescending(g => g.PlayedAtUtc)
 			.ToList();
 
-	/// <summary>How many games had some roster players but weren't team games — the "solo" sample behind player comfort.</summary>
-	public static int CountSoloGames(IEnumerable<FaceitMatch> matches, IReadOnlySet<string> roster) =>
+	/// <summary>How many games had some roster players but weren't team games — the "solo" sample behind player comfort; with <paramref name="players"/> only games of those players count (the roster still decides team vs solo).</summary>
+	public static int CountSoloGames(IEnumerable<FaceitMatch> matches, IReadOnlySet<string> roster, IReadOnlySet<string>? players = null) =>
 		matches.Count(m =>
-			m.Team1PlayerIds.Concat(m.Team2PlayerIds).Any(roster.Contains)
+			m.Team1PlayerIds.Concat(m.Team2PlayerIds).Any((players ?? roster).Contains)
 			&& FindSide(m.Team1PlayerIds, m.Team2PlayerIds, roster) is null);
 
 	/// <summary>Pool map of a raw FACEIT map name ("de_mirage" → Mirage); null for maps outside the pool.</summary>

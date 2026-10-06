@@ -99,6 +99,32 @@ public class SyncOpponentFaceitHandlerTests
 		Assert.Null((await dbContext.OpponentFaceitLinks.SingleAsync()).LastSyncedAtUtc);
 	}
 
+	[Fact]
+	public async Task Should_fetch_lifetime_map_stats_only_for_the_active_lineup_and_show_them_in_the_report()
+	{
+		await using var dbContext = TestApplicationDbContext.Create();
+		AddLink(dbContext, lastSyncedAtUtc: null);
+		var link = dbContext.OpponentFaceitLinks.Local.Single();
+		link.PlayerIds = [.. Them, "ex1"];
+		dbContext.FaceitPlayers.AddRange(link.PlayerIds.Select(id => new FaceitPlayer { Id = id, Nickname = id, Elo = 2000, UpdatedAtUtc = DateTime.UtcNow }));
+		await dbContext.SaveChangesAsync(CancellationToken.None);
+		var client = new TestFaceitClient();
+		foreach (var (player, index) in Them.Select((p, i) => (p, i)))
+		{
+			client.Histories[player] = [new FaceitHistoryItem("m1", DateTime.UtcNow.AddDays(-1), "championship", "ESEA League", "FINISHED")];
+			client.LifetimeMapStats[player] = [new FaceitLifetimeMapStats("de_ancient", 20 + index, 10, 1.1)];
+		}
+		client.Stats["m1"] = [TestFaceitClient.MapStats("de_mirage", Them, Strangers())];
+
+		var result = await Handler(dbContext, client).Handle(new("Team X", IsManual: true), CancellationToken.None);
+
+		Assert.Equal(Them.Order(), client.MapStatsRequests.Order());
+		Assert.NotNull((await dbContext.FaceitPlayers.FindAsync("t1"))!.MapStatsJson);
+		var ancient = result.Value.Maps.Single(m => m.MapName == "Ancient");
+		Assert.Equal((5, 110), (ancient.TheirLifetime!.Players, ancient.TheirLifetime.Matches));
+		Assert.Equal(["ex1"], result.Value.ActiveLineup!.Inactive.Select(p => p.PlayerId));
+	}
+
 	#endregion
 
 	#region Private Methods

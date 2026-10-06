@@ -4,7 +4,7 @@ namespace HarnasHub.Application.Features.Availability.Shared;
 public record WeekAvailabilityDto(List<MemberWeekDto> Members);
 
 /// <summary>One team member's row in the weekly grid; <paramref name="TeamRole"/> is the member's in-game role, null when unassigned; <paramref name="InGameNickname"/> is their chosen display nickname, null when they haven't set one (fall back to <paramref name="DisplayName"/>, the Discord name); <paramref name="RosterSlot"/> is Main/Bench (StandIn members never appear here at all) or null, which only happens for a coach; <paramref name="IsCoach"/> marks the team's coach, always listed in their own section below everyone else.</summary>
-public record MemberWeekDto(Guid UserId, string DisplayName, string? InGameNickname, string? TeamRole, string? RosterSlot, bool IsCoach, List<DayEntryDto> Days);
+public record MemberWeekDto(Guid UserId, string DisplayName, string? InGameNickname, string? TeamRole, string? RosterSlot, bool IsCoach, List<DayEntryDto> Days, bool HiddenFromCalendar = false);
 
 /// <summary>Effective availability for one member on one day ("NotSet" when nothing was declared).</summary>
 public record DayEntryDto(DateOnly Date, string Status, TimeOnly? From, TimeOnly? To, bool IsVacation, string? Note);

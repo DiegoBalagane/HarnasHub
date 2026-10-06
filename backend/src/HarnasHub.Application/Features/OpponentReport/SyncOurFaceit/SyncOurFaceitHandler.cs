@@ -27,6 +27,7 @@ public class SyncOurFaceitHandler(
 			var now = DateTime.UtcNow;
 			var ourIds = await FaceitSync.ResolveOurPlayersAsync(dbContext, faceitClient, now, cancellationToken);
 			var (newMapGames, complete) = await FaceitSync.SyncHistoryAsync(dbContext, faceitClient, ourIds, now, cancellationToken);
+			await FaceitLifetimeStats.RefreshAsync(dbContext, faceitClient, ourIds, now, cancellationToken);
 			return new FaceitSyncResultDto(ourIds.Count, newMapGames, complete);
 		}
 		catch (HttpRequestException ex)

@@ -61,3 +61,7 @@ public record FaceitTeamMapStats(string TeamId, string? Name, int Score, bool Wo
 
 /// <summary>The scoreboard of one map of a match; <paramref name="MapName"/> is FACEIT's raw value (e.g. "de_mirage").</summary>
 public record FaceitMapStats(int MapNumber, string? MapName, List<FaceitTeamMapStats> Teams);
+
+/// <summary>A player's lifetime numbers on one map from the FACEIT stats "Map" segment; <paramref name="MapName"/> is FACEIT's raw
+/// label (e.g. "de_mirage" or "Mirage") and <paramref name="KdRatio"/> the average K/D over those matches.</summary>
+public record FaceitLifetimeMapStats(string MapName, int Matches, int Wins, double? KdRatio);

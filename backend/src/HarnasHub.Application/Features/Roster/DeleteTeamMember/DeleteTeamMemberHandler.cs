@@ -44,6 +44,13 @@ public class DeleteTeamMemberHandler(IApplicationDbContext dbContext, ICurrentUs
 		dbContext.Tasks.RemoveRange(
 			await dbContext.Tasks.Where(t => t.AssignedToUserId == request.UserId).ToListAsync(cancellationToken));
 
+		// Match stat lines stay (a match's scoreboard keeps the demo nickname) but are unlinked from the account, so the
+		// removed player no longer shows up in the leaderboard or personal-stat views.
+		foreach (var stat in await dbContext.PlayerMatchStats.Where(s => s.UserId == request.UserId).ToListAsync(cancellationToken))
+		{
+			stat.UserId = null;
+		}
+
 		dbContext.Users.Remove(user);
 		await dbContext.SaveChangesAsync(cancellationToken);
 

@@ -14,7 +14,8 @@ public record OpponentSummaryDto(
 	int Losses,
 	int Draws,
 	DateTime? LastPlayedAtUtc,
-	DateTime? NextEventAtUtc);
+	DateTime? NextEventAtUtc,
+	bool IsHidden = false);
 
 /// <summary>Head-to-head record against an opponent on a single map.</summary>
 public record OpponentMapRecordDto(string MapName, int Wins, int Losses, int Draws);
@@ -39,4 +40,5 @@ public record OpponentProfileDto(
 	List<OpponentMapRecordDto> Maps,
 	List<OpponentMatchDto> Matches,
 	List<OpponentNoteDto> Notes,
-	List<EventDto> UpcomingEvents);
+	List<EventDto> UpcomingEvents,
+	bool IsHidden = false);

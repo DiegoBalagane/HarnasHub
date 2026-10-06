@@ -36,6 +36,12 @@ export function UsersTab() {
     <div className="flex flex-col gap-4">
       <PendingAccounts />
 
+      <p className="max-w-3xl text-xs text-neutral-400">
+        Statystyki — gdy odznaczone, gracz znika z rankingu i raportu rywala (jego „Moje statystyki” zostają). Kalendarz — gdy
+        odznaczone, znika z kalendarza dostępności, list dnia i liczników (własną dostępność nadal może ustawiać). Dane nie są
+        usuwane, ukrycie można cofnąć w każdej chwili. Nick FACEIT — dla graczy bez SteamID lub z SteamID niepowiązanym z FACEIT.
+      </p>
+
       <input
         type="search"
         value={search}
@@ -49,16 +55,19 @@ export function UsersTab() {
 
       <div className="w-full overflow-x-auto rounded-md border border-neutral-800">
         <div
-          className={`grid min-w-[1000px] ${userGridColumns} gap-x-3 border-b border-neutral-800 px-4 py-2 text-xs text-neutral-500`}
+          className={`grid min-w-[1400px] ${userGridColumns} gap-x-3 border-b border-neutral-800 px-4 py-2 text-xs text-neutral-500`}
         >
           <span>Użytkownik</span>
           <span>Uprawnienia</span>
           <span>Trener</span>
           <span>Skład</span>
+          <span title="Czy gracz występuje w statystykach (ranking, raport rywala)">Statystyki</span>
+          <span title="Czy gracz występuje w kalendarzu dostępności">Kalendarz</span>
           <span>SteamID64</span>
+          <span>Nick FACEIT</span>
           <span className="text-right">Akcje</span>
         </div>
-        <ul className="flex min-w-[1000px] flex-col divide-y divide-neutral-800">
+        <ul className="flex min-w-[1400px] flex-col divide-y divide-neutral-800">
           {filtered.map((member) => (
             <UserRow key={member.id} member={member} isSelf={member.id === userId} onDelete={setDeleting} />
           ))}

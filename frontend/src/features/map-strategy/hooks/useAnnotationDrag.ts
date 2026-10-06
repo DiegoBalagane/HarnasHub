@@ -1,5 +1,5 @@
 import { useCallback, useState, type PointerEvent, type RefObject } from 'react'
-import type { MapTextAnnotation } from '../../../services/mapStrategyApi'
+import type { SidedMapTextAnnotation } from '../../../services/mapStrategyApi'
 import { useUpdateTextAnnotation } from './useMapStrategy'
 
 interface AnnotationDragDraft {
@@ -17,7 +17,7 @@ function clampFraction(value: number): number {
 /** Drag-to-reposition for text annotations on the radar — same shape as {@link usePinDrag}, kept separate since
  * an annotation's save payload (text/color/fontSize) differs from a pin's. */
 export function useAnnotationDrag(
-  annotations: MapTextAnnotation[],
+  annotations: SidedMapTextAnnotation[],
   contentRef: RefObject<HTMLElement | null>,
   onTap: (annotationId: string) => void,
 ) {

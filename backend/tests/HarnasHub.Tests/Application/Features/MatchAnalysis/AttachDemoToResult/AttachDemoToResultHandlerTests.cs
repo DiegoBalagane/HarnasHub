@@ -126,7 +126,7 @@ public class AttachDemoToResultHandlerTests
 	#region Private Methods
 
 	private static AttachDemoToResultHandler Handler(TestApplicationDbContext dbContext, TestFileStorage storage, TestDemoParser parser) =>
-		new(dbContext, storage, parser, new TestRealtimeNotifier(), NullLogger<AttachDemoToResultHandler>.Instance);
+		new(dbContext, storage, parser, new TestRealtimeNotifier(), TestTeamNotifications.Create(dbContext, storage), NullLogger<AttachDemoToResultHandler>.Instance);
 
 	#endregion
 }

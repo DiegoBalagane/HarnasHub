@@ -5,7 +5,11 @@ public record VetoStepDto(int Order, string Actor, string Action, string MapName
 
 /// <summary>A map's place in the suggested veto: <paramref name="Recommendation"/> is "Pick", "Ban" or "Neutral", and
 /// <paramref name="Reasons"/> explain the <paramref name="Score"/> in plain Polish so the coach can overrule it knowingly.</summary>
-public record MapVetoSuggestionDto(string MapName, int Score, string Recommendation, List<string> Reasons);
+public record MapVetoSuggestionDto(string MapName, int Score, string Recommendation, List<string> Reasons)
+{
+	/// <summary>A few words naming what really drives the score (e.g. "w puli: stały ban", "za mało danych (my: 2 mecze)").</summary>
+	public string? Note { get; init; }
+}
 
 /// <summary>How often the opponent picked or banned a map in vetoes recorded against them.</summary>
 public record OpponentMapTendencyDto(string MapName, int Picks, int Bans);

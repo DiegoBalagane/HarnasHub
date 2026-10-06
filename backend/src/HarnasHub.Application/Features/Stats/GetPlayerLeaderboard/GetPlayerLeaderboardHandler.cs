@@ -14,8 +14,10 @@ public class GetPlayerLeaderboardHandler(IApplicationDbContext dbContext)
 
 	public async Task<ErrorOr<List<PlayerLeaderboardEntryDto>>> Handle(GetPlayerLeaderboardQuery request, CancellationToken cancellationToken)
 	{
+		// Only lines linked to an account that still exists and is shown in stats — lines of members removed before stat unlinking existed
+		// would otherwise surface as "Usunięty zawodnik" until their matches were deleted.
 		var rows = dbContext.PlayerMatchStats
-			.Where(stat => stat.UserId != null)
+			.Where(stat => stat.UserId != null && dbContext.Users.Any(user => user.Id == stat.UserId && user.ShowInStats))
 			.Join(dbContext.MatchResults, stat => stat.MatchResultId, match => match.Id, (stat, match) => new { stat, match });
 
 		if (request.Category is { } category)

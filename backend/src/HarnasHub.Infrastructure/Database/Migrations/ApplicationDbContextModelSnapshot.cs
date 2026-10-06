@@ -462,6 +462,12 @@ namespace HarnasHub.Infrastructure.Database.Migrations
                     b.Property<DateTime?>("HistorySyncedAtUtc")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<string>("MapStatsJson")
+                        .HasColumnType("jsonb");
+
+                    b.Property<DateTime?>("MapStatsSyncedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<string>("Nickname")
                         .IsRequired()
                         .HasMaxLength(64)
@@ -482,6 +488,36 @@ namespace HarnasHub.Infrastructure.Database.Migrations
                     b.HasIndex("SteamId64");
 
                     b.ToTable("FaceitPlayers", (string)null);
+                });
+
+            modelBuilder.Entity("HarnasHub.Core.Entities.HiddenOpponent", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("DisplayName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<DateTime>("HiddenAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("HiddenByUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("OpponentKey")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OpponentKey")
+                        .IsUnique();
+
+                    b.ToTable("HiddenOpponents", (string)null);
                 });
 
             modelBuilder.Entity("HarnasHub.Core.Entities.League", b =>
@@ -1286,6 +1322,10 @@ namespace HarnasHub.Infrastructure.Database.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)");
 
+                    b.Property<string>("FaceitNickname")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
                     b.Property<string>("InGameNickname")
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)");
@@ -1306,6 +1346,16 @@ namespace HarnasHub.Infrastructure.Database.Migrations
                     b.Property<string>("RosterSlot")
                         .HasMaxLength(20)
                         .HasColumnType("character varying(20)");
+
+                    b.Property<bool>("ShowInCalendar")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true);
+
+                    b.Property<bool>("ShowInStats")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true);
 
                     b.Property<string>("SteamId64")
                         .HasMaxLength(17)

@@ -3,6 +3,7 @@ import type { MapComfort, MapComparison } from '../../../services/opponentReport
 import { vetoActionClasses, vetoRecommendationLabels } from '../../veto/labels'
 import { comfortLabel, comfortTitle } from '../individualForm'
 import { advantageClass, confidenceLabels, formatPercent, formatSigned, predictionLabels } from '../labels'
+import { lifetimeLabel, lifetimeTitle, ourSampleNote, ourTitle } from '../lineup'
 
 /** Map matrix: their games and win rate vs ours, their solo comfort, the smoothed advantage, its confidence, their expected move and our recommendation. */
 export const MapMatrix = memo(function MapMatrix({ maps, comfort = [] }: { maps: MapComparison[]; comfort?: MapComfort[] }) {
@@ -13,7 +14,9 @@ export const MapMatrix = memo(function MapMatrix({ maps, comfort = [] }: { maps:
       <p className="text-xs text-neutral-500">
         Oni — mecze drużynowe z FACEIT (≥ 3 graczy z listy w jednej drużynie). My — FACEIT plus wyniki zapisane w
         HarnasHub. Komfort solo — ilu ocenionych graczy rywala gra mapę regularnie w meczach solo (≥ 3) i ilu jej unika (0–1).
-        Przewaga liczona z wygładzonego WR (małe próbki ciągnięte do 50%, lekko przesunięte formą solo).
+        Przewaga liczona z wygładzonego WR (małe próbki ciągnięte do 50%, lekko przesunięte formą solo; nowsze mecze ważą
+        więcej). Poniżej 5 meczów na mapie bilans jest tylko pokazywany („za mało danych”), a o naszych pickach/banach decyduje
+        pula map. Doświadczenie (lifetime) — suma meczów i śr. K/D składu na FACEIT, jak w pokoju meczu; najniższa waga.
       </p>
       <div className="overflow-x-auto rounded-md border border-neutral-800">
         <table className="w-full text-sm">
@@ -23,6 +26,7 @@ export const MapMatrix = memo(function MapMatrix({ maps, comfort = [] }: { maps:
               <th className="px-3 py-2">Oni</th>
               <th className="px-3 py-2">Komfort solo</th>
               <th className="px-3 py-2">My</th>
+              <th className="px-3 py-2">Doświadczenie (lifetime) oni / my</th>
               <th className="px-3 py-2">Przewaga</th>
               <th className="px-3 py-2">Pewność</th>
               <th className="px-3 py-2">Oni prawdopodobnie</th>
@@ -43,18 +47,33 @@ export const MapMatrix = memo(function MapMatrix({ maps, comfort = [] }: { maps:
 /** One map of the matrix; reasons are available on hover. */
 const MapRow = memo(function MapRow({ map, comfort }: { map: MapComparison; comfort: MapComfort | undefined }) {
   const comfortText = comfortLabel(comfort)
+  const sampleNote = ourSampleNote(map)
   return (
     <tr className="border-t border-neutral-800">
       <td className="px-3 py-2 font-medium">{map.mapName}</td>
       <td className="px-3 py-2 tabular-nums" title={trendTitle(map)}>
         {map.theirGames} · {formatPercent(map.theirWinRate)}
         {map.theirGames > 0 && <span className="ml-1 text-xs text-neutral-500">({Math.round(map.theirShare)}% meczów)</span>}
+        {map.theirGames > 0 && map.theirLowSample && (
+          <span className="ml-1 text-xs text-warning-300/80">(mała próba)</span>
+        )}
       </td>
       <td className="px-3 py-2 text-xs text-neutral-400" title={comfort && comfortText ? comfortTitle(comfort) : undefined}>
         {comfortText ?? '—'}
       </td>
-      <td className="px-3 py-2 tabular-nums" title={`FACEIT: ${map.ourFaceitGames}, HarnasHub: ${map.ourInternalGames}`}>
+      <td className="px-3 py-2 tabular-nums" title={ourTitle(map)}>
         {map.ourGames} · {formatPercent(map.ourWinRate)}
+        {sampleNote && <span className="ml-1 text-xs text-warning-300/80">({sampleNote})</span>}
+      </td>
+      <td className="px-3 py-2 text-xs tabular-nums text-neutral-400">
+        <span
+          title={lifetimeTitle(map.theirLifetime, 'oni')}
+          className={map.theirLifetime?.experienced ? 'text-neutral-200' : undefined}
+        >
+          {lifetimeLabel(map.theirLifetime)}
+        </span>
+        <span className="mx-1 text-neutral-600">/</span>
+        <span title={lifetimeTitle(map.ourLifetime, 'my')}>{lifetimeLabel(map.ourLifetime)}</span>
       </td>
       <td className={`px-3 py-2 font-medium tabular-nums ${advantageClass(map.advantage)}`}>
         {formatSigned(map.advantage)} pp

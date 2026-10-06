@@ -1,5 +1,5 @@
 import { useCallback, useState, type PointerEvent, type RefObject } from 'react'
-import type { MapPosition, MapSide } from '../../../services/mapStrategyApi'
+import type { SidedMapPosition } from '../../../services/mapStrategyApi'
 import type { MapName } from '../../../services/nadesApi'
 import { useSetPlayerPosition } from './useMapStrategy'
 
@@ -16,11 +16,10 @@ function clampFraction(value: number): number {
 }
 
 /** Drag-to-reposition for player pins on the radar. A plain tap (no movement) calls `onTap` instead of saving;
- * a real drag is saved once, on release, against `contentRef`'s on-screen box (so it stays correct under zoom/pan). */
+ * a real drag is saved once, on release, to the pin's own side, to the pin's own side, against `contentRef`'s on-screen box (so it stays correct under zoom/pan). */
 export function usePinDrag(
-  positions: MapPosition[],
+  positions: SidedMapPosition[],
   mapName: MapName,
-  side: MapSide,
   contentRef: RefObject<HTMLElement | null>,
   onTap: (positionId: string) => void,
 ) {
@@ -74,11 +73,11 @@ export function usePinDrag(
     }
 
     setPlayerPosition.mutate(
-      { mapName, side, userId: position.userId, label: position.label, x: draft.x, y: draft.y, note: position.note },
+      { mapName, side: position.side, userId: position.userId, label: position.label, x: draft.x, y: draft.y, note: position.note },
       // Held until the server answers so the pin stays where it was dropped instead of snapping back.
       { onSettled: () => setDraft(null) },
     )
-  }, [draft, mapName, onTap, positions, setPlayerPosition, side])
+  }, [draft, mapName, onTap, positions, setPlayerPosition])
 
   return { draft, dragStart, move, end, isSaving: setPlayerPosition.isPending }
 }

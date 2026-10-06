@@ -65,5 +65,20 @@ public class GetEventAvailabilityHandlerTests
 		Assert.Equal(nameof(AvailabilityStatus.Available), member.Status);
 	}
 
+	[Fact]
+	public async Task Should_leave_out_players_hidden_from_the_calendar()
+	{
+		await using var dbContext = TestApplicationDbContext.Create();
+		var eventId = Guid.NewGuid();
+		dbContext.Events.Add(new Event { Id = eventId, Title = "Trening", Type = EventType.Training, StartsAtUtc = DateTime.UtcNow, CreatedAtUtc = DateTime.UtcNow });
+		dbContext.Users.Add(new User { Id = Guid.NewGuid(), DiscordId = "1", DisplayName = "Widoczny", AccessLevel = AccessLevel.Player, CreatedAtUtc = DateTime.UtcNow });
+		dbContext.Users.Add(new User { Id = Guid.NewGuid(), DiscordId = "2", DisplayName = "Ukryty", AccessLevel = AccessLevel.Player, ShowInCalendar = false, CreatedAtUtc = DateTime.UtcNow });
+		await dbContext.SaveChangesAsync(CancellationToken.None);
+
+		var result = await new GetEventAvailabilityHandler(dbContext).Handle(new GetEventAvailabilityQuery(eventId), CancellationToken.None);
+
+		Assert.Equal("Widoczny", Assert.Single(result.Value).DisplayName);
+	}
+
 	#endregion
 }

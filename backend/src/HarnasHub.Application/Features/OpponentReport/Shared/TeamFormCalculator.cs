@@ -18,8 +18,8 @@ public static class TeamFormCalculator
 
 	#region Public Methods
 
-	/// <summary>Builds the form from team games (any order) and a player id → nickname map for naming new players.</summary>
-	public static OpponentFormDto Calculate(IEnumerable<TeamGame> games, IReadOnlyDictionary<string, string> nicknames)
+	/// <summary>Builds the form from team games (any order) and a player id → nickname map for naming new players; <paramref name="ignored"/> (linked ex-members/subs outside the active lineup) never count as new.</summary>
+	public static OpponentFormDto Calculate(IEnumerable<TeamGame> games, IReadOnlyDictionary<string, string> nicknames, IReadOnlySet<string>? ignored = null)
 	{
 		var ordered = games.OrderByDescending(g => g.PlayedAtUtc).ToList();
 
@@ -35,7 +35,7 @@ public static class TeamFormCalculator
 				g.CompetitionName))
 			.ToList();
 
-		return new OpponentFormDto(lastGames, Streak(ordered), NewPlayers(ordered, nicknames));
+		return new OpponentFormDto(lastGames, Streak(ordered), NewPlayers(ordered, nicknames, ignored));
 	}
 
 	/// <summary>"W3" for three wins in a row, "L2" for two losses; null without games.</summary>
@@ -56,7 +56,7 @@ public static class TeamFormCalculator
 	#region Private Methods
 
 	/// <summary>Nicknames of players on their side in the latest games who never appeared in the older ones.</summary>
-	private static List<string> NewPlayers(List<TeamGame> newestFirst, IReadOnlyDictionary<string, string> nicknames)
+	private static List<string> NewPlayers(List<TeamGame> newestFirst, IReadOnlyDictionary<string, string> nicknames, IReadOnlySet<string>? ignored)
 	{
 		var earlier = newestFirst.Skip(RecentWindow).ToList();
 		if (earlier.Count < MinEarlierGames)
@@ -68,7 +68,7 @@ public static class TeamFormCalculator
 		var newIds = newestFirst
 			.Take(RecentWindow)
 			.SelectMany(g => g.SidePlayerIds)
-			.Where(id => !known.Contains(id))
+			.Where(id => !known.Contains(id) && ignored?.Contains(id) != true)
 			.Distinct()
 			.ToList();
 

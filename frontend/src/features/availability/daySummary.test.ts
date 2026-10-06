@@ -52,4 +52,11 @@ describe('computeDaySummary', () => {
     )
     expect(summary.commonWindow).toBeNull()
   })
+
+  it('ignores the viewer\'s own row when they are hidden from the calendar', () => {
+    const hidden = { ...member('Main', { status: 'Available' }), hiddenFromCalendar: true }
+    const summary = computeDaySummary([hidden, member('Main', { status: 'Available' })], date)
+
+    expect(summary.main).toEqual({ availableCount: 1, totalCount: 1 })
+  })
 })

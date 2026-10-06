@@ -24,7 +24,7 @@ public class GetWeekAvailabilityHandlerTests
 		AddUser(dbContext, Guid.NewGuid(), "Antek");
 		await dbContext.SaveChangesAsync(CancellationToken.None);
 
-		var handler = new GetWeekAvailabilityHandler(dbContext);
+		var handler = new GetWeekAvailabilityHandler(dbContext, new TestCurrentUserService(Guid.NewGuid()));
 
 		var result = await handler.Handle(new GetWeekAvailabilityQuery(WeekStart), CancellationToken.None);
 
@@ -58,7 +58,7 @@ public class GetWeekAvailabilityHandlerTests
 		});
 		await dbContext.SaveChangesAsync(CancellationToken.None);
 
-		var handler = new GetWeekAvailabilityHandler(dbContext);
+		var handler = new GetWeekAvailabilityHandler(dbContext, new TestCurrentUserService(Guid.NewGuid()));
 
 		var result = await handler.Handle(new GetWeekAvailabilityQuery(WeekStart), CancellationToken.None);
 
@@ -95,7 +95,7 @@ public class GetWeekAvailabilityHandlerTests
 		});
 		await dbContext.SaveChangesAsync(CancellationToken.None);
 
-		var handler = new GetWeekAvailabilityHandler(dbContext);
+		var handler = new GetWeekAvailabilityHandler(dbContext, new TestCurrentUserService(Guid.NewGuid()));
 
 		var result = await handler.Handle(new GetWeekAvailabilityQuery(WeekStart), CancellationToken.None);
 
@@ -132,7 +132,7 @@ public class GetWeekAvailabilityHandlerTests
 		});
 		await dbContext.SaveChangesAsync(CancellationToken.None);
 
-		var handler = new GetWeekAvailabilityHandler(dbContext);
+		var handler = new GetWeekAvailabilityHandler(dbContext, new TestCurrentUserService(Guid.NewGuid()));
 
 		var result = await handler.Handle(new GetWeekAvailabilityQuery(WeekStart), CancellationToken.None);
 
@@ -153,7 +153,7 @@ public class GetWeekAvailabilityHandlerTests
 		dbContext.Users.AddRange(mainUser, benchUser, standInUser);
 		await dbContext.SaveChangesAsync(CancellationToken.None);
 
-		var handler = new GetWeekAvailabilityHandler(dbContext);
+		var handler = new GetWeekAvailabilityHandler(dbContext, new TestCurrentUserService(Guid.NewGuid()));
 
 		var result = await handler.Handle(new GetWeekAvailabilityQuery(WeekStart), CancellationToken.None);
 
@@ -174,7 +174,7 @@ public class GetWeekAvailabilityHandlerTests
 		dbContext.Users.AddRange(mainUser, guestUser, unassignedUser);
 		await dbContext.SaveChangesAsync(CancellationToken.None);
 
-		var handler = new GetWeekAvailabilityHandler(dbContext);
+		var handler = new GetWeekAvailabilityHandler(dbContext, new TestCurrentUserService(Guid.NewGuid()));
 
 		var result = await handler.Handle(new GetWeekAvailabilityQuery(WeekStart), CancellationToken.None);
 
@@ -191,7 +191,7 @@ public class GetWeekAvailabilityHandlerTests
 		dbContext.Users.AddRange(mainUser, benchUser, coach);
 		await dbContext.SaveChangesAsync(CancellationToken.None);
 
-		var handler = new GetWeekAvailabilityHandler(dbContext);
+		var handler = new GetWeekAvailabilityHandler(dbContext, new TestCurrentUserService(Guid.NewGuid()));
 
 		var result = await handler.Handle(new GetWeekAvailabilityQuery(WeekStart), CancellationToken.None);
 
@@ -213,7 +213,7 @@ public class GetWeekAvailabilityHandlerTests
 		dbContext.Users.AddRange(mainUser, playingCoach);
 		await dbContext.SaveChangesAsync(CancellationToken.None);
 
-		var handler = new GetWeekAvailabilityHandler(dbContext);
+		var handler = new GetWeekAvailabilityHandler(dbContext, new TestCurrentUserService(Guid.NewGuid()));
 
 		var result = await handler.Handle(new GetWeekAvailabilityQuery(WeekStart), CancellationToken.None);
 
@@ -239,7 +239,7 @@ public class GetWeekAvailabilityHandlerTests
 		});
 		await dbContext.SaveChangesAsync(CancellationToken.None);
 
-		var handler = new GetWeekAvailabilityHandler(dbContext);
+		var handler = new GetWeekAvailabilityHandler(dbContext, new TestCurrentUserService(Guid.NewGuid()));
 
 		var result = await handler.Handle(new GetWeekAvailabilityQuery(WeekStart), CancellationToken.None);
 

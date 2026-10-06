@@ -4,6 +4,7 @@ using HarnasHub.Application.Abstractions;
 using HarnasHub.Application.Common.Behaviors;
 using HarnasHub.Application.Common.Faceit;
 using HarnasHub.Application.Common.Jobs;
+using HarnasHub.Application.Common.Notifications;
 using HarnasHub.Application.Features.Tactics.Shared.Matching;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -28,6 +29,7 @@ public static class DependencyInjection
 		services.AddScoped<JobExecutionContext>();
 		services.AddScoped<IJobProgress, JobProgress>();
 		services.AddScoped<FaceitDemoMatchLookup>();
+		services.AddScoped<TeamNotifications>();
 
 		return services;
 	}
