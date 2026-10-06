@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { DatePicker } from '../../../components/ui/DateTimePicker'
 import { useSetVacation } from '../hooks/useAvailability'
 
 const inputClass =
@@ -42,22 +43,8 @@ export function VacationForm({ onDone }: VacationFormProps) {
   return (
     <form onSubmit={handleSubmit} className="flex w-full flex-col gap-3">
       <div className="flex flex-wrap gap-3">
-        <input
-          required
-          type="date"
-          aria-label="Początek urlopu"
-          value={startDate}
-          onChange={(event) => setStartDate(event.target.value)}
-          className={`flex-1 ${inputClass}`}
-        />
-        <input
-          required
-          type="date"
-          aria-label="Koniec urlopu"
-          value={endDate}
-          onChange={(event) => setEndDate(event.target.value)}
-          className={`flex-1 ${inputClass}`}
-        />
+        <DatePicker label="Początek urlopu" value={startDate} onChange={setStartDate} className="flex-1" />
+        <DatePicker label="Koniec urlopu" value={endDate} onChange={setEndDate} className="flex-1" />
       </div>
 
       <input

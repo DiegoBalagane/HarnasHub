@@ -1,4 +1,5 @@
 import { useCallback, useMemo, useState } from 'react'
+import { useModalGuard } from '../../../../components/ModalGuardContext'
 import type { MapSide } from '../../../../services/mapStrategyApi'
 import type { DemoNades } from '../../../../services/tacticsApi'
 import { DemoImportSaveForm } from './DemoImportSaveForm'
@@ -20,6 +21,8 @@ export function DemoImportWizard({ onImported }: DemoImportWizardProps) {
   const [side, setSide] = useState<MapSide>('T')
   const [selectedIds, setSelectedIds] = useState<ReadonlySet<number>>(new Set())
   const [isSaving, setIsSaving] = useState(false)
+
+  useModalGuard({ isBusy: false, isDirty: demo !== null })
 
   const round = demo?.rounds.find((candidate) => candidate.number === roundNumber)
   const grenades = useMemo(() => grenadesForSide(round, side), [round, side])

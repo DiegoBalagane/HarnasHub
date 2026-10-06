@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useModalGuard } from '../../../../components/ModalGuardContext'
 import type { MapSide } from '../../../../services/mapStrategyApi'
 import type { MapName } from '../../../../services/nadesApi'
 import type { EconomyType, ImportedNadeInput } from '../../../../services/tacticsApi'
@@ -22,6 +23,7 @@ export function DemoImportSaveForm({ mapName, side, roundNumber, grenades, onBac
   const [note, setNote] = useState('')
   const [addToNadeLibrary, setAddToNadeLibrary] = useState(true)
   const importTactic = useImportTacticFromDemo()
+  useModalGuard({ isBusy: importTactic.isPending, isDirty: false })
 
   function handleSubmit(event: React.FormEvent) {
     event.preventDefault()

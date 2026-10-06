@@ -43,10 +43,13 @@ async function startDemoAnalysis(demoFile: File): Promise<JobAccepted> {
   return resultsApi.analyzeDemoFromStorage(objectKey, demoFile.name)
 }
 
-/** Parses an uploaded demo (as a background job) into a map/score/team-split preview, delivered to `onAnalyzed` —
- * nothing is saved until addResult is submitted. */
-export function useAnalyzeDemo(onAnalyzed: (result: AnalyzeDemoResult) => void) {
-  return useBackgroundJob<File, AnalyzeDemoResult>(startDemoAnalysis, { onSucceeded: onAnalyzed })
+/** Slot of the add-result demo analysis: keeps the job alive when the modal is closed and restores it on reopening. */
+export const ANALYZE_DEMO_SLOT = 'add-result-demo'
+
+/** Parses an uploaded demo (as a background job) into a map/score/team-split preview exposed as `result` —
+ * nothing is saved until addResult is submitted. The job id lives in a session slot, so it survives closing the form. */
+export function useAnalyzeDemo() {
+  return useBackgroundJob<File, AnalyzeDemoResult>(startDemoAnalysis, { slot: ANALYZE_DEMO_SLOT })
 }
 
 /** Edits a logged result's metadata and refreshes the results list. */

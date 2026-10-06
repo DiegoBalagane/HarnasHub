@@ -1,11 +1,13 @@
-import { useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import type { MapName } from '../../../services/nadesApi'
 import type { AnalyzeDemoResult, FaceitMatchPrefill, MatchCategory, MatchResult } from '../../../services/resultsApi'
 import { ApiError } from '../../../services/apiClient'
+import { DateTimePicker } from '../../../components/ui/DateTimePicker'
+import { useModalGuard } from '../../../components/ModalGuardContext'
 import { mapNames } from '../../nades/labels'
 import { useLinkOpponentFaceit } from '../../opponentReport/hooks/useOpponentReport'
 import { OpponentNameInput } from '../../opponents/components/OpponentNameInput'
-import { linkSourceOf, opponentFaction, opponentNameOf, toDateTimeLocal } from '../faceitPrefill'
+import { buildAnalysisPatch, linkSourceOf, opponentFaction, opponentNameOf, type TouchedField } from '../faceitPrefill'
 import { useAddResult, useAnalyzeDemo } from '../hooks/useResults'
 import { useLeagues } from '../hooks/useLeagues'
 import { useTournaments } from '../hooks/useTournaments'
@@ -45,10 +47,13 @@ export function AddResultForm({ onDone }: AddResultFormProps) {
   const [linkOpponent, setLinkOpponent] = useState(false)
   // The opponent name last filled in from FACEIT — replaced on a new team pick only while the coach hasn't edited it.
   const prefilledOpponentRef = useRef('')
+  // Fields the coach edited by hand — a demo analysis finishing later never overwrites these.
+  const touchedRef = useRef<Set<TouchedField>>(new Set())
+  const appliedResultRef = useRef<AnalyzeDemoResult | null>(null)
 
   const addResult = useAddResult()
   const linkFaceit = useLinkOpponentFaceit(opponent)
-  const analyzeDemo = useAnalyzeDemo(handleAnalyzed)
+  const analyzeDemo = useAnalyzeDemo()
   const { data: tournaments } = useTournaments()
   const { data: leagues } = useLeagues()
 
@@ -57,21 +62,34 @@ export function AddResultForm({ onDone }: AddResultFormProps) {
     [analysis, selectedTeam],
   )
 
+  function touch(field: TouchedField) {
+    touchedRef.current.add(field)
+  }
+
   function handleAnalyzed(result: AnalyzeDemoResult) {
     setAnalysis(result)
-    if (result.mapName) setMapName(result.mapName as MapName)
-    if (result.suggestedTeam) applyTeamPick(result, result.suggestedTeam)
-
-    const prefill = result.faceitMatch
-    if (!prefill) return
-    if (!result.mapName && prefill.mapName) setMapName(prefill.mapName as MapName)
-    const prefilledPlayedAt = toDateTimeLocal(prefill.playedAtUtc)
-    if (prefilledPlayedAt) setPlayedAt(prefilledPlayedAt)
-    setCategory(prefill.category)
-    setTournamentId('')
-    setLeagueId('')
-    applyFaceitOpponent(prefill, result.suggestedTeam ?? '')
+    const patch = buildAnalysisPatch(result, touchedRef.current)
+    if (patch.mapName) setMapName(patch.mapName as MapName)
+    if (patch.selectedTeam) setSelectedTeam(patch.selectedTeam)
+    if (patch.ourScore !== undefined) setOurScore(patch.ourScore)
+    if (patch.opponentScore !== undefined) setOpponentScore(patch.opponentScore)
+    if (patch.playedAt) setPlayedAt(patch.playedAt)
+    if (patch.category && patch.category !== category) {
+      setCategory(patch.category)
+      setTournamentId('')
+      setLeagueId('')
+    }
+    if (result.faceitMatch) applyFaceitOpponent(result.faceitMatch, result.suggestedTeam ?? '')
   }
+
+  // The result arrives through the slotted job — also when the form was closed meanwhile and is reopened later.
+  useEffect(() => {
+    const result = analyzeDemo.result
+    if (!result || appliedResultRef.current === result) return
+    appliedResultRef.current = result
+    handleAnalyzed(result)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [analyzeDemo.result])
 
   function applyTeamPick(result: AnalyzeDemoResult, team: 'A' | 'B') {
     setSelectedTeam(team)
@@ -92,8 +110,14 @@ export function AddResultForm({ onDone }: AddResultFormProps) {
 
   function handlePickTeam(team: 'A' | 'B') {
     if (!analysis) return
+    touchedRef.current.delete('score')
     applyTeamPick(analysis, team)
     if (analysis.faceitMatch) applyFaceitOpponent(analysis.faceitMatch, team)
+  }
+
+  function handleOpponentChange(value: string) {
+    touch('opponent')
+    setOpponent(value)
   }
 
   function handleDemoSelected(file: File) {
@@ -137,6 +161,8 @@ export function AddResultForm({ onDone }: AddResultFormProps) {
           setLinkOpponent(false)
           prefilledOpponentRef.current = ''
           setDemoInputKey((key) => key + 1)
+          touchedRef.current.clear()
+          analyzeDemo.reset()
           setSaved(result)
           onDone?.()
         },
@@ -151,6 +177,12 @@ export function AddResultForm({ onDone }: AddResultFormProps) {
     (category !== 'Tournament' || tournamentId !== '') &&
     (category !== 'League' || leagueId !== '')
 
+  useModalGuard({
+    isBusy: analyzeDemo.isBusy || addResult.isPending,
+    isDirty: [opponent, ourScore, opponentScore, mapName, notes, playedAt].some((value) => value !== '') || analysis !== null,
+    onDiscard: analyzeDemo.reset,
+  })
+
   return (
     <form
       onSubmit={handleSubmit}
@@ -159,13 +191,16 @@ export function AddResultForm({ onDone }: AddResultFormProps) {
       <h2 className="font-medium">Dodaj wynik</h2>
 
       <div className="flex gap-3">
-        <OpponentNameInput required placeholder="Przeciwnik" value={opponent} onChange={setOpponent} className={inputClass} />
+        <OpponentNameInput required placeholder="Przeciwnik" value={opponent} onChange={handleOpponentChange} className={inputClass} />
         <input
           type="number"
           min={0}
           placeholder="Nasz wynik"
           value={ourScore}
-          onChange={(event) => setOurScore(event.target.value)}
+          onChange={(event) => {
+            touch('score')
+            setOurScore(event.target.value)
+          }}
           className="w-28 rounded-md border border-neutral-800 bg-neutral-900 px-3 py-2 text-sm outline-none focus:border-neutral-500"
         />
         <input
@@ -173,7 +208,10 @@ export function AddResultForm({ onDone }: AddResultFormProps) {
           min={0}
           placeholder="Wynik przeciwnika"
           value={opponentScore}
-          onChange={(event) => setOpponentScore(event.target.value)}
+          onChange={(event) => {
+            touch('score')
+            setOpponentScore(event.target.value)
+          }}
           className="w-28 rounded-md border border-neutral-800 bg-neutral-900 px-3 py-2 text-sm outline-none focus:border-neutral-500"
         />
       </div>
@@ -182,6 +220,7 @@ export function AddResultForm({ onDone }: AddResultFormProps) {
         <select
           value={category}
           onChange={(event) => {
+            touch('category')
             setCategory(event.target.value as MatchCategory)
             setTournamentId('')
             setLeagueId('')
@@ -195,7 +234,14 @@ export function AddResultForm({ onDone }: AddResultFormProps) {
           ))}
         </select>
 
-        <select value={mapName} onChange={(event) => setMapName(event.target.value as MapName | '')} className={inputClass}>
+        <select
+          value={mapName}
+          onChange={(event) => {
+            touch('map')
+            setMapName(event.target.value as MapName | '')
+          }}
+          className={inputClass}
+        >
           <option value="">Mapa (opcjonalnie)</option>
           {mapNames.map((map) => (
             <option key={map} value={map}>
@@ -203,7 +249,16 @@ export function AddResultForm({ onDone }: AddResultFormProps) {
             </option>
           ))}
         </select>
-        <input type="datetime-local" value={playedAt} onChange={(event) => setPlayedAt(event.target.value)} className={inputClass} />
+        <DateTimePicker
+          label="Data i godzina meczu"
+          placeholder="Data i godzina"
+          value={playedAt}
+          onChange={(value) => {
+            touch('playedAt')
+            setPlayedAt(value)
+          }}
+          className={inputClass}
+        />
       </div>
 
       {category === 'Tournament' && (

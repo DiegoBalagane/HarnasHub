@@ -1,6 +1,5 @@
 import { memo, type PointerEvent } from 'react'
 import type { SidedMapTextAnnotation } from '../../../services/mapStrategyApi'
-import { sideStyles } from '../labels'
 
 interface TextAnnotationPinProps {
   annotation: SidedMapTextAnnotation
@@ -37,13 +36,6 @@ export const TextAnnotationPin = memo(function TextAnnotationPin({
         } ${isDragging ? 'opacity-70' : ''}`}
       >
         {annotation.text}
-      </span>
-
-      <span
-        title={`Notatka strony ${annotation.side}`}
-        className={`pointer-events-none absolute -top-2 left-0 text-[8px] font-bold opacity-80 ${sideStyles[annotation.side].text}`}
-      >
-        {annotation.side}
       </span>
 
       {canEdit && !isDragging && (

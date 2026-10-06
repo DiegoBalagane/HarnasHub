@@ -173,8 +173,6 @@ export const STORAGE_KEYS = {
   accessToken: 'harnashub.accessToken',
 } as const
 
-/** Pozycje tab: localStorage key of the per-viewer T/CT visibility filter. */
-export const MAP_STRATEGY_SETTINGS = { sideFilterStorageKey: 'harnashub.mapSideFilter' } as const
 
 /** Sidebar navigation: localStorage key of the collapsed flag and the two widths (px) the layout offsets content by. */
 export const SIDEBAR_SETTINGS = {

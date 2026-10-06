@@ -9,15 +9,8 @@ export const mapSideLabels: Record<MapSide, string> = {
 /** Both sides, in the order they appear on the toggle. */
 export const mapSides: MapSide[] = ['CT', 'T']
 
-/** Filter over which sides' pins are shown on the shared radar. */
-export type SideFilter = 'both' | MapSide
-
-/** Options of the visibility filter, in toggle order. */
-export const sideFilterOptions: { value: SideFilter; label: string }[] = [
-  { value: 'both', label: 'Obie' },
-  { value: 'T', label: 'T' },
-  { value: 'CT', label: 'CT' },
-]
+/** Text callouts are shared by both sides; the API still stores them per side, so new ones are always saved under this one. */
+export const sharedAnnotationSide: MapSide = 'T'
 
 // Written out in full so Tailwind's scanner keeps these classes in the build.
 /** Ring, badge and text classes per side, from the semantic side tokens (T = orange, CT = sky). */
