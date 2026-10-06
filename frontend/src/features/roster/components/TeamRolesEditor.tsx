@@ -114,7 +114,7 @@ export function TeamRolesEditor({ member }: { member: TeamMember }) {
                   disabled={isPending}
                   onClick={() => setPrimary(role)}
                   className={`text-sm transition disabled:opacity-40 ${
-                    isPrimary ? 'text-amber-400' : 'text-neutral-700 hover:text-neutral-400'
+                    isPrimary ? 'text-primary-400' : 'text-neutral-700 hover:text-neutral-400'
                   }`}
                 >
                   ★

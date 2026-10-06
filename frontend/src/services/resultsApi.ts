@@ -1,5 +1,6 @@
 import { API_ENDPOINTS } from '../constants'
 import { apiClient } from './apiClient'
+import type { JobAccepted } from './jobsApi'
 import type { LeagueType } from './leaguesApi'
 import type { DeathPosition } from './statsApi'
 
@@ -61,6 +62,34 @@ export interface AnalyzeDemoResult {
   /** 'A' | 'B' when the roster's SteamID64s overlap one of the two groups — null when nobody matched. */
   suggestedTeam: 'A' | 'B' | null
   players: AnalyzedDemoPlayer[]
+  /** Full match timeline parked in storage until addResult claims it — null when storage isn't configured. */
+  pendingTimelineKey: string | null
+  /** Prefill from the FACEIT match the file name points at — null for other names, without an API key or on FACEIT errors. */
+  faceitMatch?: FaceitMatchPrefill | null
+  /** Subtle explanation why a FACEIT-named demo got no prefill. */
+  faceitNote?: string | null
+}
+
+/** One faction of a recognised FACEIT match; `demoTeam` is the demo team ('A' started T) it played as, when known. */
+export interface FaceitFactionPrefill {
+  name: string
+  demoTeam: 'A' | 'B' | null
+  playerIds: string[]
+  nicknames: string[]
+  /** Display name of an opponent already linked to this roster. */
+  linkedOpponentName: string | null
+}
+
+/** Editable form prefill from a FACEIT match recognised from the demo file name. */
+export interface FaceitMatchPrefill {
+  matchId: string
+  competitionName: string | null
+  category: MatchCategory
+  playedAtUtc: string | null
+  mapName: string | null
+  /** Index of our faction in `factions`, null when our roster wasn't found in the room. */
+  ourFactionIndex: number | null
+  factions: FaceitFactionPrefill[]
 }
 
 export interface AddResultPayload {
@@ -78,6 +107,8 @@ export interface AddResultPayload {
   demoRoundsPlayed?: number
   demoPlayers?: AnalyzedDemoPlayer[]
   ourTeamSteamIds?: string[]
+  /** The analysis's parked timeline, moved to the new match on save. */
+  pendingTimelineKey?: string
 }
 
 export interface PresignedDemoUpload {
@@ -105,16 +136,18 @@ export const resultsApi = {
   updateResult: (matchResultId: string, payload: UpdateResultPayload) =>
     apiClient.patch<MatchResult>(API_ENDPOINTS.resultById(matchResultId), payload),
   deleteResult: (matchResultId: string) => apiClient.delete<void>(API_ENDPOINTS.resultById(matchResultId)),
+  /** Starts a background analysis job (result: AnalyzeDemoResult); the multipart part keeps the original file name. */
   analyzeDemo: (demoFile: File) => {
     const formData = new FormData()
     formData.append('demo', demoFile)
-    return apiClient.postForm<AnalyzeDemoResult>(API_ENDPOINTS.analyzeResultDemo, formData)
+    return apiClient.postForm<JobAccepted>(API_ENDPOINTS.analyzeResultDemo, formData)
   },
   /** For demos too large for analyzeDemo's own request — this asks the server for a time-limited URL, the caller
    * then PUTs the file straight to it (see uploadFileToPresignedUrl), bypassing this app's own server entirely. */
   presignDemoUpload: () => apiClient.post<PresignedDemoUpload>(API_ENDPOINTS.presignResultDemo, {}),
-  analyzeDemoFromStorage: (objectKey: string) =>
-    apiClient.post<AnalyzeDemoResult>(API_ENDPOINTS.analyzeResultDemoFromStorage, { objectKey }),
+  /** Starts a background analysis job (result: AnalyzeDemoResult) of a presigned upload; `fileName` enables FACEIT recognition. */
+  analyzeDemoFromStorage: (objectKey: string, fileName?: string) =>
+    apiClient.post<JobAccepted>(API_ENDPOINTS.analyzeResultDemoFromStorage, { objectKey, fileName }),
 }
 
 /** Uploads a file (or any other blob, e.g. a pasted clipboard image) directly to a presigned object-storage URL —

@@ -15,6 +15,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
 	public DbSet<Availability> Availabilities => Set<Availability>();
 	public DbSet<TaskItem> Tasks => Set<TaskItem>();
 	public DbSet<MatchResult> MatchResults => Set<MatchResult>();
+	public DbSet<MatchDemoAnalysis> MatchDemoAnalyses => Set<MatchDemoAnalysis>();
 	public DbSet<NadeEntry> NadeEntries => Set<NadeEntry>();
 	public DbSet<TrainingMaterial> TrainingMaterials => Set<TrainingMaterial>();
 	public DbSet<PlayerMatchStat> PlayerMatchStats => Set<PlayerMatchStat>();
@@ -30,6 +31,17 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
 	public DbSet<League> Leagues => Set<League>();
 	public DbSet<AnalysisBoard> AnalysisBoards => Set<AnalysisBoard>();
 	public DbSet<AttendanceIncident> AttendanceIncidents => Set<AttendanceIncident>();
+	public DbSet<MapPoolEntry> MapPoolEntries => Set<MapPoolEntry>();
+	public DbSet<EventVetoStep> EventVetoSteps => Set<EventVetoStep>();
+	public DbSet<EventGamePlan> EventGamePlans => Set<EventGamePlan>();
+	public DbSet<EventGamePlanItem> EventGamePlanItems => Set<EventGamePlanItem>();
+	public DbSet<OpponentFaceitLink> OpponentFaceitLinks => Set<OpponentFaceitLink>();
+	public DbSet<FaceitPlayer> FaceitPlayers => Set<FaceitPlayer>();
+	public DbSet<FaceitMatch> FaceitMatches => Set<FaceitMatch>();
+	public DbSet<FaceitMatchPlayerStat> FaceitMatchPlayerStats => Set<FaceitMatchPlayerStat>();
+	public DbSet<OpponentReportSnapshot> OpponentReportSnapshots => Set<OpponentReportSnapshot>();
+	public DbSet<OpponentDemoAnalysis> OpponentDemoAnalyses => Set<OpponentDemoAnalysis>();
+	public DbSet<BackgroundJob> BackgroundJobs => Set<BackgroundJob>();
 
 	#endregion
 

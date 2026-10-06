@@ -12,7 +12,7 @@ public class DeleteEventHandlerTests
 	#region Public Methods
 
 	[Fact]
-	public async Task Should_delete_the_event_and_its_availability_declarations()
+	public async Task Should_delete_the_event_its_availability_declarations_veto_and_game_plan()
 	{
 		await using var dbContext = TestApplicationDbContext.Create();
 		var calendarEvent = new Event
@@ -33,6 +33,24 @@ public class DeleteEventHandlerTests
 			Status = AvailabilityStatus.Available,
 			UpdatedAtUtc = DateTime.UtcNow
 		});
+		dbContext.EventVetoSteps.Add(new EventVetoStep
+		{
+			Id = Guid.NewGuid(),
+			EventId = calendarEvent.Id,
+			Order = 1,
+			Actor = VetoActor.Us,
+			Action = VetoAction.Ban,
+			MapName = MapName.Dust2
+		});
+		dbContext.EventGamePlans.Add(new EventGamePlan { Id = Guid.NewGuid(), EventId = calendarEvent.Id, Notes = "Plan" });
+		dbContext.EventGamePlanItems.Add(new EventGamePlanItem
+		{
+			Id = Guid.NewGuid(),
+			EventId = calendarEvent.Id,
+			Kind = GamePlanItemKind.Tactic,
+			TargetId = Guid.NewGuid(),
+			Order = 1
+		});
 		await dbContext.SaveChangesAsync(CancellationToken.None);
 
 		var handler = new DeleteEventHandler(dbContext, new TestRealtimeNotifier());
@@ -42,6 +60,9 @@ public class DeleteEventHandlerTests
 		Assert.False(result.IsError);
 		Assert.Empty(await dbContext.Events.ToListAsync());
 		Assert.Empty(await dbContext.Availabilities.ToListAsync());
+		Assert.Empty(await dbContext.EventVetoSteps.ToListAsync());
+		Assert.Empty(await dbContext.EventGamePlans.ToListAsync());
+		Assert.Empty(await dbContext.EventGamePlanItems.ToListAsync());
 	}
 
 	[Fact]

@@ -1,0 +1,9 @@
+{
+  "identities": [
+    {
+      "name": "harnashub",
+      "credentials": [{ "accessKey": "harnashub", "secretKey": "harnashub_dev" }],
+      "actions": ["Admin", "Read", "Write", "List", "Tagging"]
+    }
+  ]
+}

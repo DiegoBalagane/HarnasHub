@@ -71,5 +71,36 @@ public class UpdateEventHandlerTests
 		Assert.Equal("Calendar.EventNotFound", result.FirstError.Code);
 	}
 
+	[Fact]
+	public async Task Should_store_a_trimmed_opponent_and_clear_a_blank_one()
+	{
+		await using var dbContext = TestApplicationDbContext.Create();
+		var calendarEvent = new Event
+		{
+			Id = Guid.NewGuid(),
+			Title = "Mecz ligowy",
+			Type = EventType.Match,
+			StartsAtUtc = new DateTime(2026, 9, 20, 18, 0, 0, DateTimeKind.Utc),
+			CreatedByUserId = Guid.NewGuid(),
+			CreatedAtUtc = DateTime.UtcNow
+		};
+		dbContext.Events.Add(calendarEvent);
+		await dbContext.SaveChangesAsync(CancellationToken.None);
+		var handler = new UpdateEventHandler(dbContext, new TestRealtimeNotifier());
+
+		var withOpponent = await handler.Handle(
+			new UpdateEventCommand(calendarEvent.Id, "Mecz ligowy", EventType.Match, calendarEvent.StartsAtUtc, null, null, null, null, "  Team X  "),
+			CancellationToken.None);
+
+		Assert.Equal("Team X", withOpponent.Value.Opponent);
+		Assert.Equal("Team X", (await dbContext.Events.SingleAsync()).Opponent);
+
+		await handler.Handle(
+			new UpdateEventCommand(calendarEvent.Id, "Mecz ligowy", EventType.Match, calendarEvent.StartsAtUtc, null, null, null, null, "   "),
+			CancellationToken.None);
+
+		Assert.Null((await dbContext.Events.SingleAsync()).Opponent);
+	}
+
 	#endregion
 }

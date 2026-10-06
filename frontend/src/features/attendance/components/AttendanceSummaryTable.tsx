@@ -9,7 +9,7 @@ export function AttendanceSummaryTable() {
   }
 
   if (isError) {
-    return <p className="text-red-400">Nie udało się pobrać podsumowania.</p>
+    return <p className="text-danger-400">Nie udało się pobrać podsumowania.</p>
   }
 
   if (entries?.length === 0) {

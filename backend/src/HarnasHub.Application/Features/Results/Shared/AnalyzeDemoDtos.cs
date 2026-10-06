@@ -31,11 +31,16 @@ public record AnalyzedDemoPlayerDto(
 
 /// <summary>What analysing an uploaded demo could tell the coach before they commit to logging the result — the map,
 /// both possible team splits with their would-be score, which split (if any) the current roster's SteamID64s suggest
-/// is "ours", and every parsed player's raw totals for the eventual stat import.</summary>
+/// is "ours", every parsed player's raw totals for the eventual stat import, and the key of the full match timeline
+/// parked in object storage until <c>AddResultCommand</c> claims it (null when storage isn't configured or saving failed),
+/// plus the FACEIT prefill when the file name identified a FACEIT match (or a subtle note on why it couldn't be loaded).</summary>
 public record AnalyzeDemoResultDto(
 	int RoundsPlayed,
 	string? MapName,
 	DemoTeamPreviewDto TeamA,
 	DemoTeamPreviewDto TeamB,
 	string? SuggestedTeam,
-	IReadOnlyList<AnalyzedDemoPlayerDto> Players);
+	IReadOnlyList<AnalyzedDemoPlayerDto> Players,
+	string? PendingTimelineKey = null,
+	FaceitMatchPrefillDto? FaceitMatch = null,
+	string? FaceitNote = null);

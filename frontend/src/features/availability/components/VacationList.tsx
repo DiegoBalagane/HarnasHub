@@ -19,7 +19,7 @@ export function VacationList() {
   }
 
   if (isError) {
-    return <p className="text-red-400">Nie udało się pobrać urlopów.</p>
+    return <p className="text-danger-400">Nie udało się pobrać urlopów.</p>
   }
 
   const today = new Date().toISOString().slice(0, 10)
@@ -30,7 +30,7 @@ export function VacationList() {
   }
 
   return (
-    <ul className="flex w-full max-w-xl flex-col gap-2">
+    <ul className="flex w-full flex-col gap-2">
       {upcoming.map((vacation) =>
         editingId === vacation.id ? (
           <VacationEditRow key={vacation.id} vacation={vacation} onDone={() => setEditingId(null)} />
@@ -60,7 +60,7 @@ export function VacationList() {
                 type="button"
                 onClick={() => deleteVacation.mutate(vacation.id)}
                 disabled={deleteVacation.isPending}
-                className="rounded-md border border-neutral-700 px-3 py-1 text-xs text-neutral-300 transition hover:border-red-500 hover:text-red-400 disabled:opacity-50"
+                className="rounded-md border border-neutral-700 px-3 py-1 text-xs text-neutral-300 transition hover:border-danger-500 hover:text-danger-400 disabled:opacity-50"
               >
                 Usuń
               </button>
@@ -133,14 +133,14 @@ function VacationEditRow({ vacation, onDone }: VacationEditRowProps) {
           className={inputClass}
         />
 
-        {validationError !== null && <p className="text-sm text-red-400">{validationError}</p>}
-        {updateVacation.isError && <p className="text-sm text-red-400">Nie udało się zapisać zmian.</p>}
+        {validationError !== null && <p className="text-sm text-danger-400">{validationError}</p>}
+        {updateVacation.isError && <p className="text-sm text-danger-400">Nie udało się zapisać zmian.</p>}
 
         <div className="flex gap-2">
           <button
             type="submit"
             disabled={updateVacation.isPending}
-            className="rounded-md bg-red-600 px-3 py-1.5 text-xs font-medium text-white transition hover:bg-red-500 disabled:opacity-50"
+            className="rounded-md bg-primary-500 px-3 py-1.5 text-xs font-medium text-primary-950 transition hover:bg-primary-400 disabled:opacity-50"
           >
             {updateVacation.isPending ? 'Zapisywanie…' : 'Zapisz'}
           </button>

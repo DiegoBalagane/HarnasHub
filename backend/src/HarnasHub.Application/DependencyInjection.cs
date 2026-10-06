@@ -1,6 +1,10 @@
 using System.Reflection;
 using FluentValidation;
+using HarnasHub.Application.Abstractions;
 using HarnasHub.Application.Common.Behaviors;
+using HarnasHub.Application.Common.Faceit;
+using HarnasHub.Application.Common.Jobs;
+using HarnasHub.Application.Features.Tactics.Shared.Matching;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace HarnasHub.Application;
@@ -17,6 +21,13 @@ public static class DependencyInjection
 		services.AddMediatR(configuration => configuration.RegisterServicesFromAssembly(assembly));
 		services.AddValidatorsFromAssembly(assembly);
 		services.AddTransient(typeof(MediatR.IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
+		services.AddSingleton<RoundSignatureCache>();
+
+		// Background jobs: the worker marks a scope as "running job X" and handlers report progress through IJobProgress
+		// (a no-op outside a job). The FACEIT demo-name lookup is shared by the result and opponent demo analyses.
+		services.AddScoped<JobExecutionContext>();
+		services.AddScoped<IJobProgress, JobProgress>();
+		services.AddScoped<FaceitDemoMatchLookup>();
 
 		return services;
 	}

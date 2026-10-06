@@ -38,7 +38,7 @@ export function BoardGallery({ mapFilter, onEdit }: BoardGalleryProps) {
   }
 
   if (isError) {
-    return <p className="text-red-400">Nie udało się pobrać tablic.</p>
+    return <p className="text-danger-400">Nie udało się pobrać tablic.</p>
   }
 
   if (boards?.length === 0) {
@@ -75,7 +75,7 @@ export function BoardGallery({ mapFilter, onEdit }: BoardGalleryProps) {
                       }
                     }}
                     disabled={deleteBoard.isPending}
-                    className="self-start text-[11px] text-neutral-500 transition hover:text-red-400 disabled:opacity-50"
+                    className="self-start text-[11px] text-neutral-500 transition hover:text-danger-400 disabled:opacity-50"
                   >
                     Usuń
                   </button>

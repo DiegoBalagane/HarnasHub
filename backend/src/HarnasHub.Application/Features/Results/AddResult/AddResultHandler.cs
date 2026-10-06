@@ -1,17 +1,24 @@
 using System.Text.Json;
 using ErrorOr;
 using HarnasHub.Application.Abstractions;
+using HarnasHub.Application.Features.MatchAnalysis.Shared;
 using HarnasHub.Application.Features.Results.Shared;
 using HarnasHub.Application.Features.Stats.Shared;
 using HarnasHub.Core.Entities;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace HarnasHub.Application.Features.Results.AddResult;
 
 /// <summary>Handles <see cref="AddResultCommand"/> by persisting the new match result and, when the coach analysed a
 /// demo beforehand, a stat line for every demo participant who matches a roster member's SteamID64.</summary>
-public class AddResultHandler(IApplicationDbContext dbContext, ICurrentUserService currentUser, IRealtimeNotifier realtimeNotifier)
+public class AddResultHandler(
+	IApplicationDbContext dbContext,
+	ICurrentUserService currentUser,
+	IRealtimeNotifier realtimeNotifier,
+	IFileStorage fileStorage,
+	ILogger<AddResultHandler> logger)
 	: IRequestHandler<AddResultCommand, ErrorOr<MatchResultDto>>
 {
 	#region Public Methods
@@ -59,6 +66,13 @@ public class AddResultHandler(IApplicationDbContext dbContext, ICurrentUserServi
 		if (importedStatCount > 0)
 		{
 			await realtimeNotifier.NotifyAsync($"match-stats:{result.Id}", cancellationToken);
+		}
+
+		// Best-effort: the result is saved and valid without a timeline (one can still be attached later).
+		if (request.PendingTimelineKey is { } pendingKey
+			&& await MatchTimelineAttacher.ClaimPendingAsync(dbContext, fileStorage, logger, result, pendingKey, request.OurTeamSteamIds, cancellationToken))
+		{
+			await realtimeNotifier.NotifyAsync($"match-analysis:{result.Id}", cancellationToken);
 		}
 
 		var tournament = request.TournamentId is null

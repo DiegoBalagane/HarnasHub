@@ -18,5 +18,5 @@ export function AuthCallbackPage() {
     navigate(ok ? '/dashboard' : '/login?error=discord_failed', { replace: true })
   }, [loginWithToken, navigate])
 
-  return <p className="text-neutral-400">Logowanie…</p>
+  return <p className="text-center text-neutral-400">Logowanie…</p>
 }

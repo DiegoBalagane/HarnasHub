@@ -199,14 +199,14 @@ export function BoardEditor({ board, defaultMapName, onClose }: BoardEditorProps
         currentWidth={width}
       />
 
-      {uploadError && <p className="text-sm text-red-400">Nie udało się zapisać tablicy.</p>}
+      {uploadError && <p className="text-sm text-danger-400">Nie udało się zapisać tablicy.</p>}
 
       <div className="flex gap-2">
         <button
           type="button"
           onClick={handleSave}
           disabled={isSaving || title.trim() === ''}
-          className="self-start rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-red-500 disabled:opacity-50"
+          className="self-start rounded-md bg-primary-500 px-4 py-2 text-sm font-medium text-primary-950 transition hover:bg-primary-400 disabled:opacity-50"
         >
           {isSaving ? 'Zapisywanie…' : 'Zapisz'}
         </button>

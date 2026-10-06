@@ -36,5 +36,13 @@ public interface IFileStorage
 	/// retained one (e.g. an analysis board's background) is no longer referenced by anything.</summary>
 	Task DeleteAsync(string objectKey, CancellationToken cancellationToken);
 
+	/// <summary>Writes (or overwrites) an object server-side — used for small derived artifacts like a parsed match
+	/// timeline, never for user uploads, which always go browser → presigned URL.</summary>
+	Task UploadAsync(string objectKey, Stream content, string contentType, CancellationToken cancellationToken);
+
+	/// <summary>Deletes every object under <paramref name="keyPrefix"/> last modified before <paramref name="olderThanUtc"/>
+	/// and returns how many were removed — the sweep for temporary objects nobody claimed.</summary>
+	Task<int> DeleteOlderThanAsync(string keyPrefix, DateTime olderThanUtc, CancellationToken cancellationToken);
+
 	#endregion
 }

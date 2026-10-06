@@ -3,7 +3,8 @@ import { useIsCoachOrManager } from '../../auth/hooks/useIsCoachOrManager'
 import { mapSideLabels } from '../../map-strategy/labels'
 import type { EconomyType } from '../../../services/tacticsApi'
 import { useDeleteTactic, useTacticDetail, useUpdateTactic } from '../hooks/useTactics'
-import { economyLabels, economyTypes } from '../labels'
+import { useTacticEffectiveness } from '../hooks/useTacticMatching'
+import { economyLabels, economyTypes, formatEffectiveness, UNCALIBRATED_MAP_MESSAGE } from '../labels'
 import { TacticPin } from './TacticPin'
 import { TacticPointEditor } from './TacticPointEditor'
 
@@ -38,6 +39,8 @@ export function TacticEditor({ tacticId, onClose }: TacticEditorProps) {
   const canEdit = useIsCoachOrManager()
   const updateTactic = useUpdateTactic(tacticId)
   const deleteTactic = useDeleteTactic()
+  const { data: effectiveness } = useTacticEffectiveness(tactic?.mapName)
+  const tacticEffectiveness = effectiveness?.tactics.find((item) => item.tacticId === tacticId)
 
   const containerRef = useRef<HTMLDivElement>(null)
   const [name, setName] = useState('')
@@ -142,19 +145,20 @@ export function TacticEditor({ tacticId, onClose }: TacticEditorProps) {
   }
 
   if (isLoading) return <p className="text-neutral-400">Ładowanie…</p>
-  if (isError || !tactic) return <p className="text-red-400">Nie udało się pobrać taktyki.</p>
+  if (isError || !tactic) return <p className="text-danger-400">Nie udało się pobrać taktyki.</p>
 
   const selectedIndex = points.findIndex((point) => point.id === selectedPointId)
   const selectedPoint = selectedIndex >= 0 ? points[selectedIndex] : null
 
   return (
-    <div className="flex w-full max-w-3xl flex-col gap-4">
+    <div className="flex w-full flex-col gap-4">
       <div className="flex items-center justify-between">
         <button type="button" onClick={onClose} className="text-sm text-neutral-400 hover:text-white">
           ← Wróć do listy
         </button>
         <span className="text-xs text-neutral-500">
           {tactic.mapName} · {mapSideLabels[tactic.side]}
+          {effectiveness && (effectiveness.mapCalibrated ? ` · ${formatEffectiveness(tacticEffectiveness)}` : ` · ${UNCALIBRATED_MAP_MESSAGE}`)}
         </span>
       </div>
 
@@ -187,14 +191,14 @@ export function TacticEditor({ tacticId, onClose }: TacticEditorProps) {
             className="rounded-md border border-neutral-800 bg-neutral-900 px-3 py-2 text-sm outline-none focus:border-neutral-500"
           />
 
-          {updateTactic.isError && <p className="text-sm text-red-400">Nie udało się zapisać taktyki.</p>}
+          {updateTactic.isError && <p className="text-sm text-danger-400">Nie udało się zapisać taktyki.</p>}
 
           <div className="flex gap-2">
             <button
               type="button"
               onClick={handleSave}
               disabled={updateTactic.isPending || name.trim() === ''}
-              className="self-start rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-red-500 disabled:opacity-50"
+              className="self-start rounded-md bg-primary-500 px-4 py-2 text-sm font-medium text-primary-950 transition hover:bg-primary-400 disabled:opacity-50"
             >
               {updateTactic.isPending ? 'Zapisywanie…' : 'Zapisz'}
             </button>
@@ -202,7 +206,7 @@ export function TacticEditor({ tacticId, onClose }: TacticEditorProps) {
               type="button"
               onClick={handleDelete}
               disabled={deleteTactic.isPending}
-              className="rounded-md border border-neutral-700 px-4 py-2 text-sm text-neutral-300 transition hover:border-red-500 hover:text-red-400 disabled:opacity-50"
+              className="rounded-md border border-neutral-700 px-4 py-2 text-sm text-neutral-300 transition hover:border-danger-500 hover:text-danger-400 disabled:opacity-50"
             >
               Usuń taktykę
             </button>

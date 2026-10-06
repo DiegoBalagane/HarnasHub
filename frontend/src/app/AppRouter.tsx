@@ -1,23 +1,61 @@
-import { Navigate, Route, Routes } from 'react-router-dom'
+import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
+import type { ComponentType } from 'react'
 import { Layout } from './Layout'
 import { ProtectedRoute } from './ProtectedRoute'
+import { AdminPage } from './routes/AdminPage'
+import { AttendancePage } from './routes/AttendancePage'
 import { AuthCallbackPage } from './routes/AuthCallbackPage'
 import { CalendarPage } from './routes/CalendarPage'
 import { DashboardPage } from './routes/DashboardPage'
-import { EventsPage } from './routes/EventsPage'
 import { LoginPage } from './routes/LoginPage'
-import { MapStrategyPage } from './routes/MapStrategyPage'
-import { MaterialsPage } from './routes/MaterialsPage'
-import { NadesPage } from './routes/NadesPage'
+import { MatchDetailPage } from './routes/MatchDetailPage'
+import { OpponentProfilePage } from './routes/OpponentProfilePage'
+import { OpponentReportPage } from './routes/OpponentReportPage'
 import { OpponentsPage } from './routes/OpponentsPage'
+import { PlaybookPage } from './routes/PlaybookPage'
 import { ResultsPage } from './routes/ResultsPage'
 import { RosterPage } from './routes/RosterPage'
 import { SettingsPage } from './routes/SettingsPage'
 import { StatsPage } from './routes/StatsPage'
-import { TacticsPage } from './routes/TacticsPage'
-import { AnalysisBoardsPage } from './routes/AnalysisBoardsPage'
-import { AttendancePage } from './routes/AttendancePage'
 import { TasksPage } from './routes/TasksPage'
+
+/** Old route → Playbook tab, so bookmarks and deep links (?map=, ?tactic=, ?board=) keep working. */
+const legacyPlaybookRoutes: Record<string, string> = {
+  '/map-strategy': 'positions',
+  '/nades': 'nades',
+  '/tactics': 'tactics',
+  '/analysis-boards': 'boards',
+  '/materials': 'materials',
+  '/maps': 'pool',
+}
+
+/** Every authenticated page, keyed by path. */
+const protectedRoutes: [string, ComponentType][] = [
+  ['/dashboard', DashboardPage],
+  ['/calendar', CalendarPage],
+  ['/tasks', TasksPage],
+  ['/results', ResultsPage],
+  ['/results/:id', MatchDetailPage],
+  ['/playbook', PlaybookPage],
+  ['/stats', StatsPage],
+  ['/opponents', OpponentsPage],
+  ['/opponents/profile', OpponentProfilePage],
+  ['/opponents/report', OpponentReportPage],
+  ['/roster', RosterPage],
+  ['/attendance', AttendancePage],
+  ['/settings', SettingsPage],
+  ['/admin', AdminPage],
+]
+
+/** Redirects a retired route to its new home, carrying the original query string over. */
+function LegacyRedirect({ to, tab }: { to: string; tab?: string }) {
+  const { search } = useLocation()
+  const params = new URLSearchParams(search)
+  if (tab) params.set('tab', tab)
+  const query = params.toString()
+  return <Navigate to={query ? `${to}?${query}` : to} replace />
+}
+
 
 export function AppRouter() {
   return (
@@ -26,126 +64,13 @@ export function AppRouter() {
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/auth/callback" element={<AuthCallbackPage />} />
-        <Route
-          path="/dashboard"
-          element={
-            <ProtectedRoute>
-              <DashboardPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/calendar"
-          element={
-            <ProtectedRoute>
-              <CalendarPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/events"
-          element={
-            <ProtectedRoute>
-              <EventsPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/tasks"
-          element={
-            <ProtectedRoute>
-              <TasksPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/results"
-          element={
-            <ProtectedRoute>
-              <ResultsPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/nades"
-          element={
-            <ProtectedRoute>
-              <NadesPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/map-strategy"
-          element={
-            <ProtectedRoute>
-              <MapStrategyPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/tactics"
-          element={
-            <ProtectedRoute>
-              <TacticsPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/analysis-boards"
-          element={
-            <ProtectedRoute>
-              <AnalysisBoardsPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/materials"
-          element={
-            <ProtectedRoute>
-              <MaterialsPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/stats"
-          element={
-            <ProtectedRoute>
-              <StatsPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/opponents"
-          element={
-            <ProtectedRoute>
-              <OpponentsPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/roster"
-          element={
-            <ProtectedRoute>
-              <RosterPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/attendance"
-          element={
-            <ProtectedRoute>
-              <AttendancePage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/settings"
-          element={
-            <ProtectedRoute>
-              <SettingsPage />
-            </ProtectedRoute>
-          }
-        />
+        {protectedRoutes.map(([path, Page]) => (
+          <Route key={path} path={path} element={<ProtectedRoute><Page /></ProtectedRoute>} />
+        ))}
+        <Route path="/events" element={<LegacyRedirect to="/calendar" />} />
+        {Object.entries(legacyPlaybookRoutes).map(([path, tab]) => (
+          <Route key={path} path={path} element={<LegacyRedirect to="/playbook" tab={tab} />} />
+        ))}
       </Routes>
     </Layout>
   )

@@ -68,13 +68,13 @@ export function VacationForm({ onDone }: VacationFormProps) {
         className={inputClass}
       />
 
-      {validationError !== null && <p className="text-sm text-red-400">{validationError}</p>}
-      {setVacation.isError && <p className="text-sm text-red-400">Nie udało się dodać urlopu.</p>}
+      {validationError !== null && <p className="text-sm text-danger-400">{validationError}</p>}
+      {setVacation.isError && <p className="text-sm text-danger-400">Nie udało się dodać urlopu.</p>}
 
       <button
         type="submit"
         disabled={setVacation.isPending}
-        className="self-start rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-red-500 disabled:opacity-50"
+        className="self-start rounded-md bg-primary-500 px-4 py-2 text-sm font-medium text-primary-950 transition hover:bg-primary-400 disabled:opacity-50"
       >
         {setVacation.isPending ? 'Dodawanie…' : 'Dodaj urlop'}
       </button>

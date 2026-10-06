@@ -17,7 +17,7 @@ public class AddOpponentNoteHandler(IApplicationDbContext dbContext, ICurrentUse
 		var note = new OpponentNote
 		{
 			Id = Guid.NewGuid(),
-			OpponentName = request.OpponentName,
+			OpponentName = request.OpponentName.Trim(),
 			Content = request.Content,
 			MaterialUrl = request.MaterialUrl,
 			CreatedByUserId = currentUser.UserId,

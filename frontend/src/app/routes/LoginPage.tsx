@@ -17,13 +17,13 @@ export function LoginPage() {
   }
 
   return (
-    <>
+    <div className="flex flex-col items-center gap-6">
       <h1 className="text-2xl font-semibold">Zaloguj się</h1>
       <p className="max-w-sm text-center text-sm text-neutral-400">
         Drużyna loguje się kontem Discord — bez zakładania nowego hasła. Musisz być w naszym serwerze Discord.
       </p>
 
-      {error && <p className="text-sm text-red-400">{errorMessages[error] ?? 'Wystąpił błąd logowania.'}</p>}
+      {error && <p className="text-sm text-danger-400">{errorMessages[error] ?? 'Wystąpił błąd logowania.'}</p>}
 
       <a
         href={`${API_SETTINGS.baseUrl}${API_ENDPOINTS.auth.discordLogin}`}
@@ -34,6 +34,6 @@ export function LoginPage() {
         </svg>
         Zaloguj się przez Discord
       </a>
-    </>
+    </div>
   )
 }

@@ -29,7 +29,7 @@ export function PwaUpdatePrompt() {
       <button
         type="button"
         onClick={() => updateServiceWorker(true)}
-        className="shrink-0 rounded-md bg-red-600 px-3 py-1.5 text-xs font-medium text-white transition hover:bg-red-500"
+        className="shrink-0 rounded-md bg-primary-500 px-3 py-1.5 text-xs font-medium text-primary-950 transition hover:bg-primary-400"
       >
         Odśwież
       </button>

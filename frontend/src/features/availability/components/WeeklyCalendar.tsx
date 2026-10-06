@@ -145,7 +145,7 @@ export function WeeklyCalendar() {
       )}
 
       {isLoading && <p className="text-neutral-400">Ładowanie dostępności…</p>}
-      {isError && <p className="text-red-400">Nie udało się pobrać dostępności.</p>}
+      {isError && <p className="text-danger-400">Nie udało się pobrać dostępności.</p>}
 
       {!isLoading && !isError && members.length === 0 && (
         <p className="text-neutral-400">Brak członków drużyny do wyświetlenia.</p>
@@ -162,7 +162,7 @@ export function WeeklyCalendar() {
                 <div
                   key={date}
                   className={`rounded-md border px-2 py-1 text-center ${
-                    date === todayIso ? 'border-blue-500' : 'border-neutral-800'
+                    date === todayIso ? 'border-info-500' : 'border-neutral-800'
                   }`}
                 >
                   <p className="text-xs font-medium text-neutral-200">{weekdayLabelFor(date)}</p>
@@ -173,7 +173,7 @@ export function WeeklyCalendar() {
                     title="Ilu z głównego składu zadeklarowało dostępność tego dnia"
                     className={`mt-1 text-[11px] font-medium ${
                       summary.main.totalCount > 0 && summary.main.availableCount === summary.main.totalCount
-                        ? 'text-green-400'
+                        ? 'text-success-400'
                         : 'text-neutral-400'
                     }`}
                   >
@@ -193,9 +193,9 @@ export function WeeklyCalendar() {
                   {(eventsByDate.get(date) ?? []).map((event) => (
                     <Link
                       key={event.id}
-                      to={`/events?event=${event.id}`}
+                      to={`/calendar?event=${event.id}`}
                       title="Przejdź do szczegółów wydarzenia"
-                      className="mt-1 block truncate text-[10px] text-red-400 hover:underline"
+                      className="mt-1 block truncate text-[10px] text-primary-400 hover:underline"
                     >
                       ● {event.title}
                     </Link>
@@ -211,7 +211,7 @@ export function WeeklyCalendar() {
               const isNewSection = section !== previousSection
               const sectionDivider = memberIndex > 0 && isNewSection ? 'border-t border-neutral-700' : ''
               const rowHighlight = isMyRow
-                ? 'bg-neutral-900 ring-1 ring-inset ring-red-800/60'
+                ? 'bg-neutral-900 ring-1 ring-inset ring-primary-800/60'
                 : ''
 
               return (
@@ -228,7 +228,7 @@ export function WeeklyCalendar() {
                     <span className={`truncate ${isMyRow ? 'font-semibold text-white' : 'text-neutral-200'}`}>
                       {member.inGameNickname ?? member.displayName}
                     </span>
-                    {isMyRow && <span className="text-[10px] text-red-400">(Ty)</span>}
+                    {isMyRow && <span className="text-[10px] text-primary-400">(Ty)</span>}
                   </div>
                   {weekDates.map((date, index) => {
                     const entry = entryFor(member, date)

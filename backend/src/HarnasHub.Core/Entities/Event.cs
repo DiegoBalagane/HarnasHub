@@ -16,9 +16,13 @@ public class Event
 	public string? Location { get; set; }
 	public string? Url { get; set; }
 	public string? Notes { get; set; }
+	/// <summary>Optional opponent team name for a match/scrim/tournament game, matched case-insensitively against results and scouting notes.</summary>
+	public string? Opponent { get; set; }
 	public Guid CreatedByUserId { get; set; }
 	public DateTime CreatedAtUtc { get; set; }
 	public DateTime? ReminderSentAtUtc { get; set; }
+	/// <summary>When the opponent-report briefing was posted to Discord for this match, so it is sent only once.</summary>
+	public DateTime? BriefingSentAtUtc { get; set; }
 
 	#endregion
 }

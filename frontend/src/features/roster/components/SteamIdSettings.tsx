@@ -47,7 +47,7 @@ export function SteamIdSettings() {
           type="button"
           disabled={updateSteamId64.isPending}
           onClick={save}
-          className="shrink-0 rounded-md bg-red-600 px-3 py-1.5 text-xs font-medium text-white transition hover:bg-red-500 disabled:opacity-50"
+          className="shrink-0 rounded-md bg-primary-500 px-3 py-1.5 text-xs font-medium text-primary-950 transition hover:bg-primary-400 disabled:opacity-50"
         >
           Zapisz
         </button>
@@ -66,7 +66,7 @@ export function SteamIdSettings() {
         )}
       </div>
 
-      {updateSteamId64.isError && <p className="text-sm text-red-400">{updateSteamId64.error.message}</p>}
+      {updateSteamId64.isError && <p className="text-sm text-danger-400">{updateSteamId64.error.message}</p>}
     </div>
   )
 }

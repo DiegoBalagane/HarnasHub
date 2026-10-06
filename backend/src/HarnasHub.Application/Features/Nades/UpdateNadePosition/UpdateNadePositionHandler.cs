@@ -37,7 +37,7 @@ public class UpdateNadePositionHandler(IApplicationDbContext dbContext, ICurrent
 
 		return new NadeEntryDto(
 			entry.Id, entry.MapName, entry.Type.ToString(), entry.Title, entry.Description, entry.YoutubeUrl,
-			entry.LandingX, entry.LandingY, entry.CreatedByUserId);
+			entry.LandingX, entry.LandingY, entry.CreatedByUserId, entry.ThrowX, entry.ThrowY);
 	}
 
 	#endregion

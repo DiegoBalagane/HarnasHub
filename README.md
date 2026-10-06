@@ -24,10 +24,17 @@ It doubles as a hands-on playground for practicing AI-assisted software developm
 - **Per-map nade library** — organized smoke/flash/molotov lineups with embedded video clips, plus an optional pin on the map radar for each lineup.
 - **Map starting positions** — a per-map radar board where the coach drags each player's pin onto their CT/T spot, and the team reads the setup at a glance.
 - **Training materials** — a categorized library of learning resources.
-- **Opponent scouting** — notes and materials prepared ahead of a specific match.
+- **Opponent scouting** — a profile per opponent that merges scouting notes, the head-to-head record (overall and per map), match history and upcoming games; the next match gets a "prepare" banner on the dashboard.
+- **Map pool** — every map with the coach's status (comfort pick / playable / learning / ban), the team's record and win rate on it, recent form, and a shortcut to that map's tactics; filterable by scrims, league or tournament games.
+- **Veto assistant** — suggests picks and bans against a given opponent from the map pool, the team's overall and head-to-head record, tactic coverage and the opponent's recorded veto habits; every score comes with plain-language reasons. The actual veto is recorded per match event.
+- **FACEIT opponent report** — paste a FACEIT team link, match room link or nickname list and get a "them vs us" page: TL;DR insights, a per-map matrix (their team games and win rate vs ours, smoothed advantage with a confidence level), the opponent's likely bans/picks, a simulated BO1/BO3 veto with reasons for every step, players to watch, recent form and individual form (per-player ELO, per-map K/D/ADR/WR split team vs solo, form arrows, and "map comfort" from solo games blended into the predictions with shrinkage). Our players are matched automatically by SteamID64; data is cached and refreshed in the background before scheduled matches.
+- **Opponent demo tendencies** — upload several of the opponent's demos at once (or pull their latest FACEIT team games automatically when a Downloads API token is configured); the opponent's team is recognised by SteamID64, and every map gets a "how they play" card: T-side site and timing split, entry arrows and standard grenade clusters, CT default setups ("2A-1M-2B"), stacks, AWP spots, early aggression, retake vs save, key players — each with sample size, confidence and anti-strat suggestions. Grenade clusters can be saved as an analysis board or added to the nade library as "theirs". Any round of an analysed opponent demo can be replayed in 2D.
+- **2D round replay & tactic matching** — every round of a match with a demo replays on the radar (per-second positions smoothly interpolated on a canvas, kill feed, grenades with their lifetimes, bomb, 1x/2x/4x, keyboard shortcuts) and can be snapshotted into an analysis board in one click. Our rounds are automatically matched to the Playbook tactics (player positions and grenade landings from the opening seconds vs tactic points), so each round shows the tactic it was played with and every tactic shows its real win rate ("5/8 rounds").
+- **Game plan per event** — the coach writes the plan for a match or training and attaches tactics and analysis boards from the libraries; players open everything from one place (the event, or the dashboard's next-match banner) with deep links straight into each tactic or board.
 - **Player & team stats** — individual performance (K/D, ADR, HS%, rating), a win-rate trend chart over time, and one-click stat import straight from a CS2 demo file.
 - **Discord notifications** — new events/tasks and pre-event reminders posted to a team webhook.
 - **Live updates** — SignalR pushes changes (availability, tasks, results, ...) to every connected client, no polling.
+- **Background jobs with live progress** — demo parsing, FACEIT syncs and demo downloads run on an in-process job queue (`System.Threading.Channels` + a hosted worker with bounded concurrency); the API answers `202 { jobId }` and the UI shows a progress bar driven by SignalR (bytes-read progress for demos), so nobody waits on a blocking request. A FACEIT demo's original file name (`1-<uuid>-1-2.dem`) is recognised and pre-fills the opponent, map, date and category.
 - **Installable PWA** — add-to-homescreen on mobile, no app store needed.
 
 ## Tech stack
@@ -48,18 +55,25 @@ See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the full layer breakdown an
 Requirements: .NET 10 SDK, Node 20+, Docker.
 
 ```bash
-# database
-docker compose up -d postgres
+# database + local S3-compatible storage (SeaweedFS on :9000, bucket "harnashub" created on start) for demo uploads
+docker compose up -d
 
 # backend
 cd backend
 dotnet restore
+# optional: FACEIT Data API v4 server key for the opponent report (the app runs without it)
+dotnet user-secrets set "Faceit:ApiKey" "<your-key>" --project src/HarnasHub.Api
+# optional: FACEIT Downloads API token (granted on application) for automatic opponent demo downloads
+dotnet user-secrets set "Faceit:DownloadsApiToken" "<your-token>" --project src/HarnasHub.Api
 dotnet run --project src/HarnasHub.Api
 
 # frontend
 cd frontend
 npm install
 npm run dev
+
+# frontend tests (Vitest + Testing Library, no network or backend needed)
+npm test
 ```
 
 Or build and run the whole app as a single container (see [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)):

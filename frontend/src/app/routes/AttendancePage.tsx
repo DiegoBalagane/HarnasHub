@@ -1,3 +1,5 @@
+import { PageHeader } from '../../components/ui/PageHeader'
+import { AddFormModal } from '../../components/AddFormModal'
 import { useIsCoachOrManager } from '../../features/auth/hooks/useIsCoachOrManager'
 import { AddIncidentForm } from '../../features/attendance/components/AddIncidentForm'
 import { AttendanceSummaryTable } from '../../features/attendance/components/AttendanceSummaryTable'
@@ -9,11 +11,18 @@ export function AttendancePage() {
 
   return (
     <>
-      <h1 className="text-2xl font-semibold">Frekwencja</h1>
+      <PageHeader
+        title="Frekwencja"
+        actions={
+          canManage && (
+          <AddFormModal buttonLabel="+ Dodaj wpis" title="Dodaj spóźnienie / nieobecność">
+            {(close) => <AddIncidentForm onDone={close} />}
+          </AddFormModal>
+          )
+        }
+      />
 
       <AttendanceSummaryTable />
-
-      {canManage && <AddIncidentForm />}
 
       <h2 className="font-medium">Historia wpisów</h2>
       <IncidentList />
