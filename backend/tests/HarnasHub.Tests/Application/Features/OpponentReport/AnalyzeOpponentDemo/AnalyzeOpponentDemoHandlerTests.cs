@@ -110,7 +110,7 @@ public class AnalyzeOpponentDemoHandlerTests
 	#region Private Methods
 
 	private static AnalyzeOpponentDemoHandler Handler(TestApplicationDbContext dbContext, TestFileStorage storage, IDemoParser parser) =>
-		new(dbContext, storage, parser, new TestCurrentUserService(Guid.NewGuid()), TestFaceitLookup.Create(dbContext), TestTeamNotifications.Create(dbContext, storage), NullLogger<AnalyzeOpponentDemoHandler>.Instance);
+		new(dbContext, storage, parser, new TestCurrentUserService(Guid.NewGuid()), TestFaceitLookup.Create(dbContext), NullLogger<AnalyzeOpponentDemoHandler>.Instance);
 
 	#endregion
 }
