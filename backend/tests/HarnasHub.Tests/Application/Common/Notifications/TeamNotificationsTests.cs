@@ -10,7 +10,7 @@ public class TeamNotificationsTests
 	#region Public Methods
 
 	[Fact]
-	public async Task Result_saved_goes_to_the_match_schedule_with_a_link()
+	public async Task Result_saved_goes_to_announcements_with_a_link()
 	{
 		await using var dbContext = TestApplicationDbContext.Create();
 		var discord = new TestDiscordNotifier();
@@ -19,7 +19,7 @@ public class TeamNotificationsTests
 		await TestTeamNotifications.Create(dbContext, discord: discord).NotifyResultSavedAsync(result, CancellationToken.None);
 
 		var (channel, message) = Assert.Single(discord.Sent);
-		Assert.Equal(DiscordChannel.MatchSchedule, channel);
+		Assert.Equal(DiscordChannel.Announcements, channel);
 		Assert.Contains("**13:7**", message);
 		Assert.EndsWith($"https://hub.test/results/{result.Id}", message);
 	}
