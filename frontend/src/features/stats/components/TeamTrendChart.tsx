@@ -1,3 +1,4 @@
+import { recordLabel } from '../trendLabels'
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useTeamTrend } from '../hooks/useStats'
@@ -61,8 +62,7 @@ export function TeamTrendChart() {
     <div className="w-full">
       <p className="mb-1 text-sm text-neutral-400">
         Skuteczność drużyny w czasie ·{' '}
-        <span className="font-medium text-neutral-200">{last.winRatePercentage.toFixed(0)}%</span> (
-        {last.cumulativeWins}W / {last.cumulativeLosses}L)
+        <span className="font-medium text-neutral-200">{last.winRatePercentage.toFixed(0)}%</span> ({recordLabel(last)})
       </p>
 
       <svg
@@ -116,11 +116,12 @@ export function TeamTrendChart() {
           <p>
             {hovered.won ? (
               <span className="text-success-400">Wygrana</span>
+            ) : hovered.draw ? (
+              <span className="text-neutral-300">Remis</span>
             ) : (
               <span className="text-danger-400">Przegrana</span>
             )}{' '}
-            · {hovered.winRatePercentage.toFixed(0)}% skuteczności ({hovered.cumulativeWins}W /{' '}
-            {hovered.cumulativeLosses}L)
+            · {hovered.winRatePercentage.toFixed(0)}% skuteczności ({recordLabel(hovered)})
           </p>
         </div>
       )}

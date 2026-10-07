@@ -1,5 +1,6 @@
 #region Usings
 
+using HarnasHub.Application.Common.Time;
 using HarnasHub.Core.Entities;
 using HarnasHub.Core.Enums;
 
@@ -56,7 +57,7 @@ public static class MatchEventFormatter
 
 	#region Private Methods
 
-	private static string When(Event e) => $"{e.StartsAtUtc:dd.MM HH:mm}";
+	private static string When(Event e) => TeamTime.ShortDateTime(e.StartsAtUtc);
 
 	private static string OpponentPart(Event e) => string.IsNullOrWhiteSpace(e.Opponent) ? "" : $" vs {e.Opponent}";
 

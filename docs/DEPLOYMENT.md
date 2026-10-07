@@ -30,8 +30,8 @@ Render jest równoważną alternatywą (też wspiera deploy z Dockerfile + manag
    | `Jwt__Audience` | `HarnasHub.Client` |
    | `Jwt__ExpiryMinutes` | `43200` (30 dni — tyle samo co lokalnie; krótsza wartość wymusza ponowne logowanie po każdym wygaśnięciu tokenu, co bez odświeżania sesji łatwo pomylić z problemem przy deployu) |
    | `Discord__WebhookUrl` | **fallback** — webhook używany przez każdy kanał, któremu nie ustawiono własnego (Ustawienia kanału → Integracje → Webhooks → New Webhook → Copy URL). Wystarczy ten jeden, jeśli chcecie wszystko na jednym kanale |
-   | `Discord__Webhooks__Announcements` | webhook kanału **Ogłoszenia** — nowe wydarzenia (poza meczami), zadania, zwykłe przypomnienia |
-   | `Discord__Webhooks__MatchSchedule` | webhook kanału **Terminarz meczów** — mecze (dodanie/zmiana/usunięcie), przypomnienia o meczach, zapisane wyniki |
+   | `Discord__Webhooks__Announcements` | webhook kanału **Ogłoszenia** — nowe wydarzenia (poza meczami), zadania, zwykłe przypomnienia i zapisane wyniki meczów |
+   | `Discord__Webhooks__MatchSchedule` | webhook kanału **Terminarz meczów** — tylko nadchodzące mecze (dodanie/zmiana/usunięcie) i przypomnienia o nich |
    | `Discord__Webhooks__DemoReview` | webhook kanału **Analiza demek** — podsumowanie po dołączeniu przeanalizowanej demki do wyniku meczu |
    | `Discord__Webhooks__OpponentScouting` | webhook kanału **Scouting rywali** — odprawa przed meczem i podsumowanie tendencji po analizie demek rywala |
    | `DiscordOAuth__ClientId` | Client ID aplikacji Discord (Developer Portal → OAuth2) |

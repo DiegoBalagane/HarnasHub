@@ -20,7 +20,7 @@ export function makePlayer(overrides: Partial<AdvancedPlayer> = {}): AdvancedPla
     enemiesFlashed: 8,
     avgBlindSeconds: 1.5,
     teamFlashes: 1,
-    utilityDamagePerRound: 12.3,
+    utilityDamagePerMatch: 12.3,
     avgKast: 71,
     avgRating: 1.12,
     avgAdr: 80.5,

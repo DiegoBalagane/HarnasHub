@@ -55,6 +55,9 @@ public record MapComparisonDto(
 	/// <summary>Our players' solo-form win-rate prior (0.4–0.6) fed to the veto score as a small secondary term; null without data.</summary>
 	public double? OurSoloPrior { get; init; }
 
+	/// <summary>Whether our lineup plays the map regularly solo (veto familiarity, <c>VetoFamiliarity.PlaysIndividually</c>); null in older snapshots.</summary>
+	public bool? OurPlaysIndividually { get; init; }
+
 	/// <summary>True when our sample is below <see cref="SampleThresholds.MinGamesForWinRate"/> — "za mało danych", not used to decide.</summary>
 	public bool OurLowSample { get; init; }
 
