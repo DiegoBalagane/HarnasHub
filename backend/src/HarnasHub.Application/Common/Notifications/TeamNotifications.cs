@@ -25,13 +25,13 @@ public class TeamNotifications(
 {
 	#region Public Methods
 
-	/// <summary>Posts "result saved" to the match schedule channel.</summary>
+	/// <summary>Posts "result saved" to the announcements channel — the match schedule channel only lists upcoming matches.</summary>
 	public async Task NotifyResultSavedAsync(MatchResult result, CancellationToken cancellationToken)
 	{
 		try
 		{
 			var message = MatchResultFormatter.Format(result.Opponent, result.OurScore, result.OpponentScore, result.MapName, links.MatchResult(result.Id));
-			await discord.SendAsync(DiscordChannel.MatchSchedule, message, cancellationToken);
+			await discord.SendAsync(DiscordChannel.Announcements, message, cancellationToken);
 		}
 		catch (Exception ex) when (ex is not OperationCanceledException)
 		{

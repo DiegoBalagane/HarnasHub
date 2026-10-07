@@ -38,7 +38,7 @@ public class GetAdvancedStatsHandlerTests
 		Assert.Equal(0, player.OpeningLostT);
 		Assert.Equal(1, player.TradeKills);
 		Assert.Equal(1.30, player.AvgRating);
-		Assert.Equal(100d, player.UtilityDamagePerRound);
+		Assert.Equal(100d, player.UtilityDamagePerMatch);
 		var bob = Assert.Single(result.Value.Players, p => p.Name == "p2");
 		Assert.Equal(1, bob.TradedDeaths);
 		Assert.Null(bob.AvgRating);

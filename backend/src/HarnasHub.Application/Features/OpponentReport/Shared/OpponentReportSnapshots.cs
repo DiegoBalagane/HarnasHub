@@ -79,13 +79,15 @@ public static class OpponentReportSnapshots
 					row.TheirSmoothedWinRate is { } rate ? rate / 100 : MapAdvantage.SmoothedWinRate(row.TheirWins, row.TheirGames),
 					row.OurFaceitWins.HasValue ? row.OurFaceitGames : 0,
 					row.OurFaceitWins ?? 0,
-					row.OurSoloPrior)
+					row.OurSoloPrior,
+					row.OurPlaysIndividually ?? false)
 				: input)
 			.ToList();
 	}
 
 	/// <summary>Adds the FACEIT numbers to a veto input; <paramref name="theirWinRate"/> is their recency-weighted smoothed win rate
-	/// (0–1). Older snapshots without our FACEIT wins pass 0 games, so only the internal record counts.</summary>
+	/// (0–1). Older snapshots without our FACEIT wins pass 0 games, so only the internal record counts; older snapshots without
+	/// <paramref name="ourPlaysIndividually"/> count only team games and pool status towards familiarity.</summary>
 	public static MapVetoInput WithFaceit(
 		MapVetoInput input,
 		int theirGames,
@@ -93,7 +95,8 @@ public static class OpponentReportSnapshots
 		double theirWinRate,
 		int ourFaceitGames,
 		int ourFaceitWins,
-		double? ourSoloPrior) =>
+		double? ourSoloPrior,
+		bool ourPlaysIndividually = false) =>
 		input with
 		{
 			TheirGames = theirGames,
@@ -101,7 +104,8 @@ public static class OpponentReportSnapshots
 			TheirWinRate = theirGames == 0 ? null : theirWinRate,
 			OurFaceitGames = ourFaceitGames,
 			OurFaceitWins = ourFaceitWins,
-			OurSoloPrior = ourSoloPrior
+			OurSoloPrior = ourSoloPrior,
+			OurPlaysIndividually = ourPlaysIndividually
 		};
 
 	#endregion

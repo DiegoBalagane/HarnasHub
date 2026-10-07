@@ -22,8 +22,8 @@ public class AntiStratRulesTests
 		var suggestions = Evaluate(Facts(rounds));
 
 		var target = suggestions.Single(s => s.Kind == "TTarget");
-		Assert.Contains("88% rund T idzie na B", target.Text);
-		Assert.Contains("rozważ stack B", target.Text);
+		Assert.StartsWith("W 88% rund T idą na B, wejście średnio na ", target.Text);
+		Assert.Contains("→ stackujcie B albo wyjdźcie na agresję tuż przed ", target.Text);
 		Assert.Contains(suggestions, s => s.Kind == "TSlow");
 	}
 
@@ -35,8 +35,8 @@ public class AntiStratRulesTests
 
 		var suggestions = Evaluate(Facts(rounds));
 
-		Assert.Contains(suggestions, s => s.Kind == "TFast");
-		Assert.Contains(suggestions, s => s.Kind == "TStandardSmoke" && s.Text.Contains("strefa A"));
+		Assert.Contains(suggestions, s => s.Kind == "TFast" && s.Text == "Grają szybko: 100% egzekucji przed 0:35 → utility od startu rundy, nie wychodźcie solo.");
+		Assert.Contains(suggestions, s => s.Kind == "TStandardSmoke" && s.Text.StartsWith("Ten sam smoke na A w ") && s.Text.Contains("molly/flash przez smoke"));
 		Assert.DoesNotContain(suggestions, s => s.Kind == "TTarget");
 	}
 
@@ -49,8 +49,8 @@ public class AntiStratRulesTests
 		var suggestions = Evaluate(Facts(rounds));
 
 		Assert.Contains(suggestions, s => s.Kind == "CtDefaultSetup" && s.Text.Contains("3A-1M-1B") && s.Text.Contains("słabiej obstawione B"));
-		Assert.Contains(suggestions, s => s.Kind == "CtStack" && s.Text.Contains("Stackują A"));
-		Assert.Contains(suggestions, s => s.Kind == "CtAggression");
+		Assert.Contains(suggestions, s => s.Kind == "CtStack" && s.Text.Contains("stackują A →"));
+		Assert.Contains(suggestions, s => s.Kind == "CtAggression" && s.Text == "Agresywne CT: frag przed 0:25 w 100% rund → nie rushujcie, wejście na utility.");
 		Assert.Contains(suggestions, s => s.Kind == "CtSaves");
 	}
 
@@ -73,8 +73,9 @@ public class AntiStratRulesTests
 
 		var suggestions = Evaluate(Facts([], players));
 
-		Assert.Contains(suggestions, s => s.Kind == "PlayerAwp" && s.Text.StartsWith("sniper"));
-		Assert.Contains(suggestions, s => s.Kind == "PlayerEntry" && s.Text.StartsWith("entry"));
+		Assert.Contains(suggestions, s => s.Kind == "PlayerAwp" && s.Text.StartsWith("sniper to ich AWPer (") && s.Text.EndsWith("→ nie peekujcie jego kątów na sucho, najpierw flash/smoke."));
+		Assert.Contains(suggestions, s => s.Kind == "PlayerEntry" && s.Text.StartsWith("entry wchodzi pierwszy w ") && s.Text.EndsWith("→ ustawcie crossfire na jego entry i gotowy trade."));
+		Assert.All(suggestions, s => Assert.DoesNotContain("bez flasha", s.Text));
 	}
 
 	[Theory]

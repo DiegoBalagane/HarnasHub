@@ -25,7 +25,7 @@ public class MatchEventFormatterTests
 	{
 		var text = MatchEventFormatter.Created(Make(opponent: "Team X"));
 
-		Assert.Equal("📅 Nowe wydarzenie: **Liga R3** (Mecz) vs Team X — 20.09 18:00", text);
+		Assert.Equal("📅 Nowe wydarzenie: **Liga R3** (Mecz) vs Team X — 20.09 20:00", text);
 	}
 
 	[Fact]
@@ -33,8 +33,8 @@ public class MatchEventFormatterTests
 	{
 		var calendarEvent = Make(opponent: "Team X", location: "Discord");
 
-		Assert.Equal("✏️ Zmiana w meczu: **Liga R3** vs Team X — 20.09 18:00 @ Discord", MatchEventFormatter.Updated(calendarEvent));
-		Assert.Equal("🗑️ Usunięto mecz z kalendarza: **Liga R3** vs Team X — 20.09 18:00", MatchEventFormatter.Deleted(calendarEvent));
+		Assert.Equal("✏️ Zmiana w meczu: **Liga R3** vs Team X — 20.09 20:00 @ Discord", MatchEventFormatter.Updated(calendarEvent));
+		Assert.Equal("🗑️ Usunięto mecz z kalendarza: **Liga R3** vs Team X — 20.09 20:00", MatchEventFormatter.Deleted(calendarEvent));
 	}
 
 	[Fact]
