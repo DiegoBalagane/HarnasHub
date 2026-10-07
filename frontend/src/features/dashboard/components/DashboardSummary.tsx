@@ -1,3 +1,4 @@
+import { recordLabel } from '../../stats/trendLabels'
 import { scoreToneClass } from '../../results/scoreTone'
 import { Link } from 'react-router-dom'
 import type { DashboardSummary as DashboardData } from '../../../services/dashboardApi'
@@ -76,7 +77,7 @@ function TeamFormTile({ latest }: { latest: TeamTrendPoint | null }) {
         <>
           <p className="mt-1 text-2xl font-semibold">{latest.winRatePercentage.toFixed(0)}%</p>
           <p className="text-sm text-neutral-400">
-            {latest.cumulativeWins}W / {latest.cumulativeLosses}L
+            {recordLabel(latest)}
           </p>
         </>
       ) : (

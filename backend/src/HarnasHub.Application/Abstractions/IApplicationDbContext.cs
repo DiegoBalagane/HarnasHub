@@ -39,6 +39,7 @@ public interface IApplicationDbContext
 	DbSet<OpponentDemoAnalysis> OpponentDemoAnalyses { get; }
 	DbSet<BackgroundJob> BackgroundJobs { get; }
 	DbSet<HiddenOpponent> HiddenOpponents { get; }
+	DbSet<TeamInfoEntry> TeamInfoEntries { get; }
 
 	Task<int> SaveChangesAsync(CancellationToken cancellationToken);
 }

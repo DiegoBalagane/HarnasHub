@@ -103,7 +103,8 @@ public static class OpponentInsightRules
 				$"Słabi na {m.MapName} ({Pct(m.TheirWinRate!.Value)}%), my {Pct(m.OurWinRate!.Value)}% → pick",
 				$"oni {m.TheirWins}/{m.TheirGames}, my {Num(m.OurWins)}/{m.OurGames}, przewaga {Signed(m.Advantage)} pp"));
 
-	/// <summary>Maps where they hold a real edge over us — ban candidates; their per-map win rate needs <see cref="SampleThresholds.MinGamesForWinRate"/> games, ours is only quoted from as many.</summary>
+	/// <summary>Maps where they hold a real edge over us — "kandydat do bana" only when our veto bans it (a map we know stays, with a
+	/// prep hint); their per-map win rate needs <see cref="SampleThresholds.MinGamesForWinRate"/> games, ours is only quoted from as many.</summary>
 	public static IEnumerable<OpponentInsightDto> Dangers(InsightInput input) =>
 		input.Maps
 			.Where(m => m.Advantage <= -10 && m.Confidence != nameof(ConfidenceLevel.Low) && m.TheirWinRate.HasValue && SampleThresholds.HasWinRateSample(m.TheirGames))
@@ -112,7 +113,7 @@ public static class OpponentInsightRules
 			.Select(m => new OpponentInsightDto(
 				"Danger",
 				"Warning",
-				$"Uwaga na {m.MapName}: oni {Pct(m.TheirWinRate!.Value)}%, my {OurRate(m)} — {(m.PoolStatus == "Core" ? "groźnie, choć to nasza mapa komfortowa" : "kandydat do bana")}",
+				$"Uwaga na {m.MapName}: oni {Pct(m.TheirWinRate!.Value)}%, my {OurRate(m)} — {DangerVerdict(m)}",
 				$"przewaga {Signed(m.Advantage)} pp, pewność {ConfidenceLabel(m.Confidence)}"));
 
 	/// <summary>The single most dangerous player (by ADR, then K/D) with at least 3 games on a map.</summary>
@@ -190,6 +191,12 @@ public static class OpponentInsightRules
 
 	/// <summary>Percentage points with an explicit sign.</summary>
 	private static string Signed(double value) => (value > 0 ? "+" : "") + Pct(value);
+
+	/// <summary>What to do with a dangerous map, consistent with our veto recommendation on the row.</summary>
+	private static string DangerVerdict(MapComparisonDto m) =>
+		m.Recommendation == "Ban" ? "kandydat do bana"
+		: m.PoolStatus == "Core" ? "groźnie, choć to nasza mapa komfortowa"
+		: "ich mocna mapa, ale nie ma jej w naszych banach — przygotujcie na nią plan";
 
 	/// <summary>Our win rate on the row, or "brak meczów" / "za mało danych (n)" below the sample threshold.</summary>
 	private static string OurRate(MapComparisonDto m) =>

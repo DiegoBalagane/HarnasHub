@@ -40,6 +40,7 @@ export const navSections: NavSection[] = [
       { to: '/roster', label: 'Skład', icon: 'roster' },
       { to: '/tasks', label: 'Zadania', icon: 'tasks' },
       { to: '/attendance', label: 'Frekwencja', icon: 'attendance' },
+      { to: '/info', label: 'Info', icon: 'info' },
     ],
   },
   {

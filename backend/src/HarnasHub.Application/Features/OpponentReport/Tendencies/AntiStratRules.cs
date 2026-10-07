@@ -52,11 +52,11 @@ public static class AntiStratRules
 		if (topTarget is { Percent: >= 60 })
 		{
 			var late = t.ExecTiming.FirstOrDefault(s => s.Label == "Late")?.Percent ?? 0;
-			var when = t.AverageExecSecond is { } avg ? $" (śr. {Clock(avg)} od startu)" : string.Empty;
+			var when = t.AverageExecSecond is { } avg ? $", wejście średnio na {Clock(avg)}" : string.Empty;
 			var action = late >= 50 && t.AverageExecSecond is { } a
-				? $"rozważ stack {topTarget.Label} lub agresję na ich wejściu tuż przed {Clock(Math.Max(0, a - 10))}"
-				: $"wzmocnij {topTarget.Label} i trzymaj utility na ich wejście";
-			output.Add(new("TTarget", "T", $"{P(topTarget.Percent)} rund T idzie na {topTarget.Label}{when} → {action}.",
+				? $"stackujcie {topTarget.Label} albo wyjdźcie na agresję tuż przed {Clock(Math.Max(0, a - 10))}"
+				: $"dajcie dodatkowego gracza na {topTarget.Label} i trzymajcie utility na ich wejście";
+			output.Add(new("TTarget", "T", $"W {P(topTarget.Percent)} rund T idą na {topTarget.Label}{when} → {action}.",
 				$"{topTarget.Count} z {t.Targets.Sum(s => s.Count)} rund z ustalonym celem", confidence));
 		}
 
@@ -64,19 +64,19 @@ public static class AntiStratRules
 		var fastShare = t.ExecTiming.FirstOrDefault(s => s.Label == "Fast");
 		if (lateShare is { Percent: >= 50 })
 		{
-			output.Add(new("TSlow", "T", $"Grają wolno: {P(lateShare.Percent)} rozegrań po 1:15 → zbierajcie info i picki w pierwszych 40 s, nie rotujcie za wcześnie.",
+			output.Add(new("TSlow", "T", $"Grają wolno: {P(lateShare.Percent)} egzekucji po 1:15 → zbierajcie info i szukajcie picków na początku rundy, nie rotujcie za wcześnie.",
 				$"{lateShare.Count} rund", confidence));
 		}
 		else if (fastShare is { Percent: >= 40 })
 		{
-			output.Add(new("TFast", "T", $"Często grają szybko: {P(fastShare.Percent)} rozegrań przed 0:35 → utility na wejścia od startu rundy, bez samotnych wyjść.",
+			output.Add(new("TFast", "T", $"Grają szybko: {P(fastShare.Percent)} egzekucji przed 0:35 → utility od startu rundy, nie wychodźcie solo.",
 				$"{fastShare.Count} rund", confidence));
 		}
 
 		foreach (var cluster in t.GrenadeClusters.Where(c => c.Type == "Smoke" && c.PerRoundPercent >= 40).Take(2))
 		{
-			var where = cluster.Area is null ? string.Empty : $" (strefa {cluster.Area})";
-			output.Add(new("TStandardSmoke", "T", $"Ten sam smoke{where} w {P(cluster.PerRoundPercent)} rund T → przygotujcie pozycję pod jego wejście albo go wyprzedźcie.",
+			var where = cluster.Area is null ? string.Empty : $" na {cluster.Area}";
+			output.Add(new("TStandardSmoke", "T", $"Ten sam smoke{where} w {P(cluster.PerRoundPercent)} rund T → przygotujcie odpowiedź (np. molly/flash przez smoke) albo wyprzedźcie go.",
 				$"{cluster.Rounds} z {t.Rounds} rund T", confidence));
 		}
 
@@ -84,12 +84,12 @@ public static class AntiStratRules
 		var eco = t.Pistol.AfterLostPistolBuys.FirstOrDefault(s => s.Label == "Eco");
 		if (t.Pistol.LostPistols >= 2 && force is { Percent: >= 50 })
 		{
-			output.Add(new("ForceAfterPistol", "T", $"Po przegranej pistolówce zwykle force'ują ({P(force.Percent)}) → w 2. rundzie grajcie z dystansu i nie dawajcie im close-range.",
+			output.Add(new("ForceAfterPistol", "T", $"Po przegranym pistolu zwykle force'ują ({P(force.Percent)}) → w 2. rundzie grajcie z dystansu, nie dawajcie im bliskich kątów.",
 				$"{force.Count} z {t.Pistol.LostPistols} przegranych pistolówek", TendencyConfidence.For(t.Pistol.LostPistols * 4)));
 		}
 		else if (t.Pistol.LostPistols >= 2 && eco is { Percent: >= 60 })
 		{
-			output.Add(new("EcoAfterPistol", "T", $"Po przegranej pistolówce ecują ({P(eco.Percent)}) → w 2. rundzie możecie zagrać agresywniej po info.",
+			output.Add(new("EcoAfterPistol", "T", $"Po przegranym pistolu ecują ({P(eco.Percent)}) → w 2. rundzie grajcie agresywniej i wychodźcie po info.",
 				$"{eco.Count} z {t.Pistol.LostPistols} przegranych pistolówek", TendencyConfidence.For(t.Pistol.LostPistols * 4)));
 		}
 	}
@@ -104,29 +104,29 @@ public static class AntiStratRules
 		if (ct.Setups.FirstOrDefault() is { Percent: >= 40 } setup)
 		{
 			var weaker = CtSetupLabeler.WeakerSite(setup.Label);
-			var action = weaker is { } site ? $"planujcie egzekucję na słabiej obstawione {MapAreaResolver.Label(site)}" : "szukajcie przewagi przez mid";
-			output.Add(new("CtDefaultSetup", "CT", $"Najczęstsze ustawienie CT: {setup.Label} ({P(setup.Percent)}) → {action}.",
+			var action = weaker is { } site ? $"grajcie egzekucję na słabiej obstawione {MapAreaResolver.Label(site)}" : "szukajcie przewagi przez mida";
+			output.Add(new("CtDefaultSetup", "CT", $"Ich standardowe ustawienie CT to {setup.Label} ({P(setup.Percent)} rund) → {action}.",
 				$"{setup.Count} rund", ct.Confidence));
 		}
 
 		foreach (var stack in ct.Stacks.Where(s => s.Percent >= 30))
 		{
 			var other = stack.Label == nameof(MapArea.A) ? "B" : "A";
-			output.Add(new("CtStack", "CT", $"Stackują {stack.Label} w {P(stack.Percent)} rund → fejk na {stack.Label} i szybkie wejście na {other}.",
+			output.Add(new("CtStack", "CT", $"W {P(stack.Percent)} rund stackują {stack.Label} → pokażcie się na {stack.Label} i szybko przejdźcie na {other}.",
 				$"{stack.Count} rund", ct.Confidence));
 		}
 
 		if (ct.EarlyKillPercent >= 40)
 		{
-			output.Add(new("CtAggression", "CT", $"Agresywne CT: zabójstwo przed 0:25 w {P(ct.EarlyKillPercent)} rund → wolniejszy start, flashe na typowe peeki.",
+			output.Add(new("CtAggression", "CT", $"Agresywne CT: frag przed 0:25 w {P(ct.EarlyKillPercent)} rund → nie rushujcie, wejście na utility.",
 				$"{ct.EarlyKillRounds} z {ct.Rounds} rund CT", ct.Confidence));
 		}
 
 		var awpTotal = ct.AwpAreas.Sum(a => a.Count);
 		if (awpTotal >= 3 && ct.AwpAreas.FirstOrDefault() is { Percent: >= 50 } awp)
 		{
-			output.Add(new("CtAwpSpot", "CT", $"AWP najczęściej zabija na {awp.Label} ({P(awp.Percent)} zabójstw) → smoke albo flash na tę pozycję przed wejściem.",
-				$"{awp.Count} z {awpTotal} zabójstw z AWP", TendencyConfidence.For(awpTotal * 2)));
+			output.Add(new("CtAwpSpot", "CT", $"Ich AWP najwięcej fraguje na {awp.Label} ({P(awp.Percent)} killi) → zasmokujcie albo zaflashujcie ten kąt przed wejściem.",
+				$"{awp.Count} z {awpTotal} killi z AWP", TendencyConfidence.For(awpTotal * 2)));
 		}
 
 		if (ct.PostPlantRounds >= 4)
@@ -135,12 +135,12 @@ public static class AntiStratRules
 			var retakes = TendencyConfidence.Percent(ct.Retakes, ct.PostPlantRounds);
 			if (saves >= 50)
 			{
-				output.Add(new("CtSaves", "CT", $"Po plancie często oddają rundę ({P(saves)} save) → po plancie grajcie na czas, nie szukajcie zabójstw.",
+				output.Add(new("CtSaves", "CT", $"Po plancie często odpuszczają i save'ują ({P(saves)}) → grajcie na czas, nie szukajcie fragów na siłę.",
 					$"{ct.Saves} z {ct.PostPlantRounds} rund po plancie", TendencyConfidence.For(ct.PostPlantRounds * 2)));
 			}
 			else if (retakes >= 70)
 			{
-				output.Add(new("CtRetakes", "CT", $"Prawie zawsze idą na retake ({P(retakes)}) → zostawcie utility na post-plant i grajcie crossfire'y.",
+				output.Add(new("CtRetakes", "CT", $"Prawie zawsze grają retake ({P(retakes)}) → po plancie zostawcie utility i grajcie crossfire'y na post-plancie.",
 					$"{ct.Retakes} z {ct.PostPlantRounds} rund po plancie", TendencyConfidence.For(ct.PostPlantRounds * 2)));
 			}
 		}
@@ -151,14 +151,14 @@ public static class AntiStratRules
 		var confidence = TendencyConfidence.For(rounds);
 		if (players.FirstOrDefault(p => p.Role == "AWP") is { } awper)
 		{
-			output.Add(new("PlayerAwp", "Players", $"{awper.Name} to ich AWPer ({P(awper.AwpKillShare)} zabójstw z AWP drużyny) → nie wychodźcie na jego linie bez flasha.",
-				$"{awper.AwpKills} zabójstw z AWP", confidence));
+			output.Add(new("PlayerAwp", "Players", $"{awper.Name} to ich AWPer ({P(awper.AwpKillShare)} killi z AWP) → nie peekujcie jego kątów na sucho, najpierw flash/smoke.",
+				$"{awper.AwpKills} killi z AWP", confidence));
 		}
 
 		if (players.FirstOrDefault(p => p.Role == "Entry") is { } entry)
 		{
-			output.Add(new("PlayerEntry", "Players", $"{entry.Name} otwiera {P(entry.EntryRate)} rund → ustawcie się pod jego wejście (crossfire, trade).",
-				entry.OpeningWinRate is { } win ? $"wygrywa {P(win)} pierwszych pojedynków" : "brak pojedynków", confidence));
+			output.Add(new("PlayerEntry", "Players", $"{entry.Name} wchodzi pierwszy w {P(entry.EntryRate)} rund → ustawcie crossfire na jego entry i gotowy trade.",
+				entry.OpeningWinRate is { } win ? $"wygrywa {P(win)} otwierających pojedynków" : "brak otwierających pojedynków", confidence));
 		}
 	}
 

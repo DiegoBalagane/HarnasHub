@@ -17,6 +17,7 @@ import { ResultsPage } from './routes/ResultsPage'
 import { RosterPage } from './routes/RosterPage'
 import { SettingsPage } from './routes/SettingsPage'
 import { StatsPage } from './routes/StatsPage'
+import { TeamInfoPage } from './routes/TeamInfoPage'
 import { TasksPage } from './routes/TasksPage'
 
 /** Old route → Playbook tab, so bookmarks and deep links (?map=, ?tactic=, ?board=) keep working. */
@@ -43,6 +44,7 @@ const protectedRoutes: [string, ComponentType][] = [
   ['/opponents/report', OpponentReportPage],
   ['/roster', RosterPage],
   ['/attendance', AttendancePage],
+  ['/info', TeamInfoPage],
   ['/settings', SettingsPage],
   ['/admin', AdminPage],
 ]

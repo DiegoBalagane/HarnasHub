@@ -4,11 +4,12 @@ using HarnasHub.Core.Enums;
 namespace HarnasHub.Application.Features.Veto.Shared;
 
 /// <summary>The score of one map: total points, one Polish reason per signal, a short <paramref name="Note"/> naming the real
-/// drivers (used in the simulated veto) and whether the map may fill a ban slot — only with negative evidence beyond solo form.</summary>
-public record VetoMapScore(int Score, List<string> Reasons, string Note, bool BanCandidate);
+/// drivers (used in the simulated veto) and its <paramref name="Tier"/> in our ban order (see <see cref="VetoFamiliarity"/>).</summary>
+public record VetoMapScore(int Score, List<string> Reasons, string Note, VetoBanTier Tier);
 
-/// <summary>Additive points per map. Order of trust: the coach's pool status › our record and the opponent's per-map strength (both
-/// only from <see cref="SampleThresholds.MinGamesForWinRate"/> games) › head-to-head, recorded vetoes, tactics › our solo form (±5).</summary>
+/// <summary>Additive points per map. Order of trust: the coach's pool status › familiarity (maps we don't play go before maps we
+/// know — a tier, not points) › our record and the opponent's per-map strength (both only from
+/// <see cref="SampleThresholds.MinGamesForWinRate"/> games) › head-to-head, recorded vetoes, tactics › our solo form (±5).</summary>
 public static class VetoMapScorer
 {
 	#region Public Fields
@@ -35,12 +36,14 @@ public static class VetoMapScorer
 
 	#region Public Methods
 
-	/// <summary>Scores one map.</summary>
-	public static VetoMapScore Score(MapVetoInput map)
+	/// <summary>Scores one map; <paramref name="context"/> (default: none) switches on the familiarity order of the whole veto and
+	/// <paramref name="banned"/> rewords the note of a familiar map that still fills a ban slot.</summary>
+	public static VetoMapScore Score(MapVetoInput map, VetoFamiliarityContext? context = null, bool banned = false)
 	{
+		context ??= VetoFamiliarityContext.None;
 		if (map.Status == MapPoolStatus.Ban)
 		{
-			return new VetoMapScore(-100, ["Stały ban w puli map"], "w puli: stały ban", true);
+			return new VetoMapScore(-100, ["Stały ban w puli map"], "w puli: stały ban", VetoBanTier.PoolBan);
 		}
 
 		var parts = new List<Part>();
@@ -57,13 +60,22 @@ public static class VetoMapScorer
 			reasons.Add($"Forma indywidualna naszych graczy na tej mapie (solo ~{Math.Round(map.OurSoloPrior!.Value * 100):0}%) — składnik pomocniczy");
 		}
 
+		var negative = parts.Where(p => !p.Solo).Sum(p => p.Points) < 0;
+		var familiarity = VetoFamiliarity.Explain(map, negative, context, banned);
+		if (familiarity.Reason is not null)
+		{
+			reasons.Insert(1, familiarity.Reason);
+		}
+
 		var notes = parts
-			.Where(p => !p.Solo && p.Points != 0)
+			.Where(p => !p.Solo && p.Points != 0 && !(p.Record && familiarity.CoversRecord))
 			.OrderByDescending(p => Math.Abs(p.Points))
-			.Take(2)
+			.Take(familiarity.Note is null ? 2 : 1)
 			.Select(p => p.Note)
+			.Prepend(familiarity.Note)
+			.OfType<string>()
 			.ToList();
-		if (lowSample is not null)
+		if (lowSample is not null && !familiarity.CoversRecord)
 		{
 			notes.Add(lowSample);
 		}
@@ -72,7 +84,7 @@ public static class VetoMapScorer
 			parts.Sum(p => p.Points),
 			reasons,
 			notes.Count == 0 ? "brak wyraźnych sygnałów" : string.Join(", ", notes),
-			parts.Where(p => !p.Solo).Sum(p => p.Points) < 0);
+			VetoFamiliarity.Tier(map, negative, context));
 	}
 
 	#endregion
@@ -80,7 +92,7 @@ public static class VetoMapScorer
 	#region Private Methods
 
 	/// <summary>One signal's points and its short note; solo parts never decide a ban and are left out of the note.</summary>
-	private sealed record Part(int Points, string Note, bool Solo = false);
+	private sealed record Part(int Points, string Note, bool Solo = false, bool Record = false);
 
 	/// <summary>The coach's pool status — the primary signal.</summary>
 	private static void Pool(MapPoolStatus? status, List<Part> parts, List<string> reasons)
@@ -108,10 +120,9 @@ public static class VetoMapScorer
 	/// <summary>Our record (internal + FACEIT team games), only from the minimum sample; returns the "za mało danych" note, if any.</summary>
 	private static string? Record(MapVetoInput map, List<Part> parts, List<string> reasons)
 	{
-		var games = map.Wins + map.Losses + map.Draws + map.OurFaceitGames;
+		var games = VetoFamiliarity.TeamGames(map);
 		var wins = map.Wins + map.OurFaceitWins;
-		var losses = map.Losses + map.OurFaceitGames - map.OurFaceitWins;
-		var record = $"{wins}-{losses}{(map.Draws > 0 ? $"-{map.Draws}" : "")}";
+		var record = VetoFamiliarity.Record(map);
 		var noun = VetoNotes.MatchNoun(games);
 
 		if (games == 0)
@@ -131,7 +142,7 @@ public static class VetoMapScorer
 		var smoothed = MapAdvantage.SmoothedWinRate(effectiveWins, games);
 		var points = (int)Math.Clamp(Math.Round((smoothed - 0.5) * 60), -MaxRecordPoints, MaxRecordPoints);
 		var source = map.OurFaceitGames > 0 ? $", w tym {map.OurFaceitGames} na FACEIT" : "";
-		parts.Add(new Part(points, $"nasz bilans {record} ({winRate}%)"));
+		parts.Add(new Part(points, $"nasz bilans {record} ({winRate}%)", Record: true));
 		reasons.Add($"Nasz bilans {record} ({winRate}% wygranych w {games} meczach{source})");
 		return null;
 	}

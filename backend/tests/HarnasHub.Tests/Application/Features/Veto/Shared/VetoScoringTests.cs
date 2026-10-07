@@ -130,7 +130,7 @@ public class VetoScoringTests
 		var result = VetoScoring.Suggest(
 		[
 			Input(MapName.Mirage, MapPoolStatus.Core, wins: 6, losses: 2),
-			Input(MapName.Nuke, null) with { OurSoloPrior = 0.4 },
+			Input(MapName.Nuke, null) with { OurSoloPrior = 0.4, OurPlaysIndividually = true },
 			Input(MapName.Inferno, MapPoolStatus.Playable, wins: 3, losses: 3)
 		]);
 

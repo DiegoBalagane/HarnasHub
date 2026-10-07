@@ -56,6 +56,7 @@ public static class OpponentReportRows
 			TheirSmoothedWinRate = m.Their.Games == 0 ? null : Percent(m.Their.SmoothedWinRate),
 			OurFaceitWins = m.OurFaceitWins,
 			OurSoloPrior = m.VetoInput.OurSoloPrior,
+			OurPlaysIndividually = m.VetoInput.OurPlaysIndividually,
 			OurLowSample = !SampleThresholds.HasWinRateSample(m.OurTotal),
 			TheirLowSample = !SampleThresholds.HasWinRateSample(m.Their.Games),
 			TheirLifetime = LifetimeMapCalculator.ToDto(m.TheirLifetime),

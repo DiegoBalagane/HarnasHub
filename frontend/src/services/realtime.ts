@@ -51,6 +51,7 @@ function invalidateForTopic(queryClient: QueryClient, topic: string) {
     'game-plan': ['game-plan'],
     'analysis-boards': ['analysis-boards'],
     attendance: ['attendance'],
+    'team-info': ['team-info'],
   }
 
   const queryKey = topLevelKeys[topic]
