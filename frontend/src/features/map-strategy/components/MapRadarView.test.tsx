@@ -59,53 +59,51 @@ describe('MapRadarView (shared radar)', () => {
   })
   afterEach(() => useAuthStore.setState({ role: null, isCoach: false }))
 
-  it('renders both sides on one radar with side markers and a legend', async () => {
+  it("shows only the chosen side's pins while text callouts stay visible for both sides", async () => {
     stubFetch()
     renderWithProviders(<MapRadarView mapName="Mirage" />)
 
-    expect(await screen.findByTestId('side-badge-t1')).toHaveTextContent('T')
-    expect(screen.getByTestId('side-badge-c1')).toHaveTextContent('CT')
+    // CT is the default side: only the CT pin, plus the shared callout.
+    expect(await screen.findByTestId('side-badge-c1')).toHaveTextContent('CT')
+    expect(screen.queryByTestId('side-badge-t1')).not.toBeInTheDocument()
+    expect(screen.getByText('Smoke tu')).toBeInTheDocument()
+    expect(within(screen.getByLabelText('Legenda')).getByText('Bravo')).toBeInTheDocument()
+
+    await userEvent.click(within(screen.getByRole('radiogroup', { name: 'Strona' })).getByRole('radio', { name: 'T' }))
+
+    expect(screen.getByTestId('side-badge-t1')).toHaveTextContent('T')
+    expect(screen.queryByTestId('side-badge-c1')).not.toBeInTheDocument()
     expect(screen.getByText('Smoke tu')).toBeInTheDocument()
     expect(within(screen.getByLabelText('Legenda')).getByText('Alfa')).toBeInTheDocument()
-    expect(within(screen.getByLabelText('Legenda')).getByText('Bravo')).toBeInTheDocument()
   })
 
-  it('always shows both sides and only offers the placement side control', async () => {
-    stubFetch()
-    renderWithProviders(<MapRadarView mapName="Mirage" />)
-
-    expect(await screen.findByTestId('side-badge-t1')).toBeInTheDocument()
-    expect(screen.getByTestId('side-badge-c1')).toBeInTheDocument()
-    expect(screen.queryByRole('radiogroup', { name: 'Pokaż' })).not.toBeInTheDocument()
-    expect(screen.getByRole('radiogroup', { name: 'Ustawiasz' })).toBeInTheDocument()
-  })
-
-  it('saves a new placement on the side chosen in "Ustawiasz"', async () => {
+  it("saves a new placement on the side chosen in 'Strona'", async () => {
     const fetchMock = stubFetch()
     renderWithProviders(<MapRadarView mapName="Mirage" />)
-    await screen.findByTestId('side-badge-t1')
+    await screen.findByTestId('side-badge-c1')
 
     // Alfa is already on T, but not on CT, so she is selectable while placing on CT.
-    await userEvent.click(within(screen.getByRole('radiogroup', { name: 'Ustawiasz' })).getByRole('radio', { name: 'CT' }))
+    await userEvent.click(within(screen.getByRole('radiogroup', { name: 'Strona' })).getByRole('radio', { name: 'CT' }))
     await userEvent.selectOptions(await screen.findByRole('combobox'), 'u1')
     await userEvent.click(screen.getByRole('button', { name: 'Dodaj pozycję' }))
     await waitFor(() => expect(writes(fetchMock).some((body) => body.userId === 'u1')).toBe(true))
     expect(writes(fetchMock).find((body) => body.userId === 'u1')).toMatchObject({ side: 'CT' })
 
-    await userEvent.click(within(screen.getByRole('radiogroup', { name: 'Ustawiasz' })).getByRole('radio', { name: 'T' }))
+    await userEvent.click(within(screen.getByRole('radiogroup', { name: 'Strona' })).getByRole('radio', { name: 'T' }))
     await userEvent.selectOptions(await screen.findByRole('combobox'), 'u2')
     await userEvent.click(screen.getByRole('button', { name: 'Dodaj pozycję' }))
     await waitFor(() => expect(writes(fetchMock).some((body) => body.userId === 'u2')).toBe(true))
     expect(writes(fetchMock).find((body) => body.userId === 'u2')).toMatchObject({ side: 'T' })
   })
 
-  it('saves a drag on the pin own side regardless of the editing control', async () => {
+  it('saves a drag on the T side when the T pins are shown', async () => {
     const fetchMock = stubFetch()
     renderWithProviders(<MapRadarView mapName="Mirage" />)
+    await screen.findByTestId('side-badge-c1')
+    await userEvent.click(within(screen.getByRole('radiogroup', { name: 'Strona' })).getByRole('radio', { name: 'T' }))
     const tPin = (await screen.findByTestId('side-badge-t1')).parentElement as HTMLElement
     const handle = within(tPin).getByTitle(/Alfa/)
 
-    // The control says CT (default) but the dragged pin lives on T.
     fireEvent.pointerDown(handle, { pointerId: 1, clientX: 200, clientY: 100 })
     fireEvent.pointerMove(handle, { pointerId: 1, clientX: 500, clientY: 250 })
     fireEvent.pointerUp(handle, { pointerId: 1 })
