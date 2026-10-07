@@ -65,7 +65,7 @@ public class AnalyzeOpponentDemoFaceitTests
 
 	private static AnalyzeOpponentDemoHandler Handler(TestApplicationDbContext dbContext, TestFaceitClient client) =>
 		new(dbContext, new TestFileStorage(), new TestDemoParser(timeline: Timeline([Round(1, MapSide.T, MapSide.T)])),
-			new TestCurrentUserService(Guid.NewGuid()), TestFaceitLookup.Create(dbContext, client), TestTeamNotifications.Create(dbContext), NullLogger<AnalyzeOpponentDemoHandler>.Instance);
+			new TestCurrentUserService(Guid.NewGuid()), TestFaceitLookup.Create(dbContext, client), NullLogger<AnalyzeOpponentDemoHandler>.Instance);
 
 	#endregion
 }

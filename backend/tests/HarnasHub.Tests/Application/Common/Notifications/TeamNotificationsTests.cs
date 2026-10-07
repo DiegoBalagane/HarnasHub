@@ -49,20 +49,6 @@ public class TeamNotificationsTests
 		Assert.Empty(discord.Sent);
 	}
 
-	[Fact]
-	public async Task Opponent_digest_goes_to_the_scouting_channel_with_a_report_link()
-	{
-		await using var dbContext = TestApplicationDbContext.Create();
-		var discord = new TestDiscordNotifier();
-
-		await TestTeamNotifications.Create(dbContext, discord: discord).NotifyOpponentDemosAsync("team x", "Team X", ["Mirage"], CancellationToken.None);
-
-		var (channel, message) = Assert.Single(discord.Sent);
-		Assert.Equal(DiscordChannel.OpponentScouting, channel);
-		Assert.Contains("Team X", message);
-		Assert.EndsWith("https://hub.test/opponents/report?name=Team%20X", message);
-	}
-
 	#endregion
 
 	#region Private Methods
