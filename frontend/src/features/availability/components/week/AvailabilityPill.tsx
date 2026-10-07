@@ -36,15 +36,18 @@ export const AvailabilityPill = React.memo(function AvailabilityPill({
     kindClass[view.kind]
   } ${mine ? 'font-semibold' : ''} ${active ? 'ring-2 ring-neutral-300' : ''}`
   const title = entry?.note ? `${view.label} — ${entry.note}` : view.label
-  const noteDot = entry?.note ? (
-    <span aria-hidden className="absolute right-1.5 top-0.5 h-1.5 w-1.5 rounded-full bg-primary-400" />
-  ) : null
+  // The note is shown on the pill itself (truncated), the full text in the tooltip — a lone dot was easy to miss.
+  const content = (
+    <span className="min-w-0 truncate">
+      {view.text}
+      {entry?.note && <span className="opacity-80"> · 💬 {entry.note}</span>}
+    </span>
+  )
 
   if (!editable) {
     return (
       <div role="img" aria-label={`${name}: ${view.label}`} title={title} className={className}>
-        {view.text}
-        {noteDot}
+        {content}
       </div>
     )
   }
@@ -57,8 +60,7 @@ export const AvailabilityPill = React.memo(function AvailabilityPill({
       onClick={(event) => onOpen?.(event.currentTarget.getBoundingClientRect())}
       className={`${className} cursor-pointer transition hover:brightness-125`}
     >
-      {view.text}
-      {noteDot}
+      {content}
     </button>
   )
 })

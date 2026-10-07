@@ -16,8 +16,8 @@ interface MapRadarViewProps {
   mapName?: MapName
 }
 
-/** Per-map starting-position board: one shared radar always showing both sides' pins (told apart only by the pin's side
- * marker) and shared text callouts; for Coach/Manager a segmented control picks the side new pins are saved to. */
+/** Per-map starting-position board: text callouts (spots) are shared by both sides and always visible, while player pins
+ * belong to one side — the "Strona" control shows that side's pins and is also the side new pins are saved to. */
 export function MapRadarView({ mapName: controlledMapName }: MapRadarViewProps) {
   const [ownMapName, setMapName] = useState<MapName>('Mirage')
   const mapName = controlledMapName ?? ownMapName
@@ -25,6 +25,7 @@ export function MapRadarView({ mapName: controlledMapName }: MapRadarViewProps) 
   const { data: positions, isLoading, isError } = useMapPositions(mapName)
   const annotations = useMapTextAnnotations(mapName)
   const canEdit = useIsCoachOrManager()
+  const sidePositions = (positions ?? []).filter((position) => position.side === editSide)
 
   return (
     <section className="flex w-full flex-col gap-4">
@@ -43,15 +44,13 @@ export function MapRadarView({ mapName: controlledMapName }: MapRadarViewProps) 
           </select>
         )}
 
-        {canEdit && (
-          <SegmentedControl
-            label="Ustawiasz"
-            options={mapSides.map((side) => ({ value: side, label: side }))}
-            value={editSide}
-            onChange={setEditSide}
-            title={mapSideLabels[editSide]}
-          />
-        )}
+        <SegmentedControl
+          label="Strona"
+          options={mapSides.map((side) => ({ value: side, label: side }))}
+          value={editSide}
+          onChange={setEditSide}
+          title={mapSideLabels[editSide]}
+        />
       </div>
 
       {canEdit && (
@@ -72,24 +71,19 @@ export function MapRadarView({ mapName: controlledMapName }: MapRadarViewProps) 
 
       {positions && (
         <>
-          <MapRadar
-            mapName={mapName}
-            positions={positions}
-            annotations={annotations}
-            canEdit={canEdit}
-          />
+          <MapRadar mapName={mapName} positions={sidePositions} annotations={annotations} canEdit={canEdit} />
 
-          <MapLegend positions={positions} />
+          <MapLegend positions={sidePositions} />
 
           <p className="text-xs text-neutral-500">
-            {positions.length === 0
-              ? 'Nikt nie ma jeszcze przypisanej pozycji na tej mapie.'
+            {sidePositions.length === 0
+              ? `Nikt nie ma jeszcze pozycji na stronie ${editSide} na tej mapie.`
               : canEdit
                 ? 'Przeciągnij pinezkę lub notatkę, aby zmienić pozycję (pinezka zapisuje się na swojej stronie), kliknij, aby edytować. Kółkiem myszy przybliżysz mapę.'
                 : 'Najedź na pinezkę, aby zobaczyć zawodnika i jego rolę. Kółkiem myszy przybliżysz mapę.'}
           </p>
 
-          <PositionNotesList positions={positions} />
+          <PositionNotesList positions={sidePositions} />
         </>
       )}
     </section>
@@ -105,9 +99,20 @@ interface SegmentedControlProps<T extends string> {
 }
 
 /** Small labelled toggle group (radio semantics) used for the side new pins are placed on. */
-function SegmentedControl<T extends string>({ label, options, value, onChange, title }: SegmentedControlProps<T>) {
+function SegmentedControl<T extends string>({
+  label,
+  options,
+  value,
+  onChange,
+  title,
+}: SegmentedControlProps<T>) {
   return (
-    <div role="radiogroup" aria-label={label} title={title} className="flex items-center gap-2 text-sm text-neutral-400">
+    <div
+      role="radiogroup"
+      aria-label={label}
+      title={title}
+      className="flex items-center gap-2 text-sm text-neutral-400"
+    >
       <span>{label}:</span>
       <div className="flex overflow-hidden rounded-md border border-neutral-800">
         {options.map((option) => (
@@ -135,7 +140,10 @@ function MapLegend({ positions }: { positions: SidedMapPosition[] }) {
   for (const position of positions) players.set(position.userId, players.get(position.userId) ?? position)
 
   return (
-    <div aria-label="Legenda" className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-neutral-300">
+    <div
+      aria-label="Legenda"
+      className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-neutral-300"
+    >
       {mapSides.map((side) => (
         <span key={side} className="flex items-center gap-1.5">
           <span className={`h-3.5 w-3.5 rounded-full ring-2 ${sideStyles[side].ring}`} />
