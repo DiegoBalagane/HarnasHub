@@ -7,8 +7,8 @@ using HarnasHub.Core.Enums;
 namespace HarnasHub.Application.Common.Maps;
 
 /// <summary>Which maps' stored radar fractions can be trusted on the images the app ships. Every pool map has an overview
-/// calibration (so <c>DemoTimeline.IsRadarCalibrated</c> is true), but Dust2 and Inferno ship cropped radar images
-/// with no fitted crop yet (<c>MapCalibration.RadarImageCrops</c> in Infrastructure), so their fractions land off-target —
+/// calibration (so <c>DemoTimeline.IsRadarCalibrated</c> is true), but Dust2 and Inferno only have crops registered
+/// against the official radar, not yet checked on a real demo (<c>MapCalibration.RadarImageCrops</c> in Infrastructure), so until then
 /// position-based features (2D replay, tactic matching) refuse them instead of drawing nonsense. World coordinates are kept
 /// in every timeline, so adding a crop later only needs the radar fractions recomputed. Keep in sync with MapCalibration.</summary>
 public static class MapRadarSupport

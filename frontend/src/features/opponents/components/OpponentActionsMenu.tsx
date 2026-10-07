@@ -6,6 +6,7 @@ import { RenameOpponentDialog } from './RenameOpponentDialog'
 interface OpponentActionsMenuProps {
   name: string
   isHidden?: boolean
+  /** Positioning classes of the wrapper; it must stay positioned (relative by default) for the dropdown. */
   className?: string
   /** After a rename/merge, with the new name. */
   onRenamed?: (newName: string) => void
@@ -17,7 +18,7 @@ interface OpponentActionsMenuProps {
 export function OpponentActionsMenu({
   name,
   isHidden = false,
-  className = '',
+  className = 'relative',
   onRenamed,
   onGone,
 }: OpponentActionsMenuProps) {
@@ -32,7 +33,7 @@ export function OpponentActionsMenu({
   }
 
   return (
-    <div className={`relative ${className}`}>
+    <div className={className}>
       <button
         type="button"
         aria-label={`Akcje przeciwnika ${name}`}

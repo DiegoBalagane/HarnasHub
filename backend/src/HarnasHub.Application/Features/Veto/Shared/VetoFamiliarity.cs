@@ -13,7 +13,7 @@ public enum VetoBanTier
 {
 	/// <summary>Permanent ban in the map pool.</summary>
 	PoolBan = 0,
-	/// <summary>A map we don't play (few team games, little solo play, no Core/Playable status) or one marked as Learning.</summary>
+	/// <summary>A map we don't play: outside the coach's pool, or (without a pool) few team games and little solo play.</summary>
 	NotPlayed = 1,
 	/// <summary>A familiar map with negative evidence beyond solo form that isn't one of our comfortable maps.</summary>
 	BanCandidate = 2,
@@ -54,10 +54,11 @@ public static class VetoFamiliarity
 		comfort is { IsAvoided: false } c
 		&& (c.RegularPlayers >= MinSoloRegulars || (c.RegularPlayers >= 2 && lifetime is { IsExperienced: true }));
 
-	/// <summary>Core/Playable in the pool, or (no Learning/Ban status) enough team games or regular individual play.</summary>
+	/// <summary>Any map in the coach's pool (Core, Playable or Learning — a map being trained is still ours); without a pool, enough team
+	/// games or regular individual play. Once the pool exists, a map outside it is never ours, whatever a few games or solo play say.</summary>
 	public static bool IsFamiliar(MapVetoInput map) =>
-		map.Status is MapPoolStatus.Core or MapPoolStatus.Playable
-		|| (map.Status is null && (TeamGames(map) >= MinTeamGamesForFamiliarity || map.OurPlaysIndividually));
+		map.Status is MapPoolStatus.Core or MapPoolStatus.Playable or MapPoolStatus.Learning
+		|| (!map.CoachPool && map.Status is null && (TeamGames(map) >= MinTeamGamesForFamiliarity || map.OurPlaysIndividually));
 
 	/// <summary>A map without pool status that we don't play — banned first.</summary>
 	public static bool IsUnplayed(MapVetoInput map) => map.Status is null && !IsFamiliar(map);
@@ -68,11 +69,11 @@ public static class VetoFamiliarity
 		map.Status == MapPoolStatus.Core
 		|| (IsFamiliar(map) && TeamGames(map) >= MinTeamGamesForFamiliarity && Wins(map) > Losses(map));
 
-	/// <summary>The coach's pool is the source of truth once it names maps we play (Core/Playable): then a map without status is familiar
-	/// only from real team games, never from our players' solo play alone — otherwise solo FACEIT habits picked maps the team never trained.</summary>
+	/// <summary>Marks every map with <see cref="MapVetoInput.CoachPool"/> when the coach has put any map in the pool (Core, Playable or
+	/// Learning): the pool is then the source of truth, so a map outside it is banned before any map we train.</summary>
 	public static List<MapVetoInput> ApplyCoachPool(IReadOnlyCollection<MapVetoInput> maps) =>
-		maps.Any(m => m.Status is MapPoolStatus.Core or MapPoolStatus.Playable)
-			? maps.Select(m => m.Status is null ? m with { OurPlaysIndividually = false } : m).ToList()
+		maps.Any(m => m.Status is MapPoolStatus.Core or MapPoolStatus.Playable or MapPoolStatus.Learning)
+			? maps.Select(m => m with { CoachPool = true }).ToList()
 			: maps.ToList();
 
 	/// <summary>The context of one veto over <paramref name="maps"/>.</summary>
@@ -107,6 +108,11 @@ public static class VetoFamiliarity
 		var noun = VetoNotes.MatchNoun(games);
 		if (context.Active && IsUnplayed(map))
 		{
+			if (map.CoachPool)
+			{
+				return ("Poza naszą pulą map (trenujemy inne) — ban w pierwszej kolejności", "poza naszą pulą map — ban w pierwszej kolejności", true);
+			}
+
 			return ($"Nie gramy tej mapy ({games} {noun} drużynowo, brak statusu w puli) — ban w pierwszej kolejności",
 				$"nie gramy tej mapy ({games} {noun}) — ban w pierwszej kolejności", true);
 		}
