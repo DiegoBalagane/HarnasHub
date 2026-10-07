@@ -44,6 +44,18 @@ public class GetOpponentProfileHandlerTests
 	}
 
 	[Fact]
+	public async Task Should_use_the_faceit_link_display_name_for_an_opponent_without_other_data()
+	{
+		await using var dbContext = TestApplicationDbContext.Create();
+		dbContext.OpponentFaceitLinks.Add(new HarnasHub.Core.Entities.OpponentFaceitLink { Id = Guid.NewGuid(), OpponentKey = "team x", DisplayName = "Team X" });
+		await dbContext.SaveChangesAsync(CancellationToken.None);
+
+		var result = await new GetOpponentProfileHandler(dbContext).Handle(new GetOpponentProfileQuery("team x"), CancellationToken.None);
+
+		Assert.Equal("Team X", result.Value.Name);
+	}
+
+	[Fact]
 	public async Task Should_return_an_empty_profile_for_an_opponent_without_data()
 	{
 		await using var dbContext = TestApplicationDbContext.Create();

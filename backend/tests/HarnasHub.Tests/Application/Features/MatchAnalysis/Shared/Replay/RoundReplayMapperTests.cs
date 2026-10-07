@@ -33,7 +33,9 @@ public class RoundReplayMapperTests
 	{
 		var timeline = Timeline(
 			[Round(1, MapSide.T, MapSide.T)],
-			positions: [Track(1, Them[0], MapSide.T, SiteA), Track(1, Others[0], MapSide.CT, SiteB)]);
+			positions: [Track(1, Them[0], MapSide.T, SiteA), Track(1, Others[0], MapSide.CT, SiteB)],
+			economy: [new DemoRoundEconomy(1, Them.Concat(Others)
+				.Select(id => new DemoPlayerEconomy(id, $"p{id}", MapSide.T, 4000, 0, 0, 100, true, false, null)).ToList())]);
 
 		var replay = RoundReplayMapper.Build(timeline, 1, TheirPerspective)!;
 

@@ -25,12 +25,14 @@ public static class IndividualGameLines
 	/// <summary>Lines of <paramref name="roster"/> players in the cached <paramref name="matches"/> (lines of other matches are
 	/// dropped, so the window of the matches applies), oldest first. A line is a team game when ≥ 3 roster players stood on the
 	/// player's side (<see cref="TeamMatchDetector.FindSide"/>); everything else — including games against other roster members —
-	/// is solo. With <paramref name="players"/> only those players' lines are returned (the full roster still decides team vs solo).</summary>
+	/// is solo. With <paramref name="players"/> only those players' lines are returned (the full roster still decides team vs solo);
+	/// <paramref name="teamSides"/> (cached row id → the team's side) replaces the roster rule when the team games are already known.</summary>
 	public static List<IndividualGameLine> Build(
 		IEnumerable<FaceitMatch> matches,
 		IEnumerable<FaceitMatchPlayerStat> stats,
 		IReadOnlySet<string> roster,
-		IReadOnlySet<string>? players = null)
+		IReadOnlySet<string>? players = null,
+		IReadOnlyDictionary<Guid, int>? teamSides = null)
 	{
 		var byId = matches.ToDictionary(m => m.Id);
 		var sides = new Dictionary<Guid, int?>();
@@ -42,7 +44,9 @@ public static class IndividualGameLines
 				var match = byId[s.MatchId];
 				if (!sides.TryGetValue(match.Id, out var side))
 				{
-					side = TeamMatchDetector.FindSide(match.Team1PlayerIds, match.Team2PlayerIds, roster);
+					side = teamSides is not null
+						? teamSides.TryGetValue(match.Id, out var known) ? known : null
+						: TeamMatchDetector.FindSide(match.Team1PlayerIds, match.Team2PlayerIds, roster);
 					sides[match.Id] = side;
 				}
 

@@ -2,6 +2,7 @@
 
 using HarnasHub.Application.Abstractions;
 using HarnasHub.Application.Features.MatchAnalysis.Shared;
+using HarnasHub.Application.Features.MatchAnalysis.Shared.Analysis;
 using HarnasHub.Core.Enums;
 
 #endregion
@@ -17,6 +18,7 @@ public static class OpponentPlayerFactsExtractor
 	/// <summary>Totals for every player who stood on the opponent's side in at least one round, most rounds first.</summary>
 	public static List<OpponentPlayerFacts> Extract(DemoTimeline timeline, IReadOnlySet<long> theirTeam)
 	{
+		timeline = RoundParticipants.Filter(timeline);
 		var totals = new Dictionary<long, int[]>();
 		var names = Names(timeline);
 		var killsByRound = timeline.Kills.ToLookup(k => k.RoundNumber);

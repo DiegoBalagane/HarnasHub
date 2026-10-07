@@ -3,6 +3,7 @@ import { Tabs, type TabItem } from '../../../components/ui/Tabs'
 import { useIsCoachOrManager } from '../../auth/hooks/useIsCoachOrManager'
 import { isMissingTimeline, useMatchTimeline } from '../hooks/useMatchAnalysis'
 import { AttachDemoButton } from './AttachDemoButton'
+import { ExcludedPlayersBar } from './ExcludedPlayersBar'
 import { MatchDeepAnalysisPanel } from './MatchDeepAnalysisPanel'
 import { MatchInsightsPanel } from './MatchInsightsPanel'
 import { MatchPlayerAnalysis } from './MatchPlayerAnalysis'
@@ -63,6 +64,7 @@ export function MatchTabs({ matchResultId, overview, players }: MatchTabsProps) 
       {tab === 'players' && (
         <div className="flex flex-col gap-6">
           {players}
+          {!missing && <ExcludedPlayersBar matchResultId={matchResultId} />}
           {!missing && <MatchPlayerAnalysis matchResultId={matchResultId} />}
         </div>
       )}

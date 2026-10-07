@@ -330,6 +330,10 @@ namespace HarnasHub.Infrastructure.Database.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<string>("CompetitionId")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
                     b.Property<string>("CompetitionName")
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)");
@@ -356,6 +360,10 @@ namespace HarnasHub.Infrastructure.Database.Migrations
                     b.Property<DateTime>("PlayedAtUtc")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<string>("Team1FactionId")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
                     b.Property<string>("Team1Name")
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
@@ -366,6 +374,10 @@ namespace HarnasHub.Infrastructure.Database.Migrations
 
                     b.Property<int>("Team1Score")
                         .HasColumnType("integer");
+
+                    b.Property<string>("Team2FactionId")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
 
                     b.Property<string>("Team2Name")
                         .HasMaxLength(100)
@@ -686,6 +698,12 @@ namespace HarnasHub.Infrastructure.Database.Migrations
 
                     b.Property<DateTime>("CreatedAtUtc")
                         .HasColumnType("timestamp with time zone");
+
+                    b.PrimitiveCollection<List<long>>("ExcludedSteamIds")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint[]")
+                        .HasDefaultValueSql("'{}'::bigint[]");
 
                     b.Property<Guid>("MatchResultId")
                         .HasColumnType("uuid");

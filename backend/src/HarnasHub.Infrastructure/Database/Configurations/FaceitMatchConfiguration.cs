@@ -18,6 +18,9 @@ public class FaceitMatchConfiguration : IEntityTypeConfiguration<FaceitMatch>
 		builder.Property(m => m.MapName).HasMaxLength(40);
 		builder.Property(m => m.CompetitionType).HasMaxLength(40);
 		builder.Property(m => m.CompetitionName).HasMaxLength(200);
+		builder.Property(m => m.CompetitionId).HasMaxLength(64);
+		builder.Property(m => m.Team1FactionId).HasMaxLength(64);
+		builder.Property(m => m.Team2FactionId).HasMaxLength(64);
 		builder.Property(m => m.Team1Name).HasMaxLength(100);
 		builder.Property(m => m.Team2Name).HasMaxLength(100);
 		builder.Property(m => m.Team1PlayerIds).IsRequired();

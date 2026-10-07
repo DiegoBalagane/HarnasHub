@@ -27,13 +27,15 @@ public static class ActiveLineupResolver
 
 	#region Public Methods
 
-	/// <summary>Resolves the lineup from <paramref name="newestFirst"/> team games of the full linked <paramref name="roster"/>.</summary>
+	/// <summary>Resolves the lineup from <paramref name="newestFirst"/> team games of the full linked <paramref name="roster"/>;
+	/// <paramref name="gamesNoun"/> names those games in the Polish basis text (genitive plural).</summary>
 	public static ActiveLineup Resolve(
 		IReadOnlyList<TeamGame> newestFirst,
 		IReadOnlySet<string> roster,
 		DateTime nowUtc,
 		IReadOnlyDictionary<string, string> nicknames,
-		IReadOnlyList<FaceitPlayerDto> profiles)
+		IReadOnlyList<FaceitPlayerDto> profiles,
+		string gamesNoun = "meczów drużynowych")
 	{
 		var window = newestFirst
 			.Where((game, index) => index < RecentTeamGames || game.PlayedAtUtc >= nowUtc.AddDays(-RecentDays))
@@ -44,9 +46,9 @@ public static class ActiveLineupResolver
 		var (active, basis) = roster.Count <= MaxLineupSize
 			? (roster.ToHashSet(), $"Wszyscy powiązani gracze ({roster.Count}) — nie ma kogo odfiltrować")
 			: window.Count == 0
-				? (roster.ToHashSet(), "Brak meczów drużynowych w oknie — brani są wszyscy powiązani gracze")
+				? (roster.ToHashSet(), $"Brak {gamesNoun} w oknie — brani są wszyscy powiązani gracze")
 				: (roster.Where(id => recent.GetValueOrDefault(id) >= minAppearances).ToHashSet(),
-					$"Skład z ostatnich {window.Count} meczów drużynowych (ostatnie {RecentTeamGames} lub z {RecentDays} dni) — gracze obecni w co najmniej {minAppearances} z nich");
+					$"Skład z ostatnich {window.Count} {gamesNoun} (ostatnie {RecentTeamGames} lub z {RecentDays} dni) — gracze obecni w co najmniej {minAppearances} z nich");
 
 		var all = Appearances(newestFirst);
 		var players = roster
@@ -78,7 +80,7 @@ public static class ActiveLineupResolver
 		games.SelectMany(g => g.SidePlayerIds.Distinct()).GroupBy(id => id).ToDictionary(g => g.Key, g => g.Count());
 
 	/// <summary>One lineup entry with its appearance counts and last team game.</summary>
-	private static LineupPlayerDto ToPlayer(
+	internal static LineupPlayerDto ToPlayer(
 		string id,
 		Dictionary<string, int> recent,
 		Dictionary<string, int> all,

@@ -1,5 +1,6 @@
 using HarnasHub.Api.Common;
 using HarnasHub.Application.Features.Stats.AddPlayerStat;
+using HarnasHub.Application.Features.Stats.GetAdvancedStats;
 using HarnasHub.Application.Features.Stats.GetMatchStats;
 using HarnasHub.Application.Features.Stats.GetMyStatsHistory;
 using HarnasHub.Application.Features.Stats.GetPlayerLeaderboard;
@@ -60,6 +61,12 @@ public class StatsEndpoints : IEndpoint
 		stats.MapGet("/leaderboard", async (MatchCategory? category, ISender sender, CancellationToken cancellationToken) =>
 		{
 			var result = await sender.Send(new GetPlayerLeaderboardQuery(category), cancellationToken);
+			return result.Match(success => Results.Ok(success), errors => errors.ToProblemResult());
+		});
+
+		stats.MapGet("/advanced", async (MatchCategory? category, MapName? map, int? last, ISender sender, CancellationToken cancellationToken) =>
+		{
+			var result = await sender.Send(new GetAdvancedStatsQuery(category, map, last), cancellationToken);
 			return result.Match(success => Results.Ok(success), errors => errors.ToProblemResult());
 		});
 

@@ -57,7 +57,15 @@ public class SyncOpponentFaceitHandler(
 				dbContext, faceitClient, link.PlayerIds.Concat(ourIds).ToList(), now, cancellationToken, jobProgress.ReportStep);
 
 			jobProgress.Report(85, "Pobieranie statystyk map (lifetime)");
-			var activeIds = await OpponentReportGenerator.ActiveLineupIdsAsync(dbContext, link.PlayerIds, now, cancellationToken);
+			var activeIds = await OpponentReportGenerator.ActiveLineupIdsAsync(dbContext, link.FaceitTeamId, link.PlayerIds, now, cancellationToken);
+			// Season players who aren't linked team members: their profile and history too, so their numbers aren't empty.
+			var unlinked = activeIds.Except(link.PlayerIds).ToList();
+			if (unlinked.Count > 0)
+			{
+				await FaceitSync.RefreshProfilesAsync(dbContext, faceitClient, unlinked, now, cancellationToken);
+				await FaceitSync.SyncHistoryAsync(dbContext, faceitClient, unlinked, now, cancellationToken);
+			}
+
 			await FaceitLifetimeStats.RefreshAsync(dbContext, faceitClient, activeIds.Concat(ourIds).ToList(), now, cancellationToken);
 
 			link.LastSyncedAtUtc = now;

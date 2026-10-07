@@ -36,7 +36,7 @@ public class GetMapAnalyticsHandler(IApplicationDbContext dbContext, IFileStorag
 				join analysis in dbContext.MatchDemoAnalyses.AsNoTracking() on result.Id equals analysis.MatchResultId
 				where result.MapName != null && result.MapName.ToLower() == mapName
 				orderby result.PlayedAtUtc descending
-				select new { result.OurScore, result.OpponentScore, analysis.ObjectKey, analysis.OurTeamSteamIds })
+				select new { result.OurScore, result.OpponentScore, analysis.ObjectKey, analysis.OurTeamSteamIds, analysis.ExcludedSteamIds })
 			.Take(MaxMatches)
 			.ToListAsync(cancellationToken);
 
@@ -54,6 +54,7 @@ public class GetMapAnalyticsHandler(IApplicationDbContext dbContext, IFileStorag
 			try
 			{
 				var stored = await MatchTimelineStorage.LoadAsync(fileStorage, candidate.ObjectKey, cancellationToken);
+				stored = stored with { Timeline = RoundParticipants.Exclude(stored.Timeline, candidate.ExcludedSteamIds) };
 				IReadOnlyList<long> ourTeam = candidate.OurTeamSteamIds.Count > 0
 					? candidate.OurTeamSteamIds
 					: TimelineTeamResolver.ResolveOurTeam(stored.Timeline.Rounds, roster, candidate.OurScore, candidate.OpponentScore);

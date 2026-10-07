@@ -1,12 +1,16 @@
 import { describe, expect, it } from 'vitest'
-import type { LineupPlayer, MapComparison } from '../../services/opponentReportApi'
+import type { ActiveLineup, LineupPlayer, MapComparison } from '../../services/opponentReportApi'
 import {
+  inactiveSummary,
   inactiveTitle,
+  leagueMatchesLabel,
   lifetimeLabel,
   lifetimeTitle,
+  lineupHeading,
   lineupPlayerLabel,
   ourSampleNote,
   ourTitle,
+  teamGamesSplitLabel,
 } from './lineup'
 
 const row = (overrides: Partial<MapComparison>): MapComparison => ({
@@ -88,5 +92,57 @@ describe('lineup labels', () => {
     expect(lineupPlayerLabel(player, 10)).toBe('f0xelon (8/10)')
     expect(lineupPlayerLabel(player, 0)).toBe('f0xelon')
     expect(inactiveTitle(player)).toBe('Mecze drużynowe w oknie: 14, ostatni: brak')
+    expect(inactiveTitle(player, { source: 'EseaSeason' })).toBe(
+      'Mecze oficjalne drużyny w oknie: 14, ostatni: brak',
+    )
+  })
+})
+
+const lineup = (overrides: Partial<ActiveLineup>): ActiveLineup => ({
+  basis: '',
+  windowGames: 4,
+  active: [player],
+  inactive: [],
+  ...overrides,
+})
+
+describe('ESEA season lineup', () => {
+  it('declines "league match" in Polish', () => {
+    expect(leagueMatchesLabel(1)).toBe('1 mecz ligowy')
+    expect(leagueMatchesLabel(3)).toBe('3 mecze ligowe')
+    expect(leagueMatchesLabel(5)).toBe('5 meczów ligowych')
+    expect(leagueMatchesLabel(12)).toBe('12 meczów ligowych')
+    expect(leagueMatchesLabel(22)).toBe('22 mecze ligowe')
+    expect(leagueMatchesLabel(0)).toBe('0 meczów ligowych')
+  })
+
+  it('names the lineup by its source', () => {
+    expect(lineupHeading(lineup({ source: 'EseaSeason', season: 'S59', windowGames: 1 }))).toBe(
+      'Skład z sezonu ESEA S59 (1 mecz ligowy)',
+    )
+    expect(lineupHeading(lineup({ source: 'OfficialMatches' }))).toBe('Skład z meczów oficjalnych drużyny')
+    expect(lineupHeading(lineup({}))).toBe('Aktywny skład')
+  })
+
+  it('labels the collapsed team members for a season lineup', () => {
+    expect(inactiveSummary(lineup({ source: 'EseaSeason', inactive: [player, player] }))).toBe(
+      'Pozostali członkowie drużyny FACEIT (nie grali w tym sezonie) (2)',
+    )
+    expect(inactiveSummary(lineup({ inactive: [player] }))).toBe(
+      'Byli / rezerwowi (1) — pominięci w statystykach graczy',
+    )
+  })
+
+  it('splits their map games into official and played-together ones', () => {
+    const map = row({ theirGames: 10, theirOfficialGames: 4, theirTogetherGames: 6 })
+    const season = lineup({ source: 'EseaSeason', officialMatches: 12 })
+
+    expect(teamGamesSplitLabel(map, season)).toBe('ESEA 4 · razem 6')
+    expect(teamGamesSplitLabel(map, lineup({ source: 'OfficialMatches', officialMatches: 3 }))).toBe(
+      'ofic. 4 · razem 6',
+    )
+    expect(teamGamesSplitLabel(map, lineup({ source: 'TeamGames' }))).toBeNull()
+    expect(teamGamesSplitLabel(row({ theirGames: 10 }), season)).toBeNull()
+    expect(teamGamesSplitLabel(map, null)).toBeNull()
   })
 })

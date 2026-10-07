@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useIsCoachOrManager } from '../../auth/hooks/useIsCoachOrManager'
 import { useRoster } from '../../roster/hooks/useRoster'
 import { useAddPlayerStat, useMatchStats } from '../hooks/useStats'
+import { ExcludePlayerButton } from '../../match-analysis/components/ExcludePlayerButton'
 import { DeathMapView } from './DeathMapView'
 
 interface MatchStatsPanelProps {
@@ -112,6 +113,7 @@ export function MatchStatsPanel({ matchResultId, mapName }: MatchStatsPanelProps
                 <tr key={stat.id} className="text-neutral-300">
                   <td className="py-0.5 pr-2">
                     {stat.displayName}
+                    {stat.steamId64 && <ExcludePlayerButton matchResultId={matchResultId} steamId64={stat.steamId64} name={stat.displayName} />}
                     {stat.userId === null && (
                       <span className="ml-1 text-neutral-600" title="Niepołączony z żadnym kontem w składzie">
                         •

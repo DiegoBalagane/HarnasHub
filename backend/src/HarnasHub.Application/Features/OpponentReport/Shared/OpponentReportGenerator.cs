@@ -47,8 +47,11 @@ public static class OpponentReportGenerator
 		var matches = await dbContext.FaceitMatches.AsNoTracking()
 			.Where(m => m.PlayedAtUtc >= since)
 			.ToListAsync(cancellationToken);
+		// The lineup may include players who aren't (any longer) FACEIT team members but played its current ESEA season.
+		var lineupIds = OpponentTeamGames.Select(matches, link?.FaceitTeamId, theirIds.ToHashSet(), nowUtc).Lineup.ActiveIds;
+		var statIds = theirIds.Union(lineupIds).ToList();
 		var theirStats = await dbContext.FaceitMatchPlayerStats.AsNoTracking()
-			.Where(s => theirIds.Contains(s.PlayerId))
+			.Where(s => statIds.Contains(s.PlayerId))
 			.ToListAsync(cancellationToken);
 		// Our players' lines for their individual form, limited to the window by joining the cached maps.
 		var ourStats = await dbContext.FaceitMatchPlayerStats.AsNoTracking()
@@ -69,14 +72,16 @@ public static class OpponentReportGenerator
 			vetoData.Inputs,
 			ourStats,
 			ourPlayers,
-			await FaceitLifetimeStats.LoadAsync(dbContext, theirIds, cancellationToken),
+			await FaceitLifetimeStats.LoadAsync(dbContext, statIds, cancellationToken),
 			await FaceitLifetimeStats.LoadAsync(dbContext, ourIds, cancellationToken)));
 	}
 
-	/// <summary>The opponent's active lineup ids (<see cref="ActiveLineupResolver"/>) from the cached team games of the linked
-	/// <paramref name="playerIds"/> — used by the sync to fetch lifetime stats only for players who actually play.</summary>
+	/// <summary>The opponent's lineup ids (<see cref="OpponentTeamGames"/>) from the cached games of the linked FACEIT team
+	/// <paramref name="faceitTeamId"/> and <paramref name="playerIds"/> — used by the sync to fetch lifetime stats only for players
+	/// who actually play (and the history of season players who aren't linked).</summary>
 	public static async Task<IReadOnlySet<string>> ActiveLineupIdsAsync(
 		IApplicationDbContext dbContext,
+		string? faceitTeamId,
 		IReadOnlyCollection<string> playerIds,
 		DateTime nowUtc,
 		CancellationToken cancellationToken)
@@ -85,9 +90,7 @@ public static class OpponentReportGenerator
 		var matches = await dbContext.FaceitMatches.AsNoTracking()
 			.Where(m => m.PlayedAtUtc >= since)
 			.ToListAsync(cancellationToken);
-		var roster = playerIds.ToHashSet();
-		var games = TeamMatchDetector.Detect(matches, roster);
-		return ActiveLineupResolver.Resolve(games, roster, nowUtc, new Dictionary<string, string>(), []).ActiveIds;
+		return OpponentTeamGames.Select(matches, faceitTeamId, playerIds.ToHashSet(), nowUtc).Lineup.ActiveIds;
 	}
 
 	/// <summary>Fills the fields that must reflect the present rather than the snapshot: whether FACEIT is configured and the next
