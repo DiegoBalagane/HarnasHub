@@ -82,12 +82,14 @@ public static class OpponentReportBuilder
 					their.SmoothedWinRate,
 					ours[map].Games,
 					ours[map].Wins,
-					ourPrior == 0.5 ? null : ourPrior),
+					ourPrior == 0.5 ? null : ourPrior,
+					VetoFamiliarity.PlaysIndividually(individual.OurComfort.GetValueOrDefault(map), ourLifetime[map])),
 				theirLifetime[map],
 				ourLifetime[map]);
 		}).ToList();
 
-		var suggestions = VetoScoring.Suggest(maps.Select(m => m.VetoInput)).ToDictionary(s => s.MapName);
+		var ranked = VetoScoring.Rank(maps.Select(m => m.VetoInput)).ToDictionary(r => r.Input.MapName);
+		var suggestions = ranked.Values.Select(VetoScoring.ToDto).ToDictionary(s => s.MapName);
 		var rows = maps
 			.Select(m => OpponentReportRows.ToRow(m, suggestions[m.Map.ToString()], predictions[m.Map]) with
 			{
@@ -105,7 +107,8 @@ public static class OpponentReportBuilder
 				suggestions[m.Map.ToString()].Score,
 				predictions[m.Map].Preference,
 				suggestions[m.Map.ToString()].Note ?? "",
-				VetoNotes.Theirs(m.Their)))
+				VetoNotes.Theirs(m.Their),
+				ranked[m.Map].Result.Tier))
 			.ToList();
 		var plans = new List<VetoPlanDto>
 		{

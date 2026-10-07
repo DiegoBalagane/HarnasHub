@@ -73,6 +73,9 @@ export interface TeamTrendPoint {
   won: boolean
   cumulativeWins: number
   cumulativeLosses: number
+  /** True when the match ended level (e.g. 12:12). */
+  draw: boolean
+  cumulativeDraws: number
   winRatePercentage: number
 }
 

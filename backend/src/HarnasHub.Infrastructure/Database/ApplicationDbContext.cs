@@ -43,6 +43,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
 	public DbSet<OpponentDemoAnalysis> OpponentDemoAnalyses => Set<OpponentDemoAnalysis>();
 	public DbSet<BackgroundJob> BackgroundJobs => Set<BackgroundJob>();
 	public DbSet<HiddenOpponent> HiddenOpponents => Set<HiddenOpponent>();
+	public DbSet<TeamInfoEntry> TeamInfoEntries => Set<TeamInfoEntry>();
 
 	#endregion
 

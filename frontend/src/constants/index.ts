@@ -161,6 +161,11 @@ export const API_ENDPOINTS = {
       `/api/opponents/report/demos/${demoId}/rounds/${roundNumber}/replay`,
     faceitDemoDownload: '/api/opponents/report/demos/faceit-download',
   },
+  teamInfo: {
+    list: '/api/team-info',
+    byId: (id: string) => `/api/team-info/${id}`,
+    order: '/api/team-info/order',
+  },
   attendance: {
     summary: '/api/attendance/summary',
     incidents: (userId?: string) =>

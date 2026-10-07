@@ -103,7 +103,7 @@ public static class AdvancedStatsAggregator
 				if (line.UtilityDamage is { } utility)
 				{
 					player.UtilityDamage += utility;
-					player.UtilityRounds += rounds;
+					player.UtilityMatches++;
 				}
 
 				var cellKey = (user.Id, match.Map);
@@ -167,7 +167,7 @@ public static class AdvancedStatsAggregator
 	{
 		public string Name { get; set; } = user.InGameNickname ?? user.DisplayName;
 		public int Matches, Rounds, OpeningWonT, OpeningLostT, OpeningWonCt, OpeningLostCt, TradeKills, Deaths, TradedDeaths;
-		public int ClutchAttempts, ClutchesWon, BestClutchWon, EnemiesFlashed, TeamFlashes, UtilityDamage, UtilityRounds;
+		public int ClutchAttempts, ClutchesWon, BestClutchWon, EnemiesFlashed, TeamFlashes, UtilityDamage, UtilityMatches;
 		public double BlindSecondsSum;
 		public List<PlayerMatchStat> Lines { get; } = [];
 
@@ -181,7 +181,7 @@ public static class AdvancedStatsAggregator
 				TradeKills, Deaths, TradedDeaths,
 				ClutchAttempts, ClutchesWon, BestClutchWon,
 				EnemiesFlashed, EnemiesFlashed == 0 ? 0 : Math.Round(BlindSecondsSum / EnemiesFlashed, 2), TeamFlashes,
-				UtilityRounds == 0 ? null : Math.Round((double)UtilityDamage / UtilityRounds, 1),
+				UtilityMatches == 0 ? null : Math.Round((double)UtilityDamage / UtilityMatches, 1),
 				kasts.Count == 0 ? null : Math.Round(kasts.Average(), 1),
 				Lines.Count == 0 ? null : Math.Round(Lines.Average(l => l.Rating), 2),
 				Lines.Count == 0 ? null : Math.Round(Lines.Average(l => l.Adr), 1));

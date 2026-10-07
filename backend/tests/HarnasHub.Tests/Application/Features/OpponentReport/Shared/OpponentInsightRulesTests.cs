@@ -61,11 +61,21 @@ public class OpponentInsightRulesTests
 	public void Dangers_should_need_enough_of_their_games_and_flag_our_thin_sample()
 	{
 		var thin = Row("Mirage", 4, theirWinRate: 75, ourWinRate: 0, advantage: -30, confidence: "Medium");
-		var solid = Row("Nuke", 9, theirWinRate: 78, ourWinRate: 0, advantage: -25, confidence: "Medium") with { OurGames = 2, OurWins = 0 };
+		var solid = Row("Nuke", 9, theirWinRate: 78, ourWinRate: 0, advantage: -25, confidence: "Medium") with { OurGames = 2, OurWins = 0, Recommendation = "Ban" };
 
 		var insight = Assert.Single(OpponentInsightRules.Dangers(Input(20, [thin, solid])));
 
 		Assert.Equal("Uwaga na Nuke: oni 78%, my za mało danych (2 mecze) — kandydat do bana", insight.Text);
+	}
+
+	[Fact]
+	public void Dangers_should_not_call_a_map_a_ban_candidate_when_our_veto_keeps_it()
+	{
+		var kept = Row("Anubis", 9, theirWinRate: 78, ourWinRate: 0, advantage: -25, confidence: "Medium") with { OurGames = 4, OurWins = 3 };
+
+		var insight = Assert.Single(OpponentInsightRules.Dangers(Input(20, [kept])));
+
+		Assert.EndsWith("ich mocna mapa, ale nie ma jej w naszych banach — przygotujcie na nią plan", insight.Text);
 	}
 
 	[Fact]

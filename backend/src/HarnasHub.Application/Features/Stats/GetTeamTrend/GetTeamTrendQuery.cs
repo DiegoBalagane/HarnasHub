@@ -7,4 +7,11 @@ namespace HarnasHub.Application.Features.Stats.GetTeamTrend;
 public record GetTeamTrendQuery : IRequest<ErrorOr<List<TeamTrendPointDto>>>;
 
 /// <summary>One point on the team trend chart: a match's outcome and the cumulative win rate up to it.</summary>
-public record TeamTrendPointDto(DateTime PlayedAtUtc, bool Won, int CumulativeWins, int CumulativeLosses, double WinRatePercentage);
+public record TeamTrendPointDto(
+	DateTime PlayedAtUtc,
+	bool Won,
+	int CumulativeWins,
+	int CumulativeLosses,
+	double WinRatePercentage,
+	bool Draw = false,
+	int CumulativeDraws = 0);

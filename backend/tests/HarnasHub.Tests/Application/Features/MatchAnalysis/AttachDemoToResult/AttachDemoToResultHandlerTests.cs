@@ -3,7 +3,9 @@
 using HarnasHub.Application.Abstractions;
 using HarnasHub.Application.Features.MatchAnalysis.AttachDemoToResult;
 using HarnasHub.Application.Features.MatchAnalysis.Shared;
+using HarnasHub.Core.Entities;
 using HarnasHub.Core.Enums;
+using HarnasHub.Tests.Application.Features.MatchAnalysis.Shared;
 using HarnasHub.Tests.Application.Features.Tactics;
 using HarnasHub.Tests.Common;
 using Microsoft.EntityFrameworkCore;
@@ -46,6 +48,29 @@ public class AttachDemoToResultHandlerTests
 		var analysis = await dbContext.MatchDemoAnalyses.SingleAsync();
 		Assert.Equal(DemoTimelineFactory.TeamA, analysis.OurTeamSteamIds);
 		Assert.Equal(DemoTimelineSerializer.CurrentParserVersion, analysis.ParserVersion);
+	}
+
+	[Fact]
+	public async Task Should_refresh_only_death_positions_of_existing_stat_rows()
+	{
+		await using var dbContext = TestApplicationDbContext.Create();
+		var match = MatchTimelineFactory.Result();
+		var user = new User { Id = Guid.NewGuid(), DiscordId = "d", DisplayName = "Me", SteamId64 = "7" };
+		dbContext.MatchResults.Add(match);
+		dbContext.Users.Add(user);
+		dbContext.PlayerMatchStats.Add(new PlayerMatchStat { Id = Guid.NewGuid(), MatchResultId = match.Id, UserId = user.Id, Kills = 21, DeathPositionsJson = "[]", CreatedAtUtc = DateTime.UtcNow });
+		await dbContext.SaveChangesAsync(CancellationToken.None);
+		var timeline = MatchTimelineFactory.Timeline([MatchTimelineFactory.Round(1, MapSide.T)]) with
+		{
+			Stats = new DemoParseResult(1, null, [DeathPositionRefresherTests.Player(7, "Me", (0.3f, 0.4f))], [])
+		};
+
+		await Handler(dbContext, new TestFileStorage(), new TestDemoParser(timeline: timeline))
+			.Handle(new AttachDemoToResultCommand(match.Id, DemoKey), CancellationToken.None);
+
+		var stat = await dbContext.PlayerMatchStats.SingleAsync();
+		Assert.Contains("0.3", stat.DeathPositionsJson);
+		Assert.Equal(21, stat.Kills);
 	}
 
 	[Fact]

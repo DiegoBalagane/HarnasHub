@@ -117,10 +117,10 @@ export const advancedColumns: AdvancedColumn[] = [
   },
   {
     key: 'utility',
-    label: 'Obr. granatami/rundę',
-    title: 'Średnie obrażenia zadane granatami i ogniem na rundę',
-    value: (p) => p.utilityDamagePerRound,
-    format: (p) => formatNumber(p.utilityDamagePerRound),
+    label: 'Obr. granatami/mecz',
+    title: 'Średnie obrażenia zadane granatami i ogniem w meczu',
+    value: (p) => p.utilityDamagePerMatch,
+    format: (p) => formatNumber(p.utilityDamagePerMatch),
   },
   {
     key: 'kast',

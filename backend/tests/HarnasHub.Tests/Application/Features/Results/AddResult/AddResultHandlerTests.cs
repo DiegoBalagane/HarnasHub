@@ -202,7 +202,7 @@ public class AddResultHandlerTests
 		await Handler(dbContext).Handle(Command(), CancellationToken.None);
 
 		var (channel, message) = Assert.Single(Discord.Sent);
-		Assert.Equal(DiscordChannel.MatchSchedule, channel);
+		Assert.Equal(DiscordChannel.Announcements, channel);
 		Assert.Contains("16:10", message);
 	}
 

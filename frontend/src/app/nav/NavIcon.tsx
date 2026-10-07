@@ -11,6 +11,7 @@ export type NavIconName =
   | 'roster'
   | 'tasks'
   | 'attendance'
+  | 'info'
   | 'admin'
   | 'settings'
   | 'logout'
@@ -45,6 +46,7 @@ const iconPaths: Record<NavIconName, string[]> = {
     'M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2',
     'M9 14l2 2 4-4',
   ],
+  info: ['M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20z', 'M12 16v-4', 'M12 8h.01'],
   admin: ['M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z', 'M9 12l2 2 4-4'],
   settings: [
     'M12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6z',

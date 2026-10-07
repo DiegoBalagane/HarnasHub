@@ -21,7 +21,7 @@ export interface AdvancedPlayer {
   enemiesFlashed: number
   avgBlindSeconds: number
   teamFlashes: number
-  utilityDamagePerRound: number | null
+  utilityDamagePerMatch: number | null
   avgKast: number | null
   avgRating: number | null
   avgAdr: number | null

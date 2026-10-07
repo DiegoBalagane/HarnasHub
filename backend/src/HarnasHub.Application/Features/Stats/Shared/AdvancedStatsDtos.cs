@@ -27,7 +27,7 @@ public record AdvancedPlayerDto(
 	int EnemiesFlashed,
 	double AvgBlindSeconds,
 	int TeamFlashes,
-	double? UtilityDamagePerRound,
+	double? UtilityDamagePerMatch,
 	double? AvgKast,
 	double? AvgRating,
 	double? AvgAdr);

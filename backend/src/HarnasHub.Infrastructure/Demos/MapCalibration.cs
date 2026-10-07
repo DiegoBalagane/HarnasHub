@@ -43,9 +43,11 @@ public static class MapCalibration
 	{
 		[MapName.Ancient] = (0.0785f, 0.034f, 0.820f, 0.9325f),
 		[MapName.Mirage] = (0.0815f, 0.127f, 0.862f, 0.7503f),
-		// Fitted from a real Nuke demo's position extents against nuke.webp's playable bounds and checked by eye. The image only
-		// shows the upper level, so lower-level positions (ramp, secret, B) are drawn over the upper floor plan.
-		[MapName.Nuke] = (0.1956f, 0.2533f, 0.6587f, 0.5163f),
+		// Fitted numerically on ~7 000 upper-level samples of a real Nuke demo (lower floor excluded by world Z): the T-spawn
+		// end is anchored to the image's leftmost playable column, then L/T/W/H maximise the share of positions landing on
+		// drawn floor (94.6 %, was 86.9 % with the earlier eyeballed fit). The image only shows the upper level and is not
+		// scaled uniformly against the overview, hence the free height; lower-level positions are drawn over the upper plan.
+		[MapName.Nuke] = (0.1863f, 0.148f, 0.67f, 0.692f),
 	};
 
 	private const float ImageSizePixels = 1024f;
@@ -77,17 +79,12 @@ public static class MapCalibration
 	/// if there's no calibration for this map.</summary>
 	public static (float X, float Y)? ToRadarFraction(MapName mapName, float worldX, float worldY)
 	{
-		if (!Calibrations.TryGetValue(mapName, out var calibration))
+		if (Overview(mapName) is not { } toOverview)
 		{
 			return null;
 		}
 
-		var (pixelX, pixelY) = calibration.Rotated
-			? ((worldY - calibration.PosY) / -calibration.Scale, (worldX - calibration.PosX) / calibration.Scale)
-			: ((worldX - calibration.PosX) / calibration.Scale, (calibration.PosY - worldY) / calibration.Scale);
-
-		var overviewX = pixelX / ImageSizePixels;
-		var overviewY = pixelY / ImageSizePixels;
+		var (overviewX, overviewY) = toOverview(worldX, worldY);
 
 		if (RadarImageCrops.TryGetValue(mapName, out var crop))
 		{
@@ -96,6 +93,24 @@ public static class MapCalibration
 		}
 
 		return (Math.Clamp(overviewX, 0f, 1f), Math.Clamp(overviewY, 0f, 1f));
+	}
+
+	/// <summary>World (X, Y) → fraction of the full 1024px overview, before any image crop and unclamped — the space a crop
+	/// is fitted in (see the dev-only position dump/fit helpers); null if there's no calibration for this map.</summary>
+	public static Func<float, float, (float X, float Y)>? Overview(MapName mapName)
+	{
+		if (!Calibrations.TryGetValue(mapName, out var calibration))
+		{
+			return null;
+		}
+
+		return (worldX, worldY) =>
+		{
+			var (pixelX, pixelY) = calibration.Rotated
+				? ((worldY - calibration.PosY) / -calibration.Scale, (worldX - calibration.PosX) / calibration.Scale)
+				: ((worldX - calibration.PosX) / calibration.Scale, (calibration.PosY - worldY) / calibration.Scale);
+			return (pixelX / ImageSizePixels, pixelY / ImageSizePixels);
+		};
 	}
 
 	#endregion
