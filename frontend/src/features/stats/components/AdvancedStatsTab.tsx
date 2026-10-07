@@ -60,7 +60,18 @@ export function AdvancedStatsTab() {
       {isLoading && <p className="text-neutral-400">Ładowanie statystyk z demek…</p>}
       {isError && <p className="text-danger-400">Nie udało się pobrać zaawansowanych statystyk.</p>}
 
-      {data && data.players.length === 0 && (
+      {data && data.players.length === 0 && data.matchesAnalyzed > 0 && (
+        <p className="text-neutral-400">
+          Przeanalizowano {data.matchesAnalyzed} mecz(e) z demką, ale nikogo z widocznego składu nie rozpoznano po SteamID64 —
+          uzupełnij SteamID64 graczy w{' '}
+          <Link to="/admin" className="text-primary-400 hover:underline">
+            panelu admina
+          </Link>
+          .
+        </p>
+      )}
+
+      {data && data.players.length === 0 && data.matchesAnalyzed === 0 && (
         <p className="text-neutral-400">
           Brak meczów z demką w tym filtrze — dołącz demkę do wyniku w{' '}
           <Link to="/results" className="text-primary-400 hover:underline">
