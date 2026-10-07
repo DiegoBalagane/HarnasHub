@@ -40,7 +40,18 @@ public record FaceitHistoryItem(
 	DateTime? FinishedAtUtc,
 	string? CompetitionType,
 	string? CompetitionName,
-	string? Status);
+	string? Status)
+{
+	/// <summary>FACEIT competition id (championship, hub or queue id), null when missing.</summary>
+	public string? CompetitionId { get; init; }
+
+	/// <summary>Both factions with their team ids and player ids; empty when FACEIT sent none.</summary>
+	public List<FaceitHistoryFaction> Factions { get; init; } = [];
+}
+
+/// <summary>One faction of a history entry: <paramref name="TeamId"/> is FACEIT's faction id — the FACEIT team id in championship
+/// games (e.g. ESEA League), a per-room id in matchmaking.</summary>
+public record FaceitHistoryFaction(string TeamId, List<string> PlayerIds);
 
 /// <summary>One player's line on a map scoreboard.</summary>
 public record FaceitPlayerMapStats(

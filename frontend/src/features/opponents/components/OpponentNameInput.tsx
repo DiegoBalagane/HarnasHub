@@ -5,6 +5,8 @@ interface OpponentNameInputProps {
   value: string
   onChange: (value: string) => void
   required?: boolean
+  id?: string
+  disabled?: boolean
   placeholder?: string
   className?: string
 }
@@ -15,6 +17,8 @@ export const OpponentNameInput = memo(function OpponentNameInput({
   value,
   onChange,
   required,
+  id,
+  disabled,
   placeholder = 'Nazwa przeciwnika',
   className,
 }: OpponentNameInputProps) {
@@ -24,7 +28,9 @@ export const OpponentNameInput = memo(function OpponentNameInput({
   return (
     <>
       <input
+        id={id}
         required={required}
+        disabled={disabled}
         maxLength={100}
         list={listId}
         autoComplete="off"

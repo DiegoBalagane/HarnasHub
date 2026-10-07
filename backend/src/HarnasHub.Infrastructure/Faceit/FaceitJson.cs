@@ -83,7 +83,8 @@ internal static class FaceitJson
 		};
 	}
 
-	/// <summary>Reads a page of match history (GET /players/{id}/history).</summary>
+	/// <summary>Reads a page of match history (GET /players/{id}/history); each faction's <c>team_id</c> is the FACEIT team id in
+	/// championship games.</summary>
 	public static List<FaceitHistoryItem> ReadHistory(JsonElement root) =>
 		Items(root, "items")
 			.Where(i => !string.IsNullOrWhiteSpace(Str(i, "match_id")))
@@ -92,7 +93,11 @@ internal static class FaceitJson
 				NullableInt(i, "finished_at") is { } finishedAt ? DateTimeOffset.FromUnixTimeSeconds(finishedAt).UtcDateTime : null,
 				Str(i, "competition_type"),
 				Str(i, "competition_name"),
-				Str(i, "status")))
+				Str(i, "status"))
+			{
+				CompetitionId = Str(i, "competition_id"),
+				Factions = ReadHistoryFactions(Prop(i, "teams"))
+			})
 			.ToList();
 
 	/// <summary>Reads the "Map" segments of GET /players/{id}/stats/cs2 (only 5v5 when a mode is given) as lifetime per-map numbers.</summary>
@@ -133,6 +138,21 @@ internal static class FaceitJson
 	#endregion
 
 	#region Private Methods
+
+	/// <summary>The factions of a history entry ("faction1"/"faction2" objects) with their team id and player ids.</summary>
+	private static List<FaceitHistoryFaction> ReadHistoryFactions(JsonElement teams) =>
+		teams.ValueKind != JsonValueKind.Object
+			? []
+			: teams.EnumerateObject()
+				.Where(faction => !string.IsNullOrWhiteSpace(Str(faction.Value, "team_id")))
+				.Select(faction => new FaceitHistoryFaction(
+					Str(faction.Value, "team_id")!,
+					Items(faction.Value, "players")
+						.Select(p => Str(p, "player_id"))
+						.Where(id => !string.IsNullOrWhiteSpace(id))
+						.Select(id => id!)
+						.ToList()))
+				.ToList();
 
 	/// <summary>One team of a map scoreboard; the score falls back to the "13 / 7" round summary when "Final Score" is missing.</summary>
 	private static FaceitTeamMapStats ReadTeamStats(JsonElement team, int teamIndex, string? winnerId, string[] scoreParts)

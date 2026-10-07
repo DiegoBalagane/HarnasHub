@@ -70,6 +70,10 @@ export interface MapComparison {
   theirLifetime?: MapLifetime | null
   /** Lifetime FACEIT numbers of our linked players on the map. */
   ourLifetime?: MapLifetime | null
+  /** Their official team games on the map (faction = their FACEIT team, e.g. ESEA); absent in older reports. */
+  theirOfficialGames?: number | null
+  /** Their other games on the map with ≥ 3 of the lineup together; absent in older reports. */
+  theirTogetherGames?: number | null
 }
 
 /** A lineup's summed lifetime FACEIT numbers on one map (like the FACEIT match room); rates and share in percent. */
@@ -101,12 +105,24 @@ export interface UnresolvedRosterPlayer {
   reason: string
 }
 
-/** Who the report treats as the active lineup and why; inactive = ex-members and subs left out of player numbers. */
+/** Where the lineup comes from: the current ESEA season, other official team games, or games of ≥ 3 linked players. */
+export type LineupSource = 'EseaSeason' | 'OfficialMatches' | 'TeamGames'
+
+/** Who the report treats as the active lineup and why; inactive = ex-members and subs left out of player numbers. With an
+ * ESEA season lineup `windowGames` is the season's league matches and `recentTeamGames` a player's appearances in them. */
 export interface ActiveLineup {
   basis: string
   windowGames: number
   active: LineupPlayer[]
   inactive: LineupPlayer[]
+  /** Absent in older reports. */
+  source?: LineupSource | null
+  /** ESEA season label ("S59") when the lineup comes from it. */
+  season?: string | null
+  /** Competition of the season's latest league match, e.g. "S59 EU Open10 D - Regular Season". */
+  seasonCompetition?: string | null
+  /** Official matches of the linked FACEIT team in the window; absent without a linked team. */
+  officialMatches?: number | null
 }
 
 /** One step of a simulated veto. */

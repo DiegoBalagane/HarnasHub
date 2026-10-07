@@ -44,4 +44,29 @@ describe('ActiveLineupSection', () => {
 
     expect(screen.queryByText(/Byli \/ rezerwowi/)).not.toBeInTheDocument()
   })
+
+  it('shows the current ESEA season lineup with appearances and collapses the other team members', async () => {
+    const season: ActiveLineup = {
+      basis:
+        'Skład z sezonu ESEA S59 — gracze, którzy zagrali dla drużyny w meczach ligowych tego sezonu (mecze: 4)',
+      windowGames: 4,
+      active: [player('alpha', 4), player('bravo', 3)],
+      inactive: [player('random', 0)],
+      source: 'EseaSeason',
+      season: 'S59',
+      seasonCompetition: 'S59 EU Open10 D - Regular Season',
+      officialMatches: 12,
+    }
+
+    render(<ActiveLineupSection lineup={season} />)
+
+    expect(screen.getByText('Skład z sezonu ESEA S59 (4 mecze ligowe):')).toBeInTheDocument()
+    expect(screen.getByText(/alpha \(4\/4\), bravo \(3\/4\)/)).toBeInTheDocument()
+    expect(screen.getByText(/S59 EU Open10 D - Regular Season/)).toBeInTheDocument()
+    expect(screen.getByText('random')).not.toBeVisible()
+    await userEvent.click(
+      screen.getByText(/Pozostali członkowie drużyny FACEIT \(nie grali w tym sezonie\) \(1\)/),
+    )
+    expect(screen.getByText('random')).toBeVisible()
+  })
 })

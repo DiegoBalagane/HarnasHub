@@ -18,11 +18,27 @@ export default defineConfig({
       injectRegister: false,
       includeAssets: ['favicon.svg', 'apple-touch-icon.png'],
       workbox: {
-        // The PWA's offline navigation fallback must never intercept API/hub calls — a plain
-        // `<a href>` navigation to e.g. /api/auth/discord/login is still "mode: navigate", so
-        // without this the service worker served the cached app shell instead of hitting the
-        // network, breaking Discord OAuth (redirect never happened).
-        navigateFallbackDenylist: [/^\/api\//, /^\/hubs\//],
+        // The app shell (index.html) is NOT precached: opening the app always asks the server for the current
+        // index.html first (NetworkFirst below), which references the newest hashed bundles — so anyone who opens
+        // or logs into the app gets the latest deployed version straight away, without an "Odśwież" step. The
+        // cached copy is only a fallback when the network is down or slow. Already-open tabs are still switched
+        // over by PwaUpdatePrompt (on navigation / when backgrounded).
+        globIgnores: ['**/index.html'],
+        navigateFallback: null,
+        cleanupOutdatedCaches: true,
+        runtimeCaching: [
+          {
+            // API/hub navigations (e.g. /api/auth/discord/login during OAuth) must always hit the network.
+            urlPattern: ({ request, url }) =>
+              request.mode === 'navigate' && !url.pathname.startsWith('/api/') && !url.pathname.startsWith('/hubs/'),
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'app-shell',
+              networkTimeoutSeconds: 4,
+              expiration: { maxEntries: 5 },
+            },
+          },
+        ],
       },
       manifest: {
         name: 'HarnasHub',

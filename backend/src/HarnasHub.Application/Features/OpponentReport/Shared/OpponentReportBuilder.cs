@@ -23,7 +23,8 @@ public record OpponentReportInput(
 	IReadOnlyDictionary<string, IReadOnlyList<FaceitLifetimeMapStats>>? OurLifetime = null);
 
 /// <summary>Pure assembly of <see cref="OpponentReportDto"/> from <see cref="OpponentReportInput"/> — no I/O, fully unit-testable.
-/// Team games are detected with the full linked roster; everything player-facing uses only the active lineup.</summary>
+/// Team games and the lineup come from <see cref="OpponentTeamGames"/> (official games of the linked FACEIT team + games of ≥ 3 of
+/// the lineup together); everything player-facing uses only the lineup.</summary>
 public static class OpponentReportBuilder
 {
 	#region Public Methods
@@ -32,16 +33,16 @@ public static class OpponentReportBuilder
 	public static OpponentReportDto Build(OpponentReportInput input)
 	{
 		var now = input.GeneratedAtUtc;
-		var theirGames = TeamMatchDetector.Detect(input.Matches, input.TheirRoster);
-		var ourGames = TeamMatchDetector.Detect(input.Matches, input.OurRoster);
 		var nicknames = OpponentReportRows.Nicknames(input);
-		var lineup = ActiveLineupResolver.Resolve(theirGames, input.TheirRoster, now, nicknames, input.Link?.Players ?? []);
+		var (theirGames, lineup) = OpponentTeamGames.Select(
+			input.Matches, input.Link?.FaceitTeamId, input.TheirRoster, now, nicknames, input.Link?.Players ?? []);
+		var ourGames = TeamMatchDetector.Detect(input.Matches, input.OurRoster);
 		var active = lineup.ActiveIds;
 		var inactive = input.TheirRoster.Where(id => !active.Contains(id)).ToHashSet();
 
 		var theirs = MapMetricsCalculator.Calculate(theirGames, now);
 		var ours = MapMetricsCalculator.Calculate(ourGames);
-		var individual = IndividualFormBuilder.Build(input, active);
+		var individual = IndividualFormBuilder.Build(input, active, theirGames);
 		var theirLifetime = Lifetime(input.TheirLifetime, active);
 		var ourLifetime = Lifetime(input.OurLifetime, input.OurRoster);
 		var predictions = OpponentVetoPredictor.Predict(theirs, theirGames.Count, individual.TheirComfort, theirLifetime);
@@ -88,7 +89,11 @@ public static class OpponentReportBuilder
 
 		var suggestions = VetoScoring.Suggest(maps.Select(m => m.VetoInput)).ToDictionary(s => s.MapName);
 		var rows = maps
-			.Select(m => OpponentReportRows.ToRow(m, suggestions[m.Map.ToString()], predictions[m.Map]))
+			.Select(m => OpponentReportRows.ToRow(m, suggestions[m.Map.ToString()], predictions[m.Map]) with
+			{
+				TheirOfficialGames = theirGames.Count(g => g.Map == m.Map && g.Official),
+				TheirTogetherGames = theirGames.Count(g => g.Map == m.Map && !g.Official)
+			})
 			.OrderByDescending(r => r.TheirGames)
 			.ThenByDescending(r => r.OurGames)
 			.ThenBy(r => r.MapName)
@@ -119,7 +124,7 @@ public static class OpponentReportBuilder
 			input.GeneratedAtUtc,
 			input.Link?.LastSyncedAtUtc,
 			theirGames.Count,
-			TeamMatchDetector.CountSoloGames(input.Matches, input.TheirRoster, active),
+			SoloGames(input.Matches, theirGames, active),
 			ourGames.Count,
 			maps.Sum(m => m.InternalGames),
 			input.OurRoster.Count,
@@ -139,6 +144,13 @@ public static class OpponentReportBuilder
 	#endregion
 
 	#region Private Methods
+
+	/// <summary>Games with a lineup player that aren't team games — the solo sample behind their player comfort.</summary>
+	private static int SoloGames(IEnumerable<FaceitMatch> matches, IEnumerable<TeamGame> teamGames, IReadOnlySet<string> lineup)
+	{
+		var teamRows = teamGames.Select(g => g.RowId).ToHashSet();
+		return matches.Count(m => !teamRows.Contains(m.Id) && m.Team1PlayerIds.Concat(m.Team2PlayerIds).Any(lineup.Contains));
+	}
 
 	/// <summary>Per-map lifetime aggregate over the given players' cached stats.</summary>
 	private static Dictionary<MapName, MapLifetime> Lifetime(

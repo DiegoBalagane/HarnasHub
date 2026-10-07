@@ -2,6 +2,7 @@
 
 using HarnasHub.Application.Abstractions;
 using HarnasHub.Application.Common.Maps;
+using HarnasHub.Application.Features.MatchAnalysis.Shared.Analysis;
 using HarnasHub.Core.Enums;
 
 #endregion
@@ -18,7 +19,7 @@ public static class MatchTimelineMapper
 	/// the team that started on T and reports <see cref="MatchTimelineDto.OurTeamResolved"/> false.</summary>
 	public static MatchTimelineDto Map(StoredDemoTimeline stored, IReadOnlyCollection<long> ourTeamSteamIds)
 	{
-		var timeline = stored.Timeline;
+		var timeline = RoundParticipants.Filter(stored.Timeline);
 		var rounds = timeline.Rounds.OrderBy(r => r.Number).ToList();
 		var resolved = ourTeamSteamIds.Count > 0;
 		var ourSet = resolved

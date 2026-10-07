@@ -1,3 +1,4 @@
+import { scoreToneClass } from '../../features/results/scoreTone'
 import { useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { useIsCoachOrManager } from '../../features/auth/hooks/useIsCoachOrManager'
@@ -37,7 +38,6 @@ export function MatchDetailPage() {
     )
   }
 
-  const won = result.ourScore > result.opponentScore
 
   return (
     <div className="flex w-full flex-col gap-5">
@@ -49,7 +49,7 @@ export function MatchDetailPage() {
         <div>
           <h1 className="text-2xl font-semibold">
             vs {result.opponent}{' '}
-            <span className={won ? 'text-success-400' : 'text-danger-400'}>
+            <span className={scoreToneClass(result.ourScore, result.opponentScore)}>
               {result.ourScore}:{result.opponentScore}
             </span>
           </h1>

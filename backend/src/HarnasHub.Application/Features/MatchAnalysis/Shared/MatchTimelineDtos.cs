@@ -14,7 +14,14 @@ public record MatchTimelineDto(
 	bool HasZones,
 	bool OurTeamResolved,
 	int ParserVersion,
-	IReadOnlyList<MatchRoundDto> Rounds);
+	IReadOnlyList<MatchRoundDto> Rounds)
+{
+	/// <summary>Players the coach/manager hid from this match's analysis (restorable from the match page).</summary>
+	public IReadOnlyList<ExcludedPlayerDto> ExcludedPlayers { get; init; } = [];
+}
+
+/// <summary>A manually excluded player: SteamID64 as a string (exceeds JS safe integers) and the best known name.</summary>
+public record ExcludedPlayerDto(string SteamId64, string Name);
 
 /// <summary>One round: winner, our side and result, running score after it, both teams' buys, bomb and every kill.</summary>
 public record MatchRoundDto(

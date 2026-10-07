@@ -1,7 +1,6 @@
 import { fireEvent, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { MAP_STRATEGY_SETTINGS } from '../../../constants'
 import type { MapPosition, MapTextAnnotation } from '../../../services/mapStrategyApi'
 import { renderWithProviders } from '../../../test/renderWithProviders'
 import { useAuthStore } from '../../auth/stores/useAuthStore'
@@ -71,25 +70,14 @@ describe('MapRadarView (shared radar)', () => {
     expect(within(screen.getByLabelText('Legenda')).getByText('Bravo')).toBeInTheDocument()
   })
 
-  it('filters pins by side and remembers the choice', async () => {
-    stubFetch()
-    renderWithProviders(<MapRadarView mapName="Mirage" />)
-    await screen.findByTestId('side-badge-t1')
-
-    await userEvent.click(within(screen.getByRole('radiogroup', { name: 'Pokaż' })).getByRole('radio', { name: 'CT' }))
-
-    expect(screen.queryByTestId('side-badge-t1')).not.toBeInTheDocument()
-    expect(screen.getByTestId('side-badge-c1')).toBeInTheDocument()
-    expect(localStorage.getItem(MAP_STRATEGY_SETTINGS.sideFilterStorageKey)).toBe('CT')
-  })
-
-  it('restores the stored filter', async () => {
-    localStorage.setItem(MAP_STRATEGY_SETTINGS.sideFilterStorageKey, 'T')
+  it('always shows both sides and only offers the placement side control', async () => {
     stubFetch()
     renderWithProviders(<MapRadarView mapName="Mirage" />)
 
     expect(await screen.findByTestId('side-badge-t1')).toBeInTheDocument()
-    expect(screen.queryByTestId('side-badge-c1')).not.toBeInTheDocument()
+    expect(screen.getByTestId('side-badge-c1')).toBeInTheDocument()
+    expect(screen.queryByRole('radiogroup', { name: 'Pokaż' })).not.toBeInTheDocument()
+    expect(screen.getByRole('radiogroup', { name: 'Ustawiasz' })).toBeInTheDocument()
   })
 
   it('saves a new placement on the side chosen in "Ustawiasz"', async () => {

@@ -1,11 +1,13 @@
 import { memo, useMemo } from 'react'
 import { useMatchDeepAnalysis } from '../hooks/useMatchAnalysis'
+import { ExcludePlayerButton } from './ExcludePlayerButton'
 
 interface MatchPlayerAnalysisProps {
   matchResultId: string
 }
 
 interface PlayerRow {
+  steamId64: string
   name: string
   tradeKills: number
   tradedDeaths: number
@@ -19,8 +21,9 @@ interface PlayerRow {
   teamFlashes: number
 }
 
-function emptyRow(name: string): PlayerRow {
+function emptyRow(steamId64: string, name: string): PlayerRow {
   return {
+    steamId64,
     name,
     tradeKills: 0,
     tradedDeaths: 0,
@@ -45,7 +48,7 @@ export const MatchPlayerAnalysis = memo(function MatchPlayerAnalysis({ matchResu
     const row = (steamId64: string, name: string) => {
       const existing = map.get(steamId64)
       if (existing) return existing
-      const created = emptyRow(name)
+      const created = emptyRow(steamId64, name)
       map.set(steamId64, created)
       return created
     }
@@ -83,8 +86,8 @@ export const MatchPlayerAnalysis = memo(function MatchPlayerAnalysis({ matchResu
           <thead className="text-xs text-neutral-500">
             <tr>
               <th className="px-3 py-2">Gracz</th>
-              <th className="px-3 py-2">Trade kille</th>
-              <th className="px-3 py-2">Odpłacone zgony</th>
+              <th className="px-3 py-2" title="Ile razy gracz zabił rywala, który w ciągu 5 s wcześniej zabił jego kolegę">Pomszczenia</th>
+              <th className="px-3 py-2" title="Z ilu swoich zgonów gracz został pomszczony — kolega zabił jego zabójcę w ciągu 5 s (np. 4/19 = 4 z 19 zgonów)">Zgony pomszczone</th>
               <th className="px-3 py-2">Clutche</th>
               <th className="px-3 py-2">Otwarcia</th>
               <th className="px-3 py-2">Wrogowie oślepieni</th>
@@ -94,8 +97,11 @@ export const MatchPlayerAnalysis = memo(function MatchPlayerAnalysis({ matchResu
           </thead>
           <tbody>
             {rows.map((player) => (
-              <tr key={player.name} className="border-t border-neutral-800">
-                <td className="px-3 py-1.5 font-medium">{player.name}</td>
+              <tr key={player.steamId64} className="border-t border-neutral-800">
+                <td className="px-3 py-1.5 font-medium">
+                  {player.name}
+                  <ExcludePlayerButton matchResultId={matchResultId} steamId64={player.steamId64} name={player.name} />
+                </td>
                 <td className="px-3 py-1.5">{player.tradeKills}</td>
                 <td className="px-3 py-1.5">
                   {player.tradedDeaths}/{player.deaths}

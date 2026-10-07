@@ -66,6 +66,12 @@ public record MapComparisonDto(
 
 	/// <summary>Lifetime FACEIT numbers of our linked players on the map; null without data.</summary>
 	public MapLifetimeDto? OurLifetime { get; init; }
+
+	/// <summary>Their official team games on the map (faction = their FACEIT team, e.g. ESEA), part of <see cref="MapComparisonDto.TheirGames"/>; null in older snapshots.</summary>
+	public int? TheirOfficialGames { get; init; }
+
+	/// <summary>Their other games on the map with ≥ 3 of the lineup on one side, part of <see cref="MapComparisonDto.TheirGames"/>; null in older snapshots.</summary>
+	public int? TheirTogetherGames { get; init; }
 }
 
 /// <summary>A lineup's summed lifetime FACEIT numbers on one map, like the match room's aggregate: <paramref name="Matches"/> of all
@@ -73,7 +79,8 @@ public record MapComparisonDto(
 /// marks a map they play a lot individually.</summary>
 public record MapLifetimeDto(int Players, int Matches, double? WinRate, double? AvgKdRatio, double Share, bool Experienced);
 
-/// <summary>One linked opponent player in the lineup header: team games in the lineup window and overall, last team game.</summary>
+/// <summary>One opponent player in the lineup header: team games in the lineup window and overall (for an ESEA season lineup: the
+/// season's league matches and official matches overall), last team game.</summary>
 public record LineupPlayerDto(
 	string PlayerId,
 	string Nickname,
@@ -84,8 +91,23 @@ public record LineupPlayerDto(
 	DateTime? LastTeamGameAtUtc);
 
 /// <summary>Who the report treats as the opponent's active lineup and why (<paramref name="Basis"/>); <paramref name="Inactive"/> are
-/// linked ex-members and subs, excluded from every player-facing number.</summary>
-public record ActiveLineupDto(string Basis, int WindowGames, List<LineupPlayerDto> Active, List<LineupPlayerDto> Inactive);
+/// linked ex-members and subs, excluded from every player-facing number. With an ESEA season lineup <paramref name="WindowGames"/>
+/// is the number of the season's league matches and each player's <see cref="LineupPlayerDto.RecentTeamGames"/> their appearances in them.</summary>
+public record ActiveLineupDto(string Basis, int WindowGames, List<LineupPlayerDto> Active, List<LineupPlayerDto> Inactive)
+{
+	/// <summary>Where the lineup comes from: "EseaSeason", "OfficialMatches" (team games without ESEA) or "TeamGames"
+	/// (≥ 3 linked players together); null in older snapshots.</summary>
+	public string? Source { get; init; }
+
+	/// <summary>Label of the ESEA season the lineup comes from ("S59"); null for other sources.</summary>
+	public string? Season { get; init; }
+
+	/// <summary>Competition name of the season's latest league match (e.g. "S59 EU Open10 D - Regular Season"); null for other sources.</summary>
+	public string? SeasonCompetition { get; init; }
+
+	/// <summary>Official matches of the FACEIT team (all seasons and competitions) in the window; null without a linked team.</summary>
+	public int? OfficialMatches { get; init; }
+}
 
 /// <summary>One step of a simulated veto; <paramref name="Actor"/>/<paramref name="Action"/> use the <c>VetoActor</c>/<c>VetoAction</c> names.</summary>
 public record VetoPlanStepDto(int Order, string Actor, string Action, string MapName, string Reason);

@@ -20,8 +20,9 @@ public static class FaceitSync
 	/// <summary>FACEIT's maximum history page size.</summary>
 	public const int HistoryPageSize = 100;
 
-	/// <summary>How many history pages per player are read, so league games older than the latest PUGs are still found.</summary>
-	public const int MaxHistoryPages = 3;
+	/// <summary>How many history pages per player are read at most — paging stops as soon as the window is exhausted, so this only
+	/// bites for very busy PUG players and keeps a whole ESEA season of league games reachable behind their matchmaking.</summary>
+	public const int MaxHistoryPages = 10;
 
 	/// <summary>A player's history pulled more recently than this is skipped — dedupes our roster across several opponent syncs.</summary>
 	public static readonly TimeSpan PlayerResyncInterval = TimeSpan.FromMinutes(10);
@@ -97,7 +98,8 @@ public static class FaceitSync
 		await dbContext.SaveChangesAsync(cancellationToken);
 	}
 
-	/// <summary>Caches the finished matches of each player within <see cref="HistoryWindow"/> that aren't cached yet;
+	/// <summary>Caches the finished matches of each player within <see cref="HistoryWindow"/> that aren't cached yet and fills the
+	/// faction/competition ids of cached ones that miss them (from the same history pages, no extra call);
 	/// <paramref name="onProgress"/> receives the fraction of players processed, so a job's bar moves during this slowest step.</summary>
 	public static async Task<(int NewMapGames, bool Complete)> SyncHistoryAsync(
 		IApplicationDbContext dbContext,
@@ -115,6 +117,11 @@ public static class FaceitSync
 				.Select(m => m.FaceitMatchId)
 				.ToListAsync(cancellationToken))
 			.ToHashSet();
+		var withoutFactions = (await dbContext.FaceitMatches
+				.Where(m => m.PlayedAtUtc >= since.AddDays(-1) && (m.Team1FactionId == null || m.Team2FactionId == null || m.CompetitionId == null))
+				.Select(m => m.FaceitMatchId)
+				.ToListAsync(cancellationToken))
+			.ToHashSet();
 		var newMapGames = 0;
 		var fetched = 0;
 
@@ -129,6 +136,7 @@ public static class FaceitSync
 			}
 
 			var history = await FaceitHistoryPager.LoadAsync(client, playerId, since, cancellationToken);
+			await BackfillAsync(dbContext, history.Where(h => withoutFactions.Remove(h.MatchId)).ToList(), cancellationToken);
 			foreach (var item in FaceitHistoryPager.SelectToFetch(history).Where(h => IsFinished(h.Status) && !known.Contains(h.MatchId)))
 			{
 				if (fetched >= MaxNewMatchesPerRun)
@@ -140,7 +148,7 @@ public static class FaceitSync
 				var maps = await client.GetMatchStatsAsync(item.MatchId, cancellationToken);
 				fetched++;
 				known.Add(item.MatchId);
-				newMapGames += AddMatch(dbContext, item, maps, nowUtc);
+				newMapGames += FaceitMatchRows.Add(dbContext, item, maps, nowUtc);
 			}
 
 			if (player is not null)
@@ -158,61 +166,25 @@ public static class FaceitSync
 
 	#region Private Methods
 
+	/// <summary>Fills faction/competition ids of the cached rows of <paramref name="items"/> (already cached matches).</summary>
+	private static async Task BackfillAsync(IApplicationDbContext dbContext, List<FaceitHistoryItem> items, CancellationToken cancellationToken)
+	{
+		if (items.Count == 0)
+		{
+			return;
+		}
+
+		var ids = items.Select(i => i.MatchId).ToList();
+		var rows = await dbContext.FaceitMatches.Where(m => ids.Contains(m.FaceitMatchId)).ToListAsync(cancellationToken);
+		foreach (var item in items)
+		{
+			FaceitMatchRows.Backfill(rows, item);
+		}
+	}
+
 	/// <summary>History entries without a status are kept; anything else must be FINISHED (cancelled rooms have no stats).</summary>
 	private static bool IsFinished(string? status) =>
 		string.IsNullOrWhiteSpace(status) || status.Equals("FINISHED", StringComparison.OrdinalIgnoreCase);
-
-	/// <summary>Adds one <see cref="FaceitMatch"/> row per map plus its scoreboard lines; returns how many maps were added.</summary>
-	private static int AddMatch(IApplicationDbContext dbContext, FaceitHistoryItem item, IReadOnlyList<FaceitMapStats> maps, DateTime nowUtc)
-	{
-		var complete = maps.Where(m => m.Teams.Count == 2).ToList();
-		foreach (var map in complete)
-		{
-			var (team1, team2) = (map.Teams[0], map.Teams[1]);
-			var match = new FaceitMatch
-			{
-				Id = Guid.NewGuid(),
-				FaceitMatchId = item.MatchId,
-				MapNumber = map.MapNumber,
-				PlayedAtUtc = item.FinishedAtUtc ?? nowUtc,
-				MapName = map.MapName,
-				CompetitionType = item.CompetitionType,
-				CompetitionName = item.CompetitionName,
-				Team1Name = team1.Name,
-				Team2Name = team2.Name,
-				Team1Score = team1.Score,
-				Team2Score = team2.Score,
-				WinnerTeam = team1.Won ? 1 : team2.Won ? 2 : 0,
-				Team1PlayerIds = team1.Players.Select(p => p.PlayerId).ToList(),
-				Team2PlayerIds = team2.Players.Select(p => p.PlayerId).ToList(),
-				FetchedAtUtc = nowUtc
-			};
-			dbContext.FaceitMatches.Add(match);
-
-			foreach (var (team, side) in new[] { (team1, 1), (team2, 2) })
-			{
-				dbContext.FaceitMatchPlayerStats.AddRange(team.Players.Select(p => new FaceitMatchPlayerStat
-				{
-					Id = Guid.NewGuid(),
-					MatchId = match.Id,
-					PlayerId = p.PlayerId,
-					Nickname = p.Nickname,
-					Team = side,
-					Kills = p.Kills,
-					Deaths = p.Deaths,
-					Assists = p.Assists,
-					Adr = p.Adr,
-					HeadshotPercent = p.HeadshotPercent,
-					TripleKills = p.TripleKills,
-					QuadroKills = p.QuadroKills,
-					PentaKills = p.PentaKills,
-					Mvps = p.Mvps
-				}));
-			}
-		}
-
-		return complete.Count;
-	}
 
 	#endregion
 }

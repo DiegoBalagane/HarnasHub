@@ -44,6 +44,20 @@ public class AnalyzeOpponentDemoHandlerTests
 	}
 
 	[Fact]
+	public async Task Should_bring_a_hidden_opponent_back_when_its_demo_is_analysed()
+	{
+		await using var dbContext = TestApplicationDbContext.Create();
+		dbContext.HiddenOpponents.Add(new HarnasHub.Core.Entities.HiddenOpponent { Id = Guid.NewGuid(), OpponentKey = "team x", DisplayName = "Team X" });
+		await dbContext.SaveChangesAsync(CancellationToken.None);
+		var parser = new TestDemoParser(timeline: Timeline([Round(1, MapSide.T, MapSide.T)]));
+
+		var result = await Handler(dbContext, new TestFileStorage(), parser).Handle(new AnalyzeOpponentDemoCommand("Team X", DemoKey), CancellationToken.None);
+
+		Assert.False(result.IsError);
+		Assert.Empty(dbContext.HiddenOpponents);
+	}
+
+	[Fact]
 	public async Task Should_reject_an_unreadable_demo_and_still_delete_it()
 	{
 		await using var dbContext = TestApplicationDbContext.Create();

@@ -1,4 +1,4 @@
-import type { FaceitFactionPrefill, FaceitMatchPrefill } from '../../services/resultsApi'
+import type { AnalyzeDemoResult, FaceitFactionPrefill, FaceitMatchPrefill, MatchCategory } from '../../services/resultsApi'
 
 /** The opponent's faction of a recognised FACEIT match: the one that isn't ours when the server found us in the room,
  * otherwise the one that didn't play as the picked demo team; null when neither tells. */
@@ -31,4 +31,61 @@ export function toDateTimeLocal(iso: string | null): string {
   if (Number.isNaN(date.getTime())) return ''
   const pad = (value: number) => String(value).padStart(2, '0')
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`
+}
+
+/** Form fields the coach can edit by hand; once touched, a demo analysis must never overwrite them. */
+export type TouchedField = 'opponent' | 'score' | 'map' | 'playedAt' | 'category'
+
+/** Fields an analysis result wants to fill; absent keys mean "leave the form field alone". */
+export interface AnalysisPatch {
+  mapName?: string
+  ourScore?: string
+  opponentScore?: string
+  selectedTeam?: 'A' | 'B'
+  playedAt?: string
+  category?: MatchCategory
+}
+
+/** What a finished demo analysis (plus its FACEIT prefill) may write into the result form: only fields the coach hasn't touched. */
+export function buildAnalysisPatch(result: AnalyzeDemoResult, touched: ReadonlySet<TouchedField>): AnalysisPatch {
+  const patch: AnalysisPatch = {}
+  const faceit = result.faceitMatch ?? null
+
+  const mapName = result.mapName ?? faceit?.mapName
+  if (mapName && !touched.has('map')) patch.mapName = mapName
+
+  if (result.suggestedTeam) {
+    patch.selectedTeam = result.suggestedTeam
+    if (!touched.has('score')) {
+      const preview = result.suggestedTeam === 'A' ? result.teamA : result.teamB
+      patch.ourScore = String(preview.ourScore)
+      patch.opponentScore = String(preview.opponentScore)
+    }
+  }
+
+  if (faceit) {
+    const playedAt = toDateTimeLocal(faceit.playedAtUtc)
+    if (playedAt && !touched.has('playedAt')) patch.playedAt = playedAt
+    if (!touched.has('category')) patch.category = faceit.category
+  }
+
+  return patch
+}
+
+/** Season number of an ESEA competition name such as "S59 EU Open10 D - Regular Season" or "ESEA Season 59"; null otherwise. */
+export function eseaSeasonNumber(competitionName: string | null | undefined): number | null {
+  if (!competitionName) return null
+  const match = /\bS(?:eason\s*)?(\d{1,3})\b/i.exec(competitionName)
+  return match ? Number(match[1]) : null
+}
+
+/** The team's league matching a FACEIT competition's ESEA season (by "S59"/"Season 59" in its name or season), if exactly one fits. */
+export function matchLeagueForCompetition<T extends { id: string; name: string; season: string }>(
+  leagues: readonly T[],
+  competitionName: string | null | undefined,
+): T | null {
+  const season = eseaSeasonNumber(competitionName)
+  if (season === null) return null
+  const candidates = leagues.filter((league) => eseaSeasonNumber(`${league.name} ${league.season}`) === season)
+  return candidates.length === 1 ? candidates[0] : null
 }

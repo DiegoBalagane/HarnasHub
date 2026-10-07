@@ -59,7 +59,7 @@ export function OpponentReportPage() {
 
           <ReportToolbar report={report} canManage={canManage} format={format} />
           <InsightList insights={report.insights} />
-          <MapMatrix maps={report.maps} comfort={report.individualForm?.theirs.mapComfort} />
+          <MapMatrix maps={report.maps} comfort={report.individualForm?.theirs.mapComfort} lineup={report.activeLineup} />
           <VetoPlanSection plans={report.vetoPlans} format={format} onFormatChange={setFormat} />
           <PlayersToWatch maps={report.playersToWatch} />
           <TeamFormSection form={report.form} />

@@ -1,6 +1,7 @@
 #region Usings
 
 using HarnasHub.Application.Abstractions;
+using HarnasHub.Application.Features.MatchAnalysis.Shared.Analysis;
 using Microsoft.EntityFrameworkCore;
 
 #endregion
@@ -87,6 +88,7 @@ public static class PlayerNameResolver
 	/// <summary>A copy of the timeline with every unnamed player's name replaced by the resolved one (unchanged when all are named).</summary>
 	public static async Task<DemoTimeline> ApplyAsync(IApplicationDbContext dbContext, DemoTimeline timeline, CancellationToken cancellationToken)
 	{
+		timeline = RoundParticipants.Filter(timeline);
 		var demoNames = new Dictionary<long, string?>();
 		foreach (var (id, name) in TimelinePlayerNames.Collect(timeline))
 		{

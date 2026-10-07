@@ -1,3 +1,4 @@
+import { scoreToneClass } from '../../results/scoreTone'
 import { Link } from 'react-router-dom'
 import type { DashboardSummary as DashboardData } from '../../../services/dashboardApi'
 import type { TeamTrendPoint } from '../../../services/statsApi'
@@ -108,7 +109,7 @@ function LastMatchTile({ data }: { data: DashboardData | undefined }) {
         <>
           <p className="mt-1 font-medium">
             vs {last.opponent}{' '}
-            <span className={last.won ? 'text-success-400' : 'text-danger-400'}>
+            <span className={scoreToneClass(last.ourScore, last.opponentScore)}>
               {last.ourScore}:{last.opponentScore}
             </span>
           </p>

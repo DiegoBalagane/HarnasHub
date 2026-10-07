@@ -91,7 +91,7 @@ function Content({ data }: { data: MapAnalytics }) {
         <div className="rounded-md border border-neutral-800 p-3">
           <h3 className="text-sm font-medium">Trade’y i clutche</h3>
           <p className="mt-1 text-sm text-neutral-300">
-            Odpłacone zgony: {data.trades.ourTradedDeaths}/{data.trades.ourDeaths} (
+            Zgony pomszczone przez kolegę (≤ 5 s): {data.trades.ourTradedDeaths}/{data.trades.ourDeaths} (
             {percent(data.trades.ourTradedDeaths, data.trades.ourDeaths)})
           </p>
           <ul className="mt-1 text-sm text-neutral-400">

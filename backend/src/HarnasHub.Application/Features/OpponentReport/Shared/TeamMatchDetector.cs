@@ -14,7 +14,20 @@ public record TeamGame(
 	int RoundsAgainst,
 	bool Won,
 	List<string> SidePlayerIds,
-	string? CompetitionName);
+	string? CompetitionName)
+{
+	/// <summary>Id of the cached <see cref="FaceitMatch"/> row (one map) the game comes from.</summary>
+	public Guid RowId { get; init; }
+
+	/// <summary>The roster's faction in the cached row (1 or 2).</summary>
+	public int Side { get; init; }
+
+	/// <summary>True for an official team game — the roster's faction id is its FACEIT team id (championship such as ESEA League).</summary>
+	public bool Official { get; init; }
+
+	/// <summary>ESEA League season of an official game (<see cref="EseaSeasonParser"/>), null outside ESEA.</summary>
+	public int? Season { get; init; }
+}
 
 /// <summary>Decides which cached FACEIT games were played by a roster as a team rather than by its players solo.</summary>
 public static class TeamMatchDetector
@@ -68,12 +81,8 @@ public static class TeamMatchDetector
 		return MapNameParser.Parse(underscore >= 0 && underscore < 4 ? name[(underscore + 1)..] : name);
 	}
 
-	#endregion
-
-	#region Private Methods
-
 	/// <summary>Flips the stored team-1/team-2 view to the roster's side.</summary>
-	private static TeamGame ToTeamGame(FaceitMatch match, int side)
+	public static TeamGame ToTeamGame(FaceitMatch match, int side)
 	{
 		var roundsFor = side == 1 ? match.Team1Score : match.Team2Score;
 		var roundsAgainst = side == 1 ? match.Team2Score : match.Team1Score;
@@ -88,7 +97,11 @@ public static class TeamMatchDetector
 			roundsAgainst,
 			won,
 			side == 1 ? match.Team1PlayerIds : match.Team2PlayerIds,
-			match.CompetitionName);
+			match.CompetitionName)
+		{
+			RowId = match.Id,
+			Side = side
+		};
 	}
 
 	#endregion
