@@ -24,7 +24,11 @@ public record MapVetoInput(
 	int TheirWins = 0,
 	double? TheirWinRate = null,
 	double? OurSoloPrior = null,
-	bool OurPlaysIndividually = false);
+	bool OurPlaysIndividually = false)
+{
+	/// <summary>Whether the coach has set up the map pool (any map Core/Playable/Learning) — then the pool alone says which maps are ours.</summary>
+	public bool CoachPool { get; init; }
+}
 
 /// <summary>One map after scoring: its input, score (with ban tier) and the final "Pick"/"Ban"/"Neutral" recommendation.</summary>
 public record RankedVetoMap(MapVetoInput Input, VetoMapScore Result, string Recommendation);
