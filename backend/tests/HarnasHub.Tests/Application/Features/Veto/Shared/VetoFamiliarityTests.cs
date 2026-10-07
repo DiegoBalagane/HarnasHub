@@ -73,18 +73,37 @@ public class VetoFamiliarityTests
 	}
 
 	[Fact]
-	public void Should_count_regular_solo_play_as_familiarity()
+	public void Should_count_regular_solo_play_as_familiarity_without_a_coach_pool()
 	{
 		var result = Suggest(
 		[
-			Input(MapName.Mirage, MapPoolStatus.Core, wins: 6, losses: 2),
+			Input(MapName.Mirage, null, wins: 6, losses: 2),
 			Input(MapName.Dust2, null) with { OurPlaysIndividually = true },
 			Input(MapName.Inferno, null),
-			Input(MapName.Nuke, MapPoolStatus.Playable)
+			Input(MapName.Nuke, null, wins: 2, losses: 1)
 		]);
 
 		Assert.Equal(["Inferno"], Bans(result));
 		Assert.Contains("Znamy tę mapę (większość składu gra ją regularnie solo)", result.Single(m => m.MapName == "Dust2").Reasons);
+	}
+
+	[Fact]
+	public void Should_trust_the_coach_pool_over_solo_play()
+	{
+		var result = Suggest(
+		[
+			Input(MapName.Mirage, null, wins: 6, losses: 2),
+			Input(MapName.Ancient, MapPoolStatus.Playable, wins: 2, losses: 2) with { TheirGames = 10, TheirWins = 8, TheirWinRate = 0.8 },
+			Input(MapName.Cache, null) with { OurPlaysIndividually = true },
+			Input(MapName.Inferno, null) with { OurPlaysIndividually = true },
+			Input(MapName.Anubis, null) with { OurPlaysIndividually = true },
+			Input(MapName.Dust2, null),
+			Input(MapName.Nuke, null)
+		]);
+
+		Assert.DoesNotContain("Ancient", Bans(result));
+		Assert.DoesNotContain("Cache", result.Where(m => m.Recommendation == "Pick").Select(m => m.MapName));
+		Assert.All(Bans(result), map => Assert.Contains(map, new[] { "Cache", "Inferno", "Anubis", "Dust2", "Nuke" }));
 	}
 
 	[Fact]

@@ -11,7 +11,7 @@ namespace HarnasHub.Tests.Infrastructure.Demos;
 
 /// <summary>Dev-only helper for fitting a radar crop numerically: set <c>HARNASHUB_POSITION_DUMP_DEMO</c> to a .dem path and
 /// <c>HARNASHUB_POSITION_DUMP_OUT</c> to an output file, then run <c>dotnet test --filter PositionDumpHelper</c>. It writes
-/// every sampled player position as plain overview fractions (no image crop applied) plus the world Z, one "x;y;z" per line.
+/// every sampled player position as plain overview fractions (no image crop applied) plus the world Z, side and round second ("x;y;z;side;second"), after "#map" and bomb plant lines ("P;x;y;z;site").
 /// Without the variables it does nothing, so it never affects CI.</summary>
 public class PositionDumpHelper
 {
@@ -35,15 +35,23 @@ public class PositionDumpHelper
 			return;
 		}
 
-		var lines = timeline.Positions
-			.SelectMany(track => Enumerable.Range(0, track.Health.Count).Select(i => (X: track.World[i * 3], Y: track.World[i * 3 + 1], Z: track.World[i * 3 + 2])))
+		var samples = timeline.Positions
+			.SelectMany(track => Enumerable.Range(0, track.Health.Count).Select(i => (X: track.World[i * 3], Y: track.World[i * 3 + 1], Z: track.World[i * 3 + 2], track.Side, Second: track.StartSecond + i)))
 			.Select(p =>
 			{
 				var (x, y) = overview(p.X, p.Y);
-				return string.Create(CultureInfo.InvariantCulture, $"{x:0.#####};{y:0.#####};{p.Z}");
+				return string.Create(CultureInfo.InvariantCulture, $"{x:0.#####};{y:0.#####};{p.Z};{p.Side};{p.Second}");
+			});
+		var plants = timeline.Rounds
+			.Where(r => r.BombPlant?.Position is not null)
+			.Select(r =>
+			{
+				var position = r.BombPlant!.Position!;
+				var (x, y) = overview(position.WorldX, position.WorldY);
+				return string.Create(CultureInfo.InvariantCulture, $"P;{x:0.#####};{y:0.#####};{position.WorldZ};{r.BombPlant.Site}");
 			});
 
-		await File.WriteAllLinesAsync(output, lines);
+		await File.WriteAllLinesAsync(output, [$"#{map}", .. plants, .. samples]);
 	}
 
 	#endregion
