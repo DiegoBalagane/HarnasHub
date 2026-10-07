@@ -54,6 +54,8 @@ public class FaceitDemoFileNameTests
 	[InlineData("championship", "ESEA Open S55", MatchCategory.League)]
 	[InlineData("championship", "Polska Liga Esportowa", MatchCategory.League)]
 	[InlineData("Championship", "Weekend Cup", MatchCategory.Tournament)]
+	[InlineData("championship", "S59 EU Open10 D - Regular Season", MatchCategory.League)]
+	[InlineData("championship", "Summer Cup S1 Finals", MatchCategory.Tournament)]
 	public void Should_map_competitions_to_categories_conservatively(string? type, string? name, MatchCategory expected)
 	{
 		Assert.Equal(expected, FaceitCompetitionCategory.Map(type, name));

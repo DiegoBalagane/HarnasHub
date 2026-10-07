@@ -49,6 +49,7 @@ public class AnalyzeOpponentDemoHandler(
 			var key = OpponentNames.ToKey(request.OpponentName);
 			var input = await BuildInputAsync(key, request.FileName, cancellationToken);
 			var analysis = await OpponentDemoProcessor.StoreAsync(dbContext, fileStorage, input, timeline, DateTime.UtcNow, cancellationToken);
+			await OpponentRevival.ReviveAsync(dbContext, request.OpponentName, cancellationToken);
 			await dbContext.SaveChangesAsync(cancellationToken);
 			// Digest only when the opponent team was resolved (otherwise there are no tendencies to summarise yet).
 			if (analysis.FactsJson is not null)

@@ -21,6 +21,8 @@ public class MatchDemoAnalysisConfiguration : IEntityTypeConfiguration<MatchDemo
 
 		builder.Property(a => a.ObjectKey).IsRequired().HasMaxLength(300);
 		builder.Property(a => a.OurTeamSteamIds).IsRequired();
+		// Existing analyses get an empty list, so the column can be added to a populated table.
+		builder.Property(a => a.ExcludedSteamIds).IsRequired().HasDefaultValueSql("'{}'::bigint[]");
 
 		builder.HasIndex(a => a.MatchResultId).IsUnique();
 	}

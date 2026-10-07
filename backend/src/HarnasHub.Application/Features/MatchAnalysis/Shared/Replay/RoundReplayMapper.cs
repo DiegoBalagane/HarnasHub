@@ -3,6 +3,7 @@
 using HarnasHub.Application.Abstractions;
 using HarnasHub.Application.Common.Demos;
 using HarnasHub.Application.Common.Maps;
+using HarnasHub.Application.Features.MatchAnalysis.Shared.Analysis;
 using HarnasHub.Core.Enums;
 
 #endregion
@@ -22,6 +23,7 @@ public static class RoundReplayMapper
 	/// <summary>Builds the replay of round <paramref name="roundNumber"/>, or null when the timeline has no such round.</summary>
 	public static RoundReplayDto? Build(DemoTimeline timeline, int roundNumber, ReplayPerspective perspective)
 	{
+		timeline = RoundParticipants.Filter(timeline);
 		var round = timeline.Rounds.FirstOrDefault(r => r.Number == roundNumber);
 		if (round is null)
 		{

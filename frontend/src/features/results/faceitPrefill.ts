@@ -71,3 +71,21 @@ export function buildAnalysisPatch(result: AnalyzeDemoResult, touched: ReadonlyS
 
   return patch
 }
+
+/** Season number of an ESEA competition name such as "S59 EU Open10 D - Regular Season" or "ESEA Season 59"; null otherwise. */
+export function eseaSeasonNumber(competitionName: string | null | undefined): number | null {
+  if (!competitionName) return null
+  const match = /\bS(?:eason\s*)?(\d{1,3})\b/i.exec(competitionName)
+  return match ? Number(match[1]) : null
+}
+
+/** The team's league matching a FACEIT competition's ESEA season (by "S59"/"Season 59" in its name or season), if exactly one fits. */
+export function matchLeagueForCompetition<T extends { id: string; name: string; season: string }>(
+  leagues: readonly T[],
+  competitionName: string | null | undefined,
+): T | null {
+  const season = eseaSeasonNumber(competitionName)
+  if (season === null) return null
+  const candidates = leagues.filter((league) => eseaSeasonNumber(`${league.name} ${league.season}`) === season)
+  return candidates.length === 1 ? candidates[0] : null
+}

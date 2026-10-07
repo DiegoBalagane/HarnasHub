@@ -23,7 +23,8 @@ public class OpponentPlayerFactsExtractorTests
 				Kill(1, 11, 21, 10f, weapon: "awp", isOpening: true),
 				Kill(1, 11, 22, 20f, weapon: "awp"),
 				Kill(2, 23, 12, 10f, isOpening: true)
-			]);
+			],
+			economy: [Economy(1, 4000), Economy(2, 4000)]);
 
 		var players = OpponentPlayerFactsExtractor.Extract(timeline, Them.ToHashSet()).ToDictionary(p => p.SteamId64);
 

@@ -7,7 +7,14 @@ import { useModalGuard } from '../../../components/ModalGuardContext'
 import { mapNames } from '../../nades/labels'
 import { useLinkOpponentFaceit } from '../../opponentReport/hooks/useOpponentReport'
 import { OpponentNameInput } from '../../opponents/components/OpponentNameInput'
-import { buildAnalysisPatch, linkSourceOf, opponentFaction, opponentNameOf, type TouchedField } from '../faceitPrefill'
+import {
+  buildAnalysisPatch,
+  linkSourceOf,
+  matchLeagueForCompetition,
+  opponentFaction,
+  opponentNameOf,
+  type TouchedField,
+} from '../faceitPrefill'
 import { useAddResult, useAnalyzeDemo } from '../hooks/useResults'
 import { useLeagues } from '../hooks/useLeagues'
 import { useTournaments } from '../hooks/useTournaments'
@@ -78,6 +85,11 @@ export function AddResultForm({ onDone }: AddResultFormProps) {
       setCategory(patch.category)
       setTournamentId('')
       setLeagueId('')
+    }
+    // An ESEA match lands in the team's league for that season when exactly one league matches ("S59" → "Season 59").
+    if ((patch.category ?? category) === 'League' && !touchedRef.current.has('category')) {
+      const league = matchLeagueForCompetition(leagues ?? [], result.faceitMatch?.competitionName)
+      if (league) setLeagueId(league.id)
     }
     if (result.faceitMatch) applyFaceitOpponent(result.faceitMatch, result.suggestedTeam ?? '')
   }
@@ -262,10 +274,26 @@ export function AddResultForm({ onDone }: AddResultFormProps) {
       </div>
 
       {category === 'Tournament' && (
-        <TournamentPicker tournaments={tournaments ?? []} value={tournamentId} onChange={setTournamentId} />
+        <TournamentPicker
+          tournaments={tournaments ?? []}
+          value={tournamentId}
+          onChange={(id) => {
+            touch('category')
+            setTournamentId(id)
+          }}
+        />
       )}
 
-      {category === 'League' && <LeaguePicker leagues={leagues ?? []} value={leagueId} onChange={setLeagueId} />}
+      {category === 'League' && (
+        <LeaguePicker
+          leagues={leagues ?? []}
+          value={leagueId}
+          onChange={(id) => {
+            touch('category')
+            setLeagueId(id)
+          }}
+        />
+      )}
 
       <DemoAnalysisSection
         inputKey={demoInputKey}

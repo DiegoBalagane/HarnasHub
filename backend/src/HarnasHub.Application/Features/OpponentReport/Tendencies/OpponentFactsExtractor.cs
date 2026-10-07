@@ -2,6 +2,7 @@
 
 using HarnasHub.Application.Abstractions;
 using HarnasHub.Application.Features.MatchAnalysis.Shared;
+using HarnasHub.Application.Features.MatchAnalysis.Shared.Analysis;
 using HarnasHub.Core.Enums;
 
 #endregion
@@ -29,6 +30,7 @@ public static class OpponentFactsExtractor
 	/// <summary>Extracts the facts; rounds the opponent didn't play (none of <paramref name="theirTeam"/> present) are skipped.</summary>
 	public static OpponentDemoFacts Extract(DemoTimeline timeline, IReadOnlySet<long> theirTeam)
 	{
+		timeline = RoundParticipants.Filter(timeline);
 		var rounds = new List<OpponentRoundFacts>();
 		var killsByRound = timeline.Kills.ToLookup(k => k.RoundNumber);
 		var economyByRound = timeline.Economy.ToDictionary(e => e.RoundNumber);

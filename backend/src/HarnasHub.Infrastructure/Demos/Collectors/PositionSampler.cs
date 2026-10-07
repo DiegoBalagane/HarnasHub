@@ -28,16 +28,16 @@ internal sealed class PositionSampler(CsDemoParser demo, DemoRoundClock clock) :
 	/// <inheritdoc />
 	public void Subscribe()
 	{
-		demo.Source1GameEvents.RoundAnnounceMatchStart += _ =>
-		{
-			_tracks.Reset();
-			_sampling = false;
-		};
+		// Match start throws away warmup/knife samples but keeps sampling: in round 1 this event can arrive after freeze end,
+		// and switching sampling off here left round 1 of every demo without a single player position.
+		demo.Source1GameEvents.RoundAnnounceMatchStart += _ => _tracks.Reset();
 		demo.Source1GameEvents.RoundStart += _ => StopRound();
 		demo.Source1GameEvents.RoundFreezeEnd += _ =>
 		{
 			StopRound();
-			_sampling = clock.IsOfficialMatchRound;
+			// Always armed at freeze end; whether the round counts is checked per sample (see OnCommandFinish), because the
+			// official-round latch for round 1 only flips after freeze end.
+			_sampling = true;
 			_nextSecond = 0;
 		};
 		demo.Source1GameEvents.RoundEnd += _ => StopRound();
@@ -60,7 +60,7 @@ internal sealed class PositionSampler(CsDemoParser demo, DemoRoundClock clock) :
 
 	private void OnCommandFinish()
 	{
-		if (!_sampling || clock.FreezeEndTime is null)
+		if (!_sampling || clock.FreezeEndTime is null || !clock.IsOfficialMatchRound)
 		{
 			return;
 		}

@@ -16,6 +16,12 @@ public class FaceitMatch
 	/// <summary>FACEIT competition type, e.g. "matchmaking" or "championship".</summary>
 	public string? CompetitionType { get; set; }
 	public string? CompetitionName { get; set; }
+	/// <summary>FACEIT competition id (championship, hub or queue id); null in rows cached before it was stored.</summary>
+	public string? CompetitionId { get; set; }
+	/// <summary>FACEIT faction id of team 1 — the FACEIT team id in championship (e.g. ESEA League) games; null when unknown.</summary>
+	public string? Team1FactionId { get; set; }
+	/// <summary>FACEIT faction id of team 2 — the FACEIT team id in championship (e.g. ESEA League) games; null when unknown.</summary>
+	public string? Team2FactionId { get; set; }
 	public string? Team1Name { get; set; }
 	public string? Team2Name { get; set; }
 	/// <summary>Rounds won by team 1 on this map.</summary>

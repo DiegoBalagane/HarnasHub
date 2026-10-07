@@ -73,7 +73,7 @@ public class GetRoundReplayHandlerTests
 		dbContext.MatchResults.Add(match);
 		await dbContext.SaveChangesAsync(CancellationToken.None);
 
-		timeline ??= MatchTimelineFactory.Timeline([MatchTimelineFactory.Round(1, MapSide.T)]) with
+		timeline ??= MatchTimelineFactory.Timeline([MatchTimelineFactory.Round(1, MapSide.T)], [MatchTimelineFactory.Economy(1, 4000, 4000)]) with
 		{
 			Positions = [OpponentTimelineFactory.Track(1, 1, MapSide.T, OpponentTimelineFactory.SiteA)]
 		};

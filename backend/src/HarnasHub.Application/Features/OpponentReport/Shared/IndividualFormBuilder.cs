@@ -13,11 +13,12 @@ public static class IndividualFormBuilder
 {
 	#region Public Methods
 
-	/// <summary>Player form and map comfort for their active lineup (<paramref name="theirActive"/>; the full linked roster still
-	/// decides team vs solo) and our linked players over the cached window; comfort rates are recency-weighted.</summary>
-	public static IndividualFormResult Build(OpponentReportInput input, IReadOnlySet<string> theirActive)
+	/// <summary>Player form and map comfort for their active lineup (<paramref name="theirActive"/>; <paramref name="theirGames"/> decide
+	/// team vs solo) and our linked players over the cached window; comfort rates are recency-weighted.</summary>
+	public static IndividualFormResult Build(OpponentReportInput input, IReadOnlySet<string> theirActive, IReadOnlyCollection<TeamGame> theirGames)
 	{
-		var theirLines = IndividualGameLines.Build(input.Matches, input.TheirStats, input.TheirRoster, theirActive);
+		var theirLines = IndividualGameLines.Build(
+			input.Matches, input.TheirStats, input.TheirRoster, theirActive, theirGames.ToDictionary(g => g.RowId, g => g.Side));
 		var ourLines = IndividualGameLines.Build(input.Matches, input.OurStats ?? [], input.OurRoster);
 		var theirComfort = MapComfortCalculator.Calculate(theirLines, input.GeneratedAtUtc);
 		var ourComfort = MapComfortCalculator.Calculate(ourLines, input.GeneratedAtUtc);

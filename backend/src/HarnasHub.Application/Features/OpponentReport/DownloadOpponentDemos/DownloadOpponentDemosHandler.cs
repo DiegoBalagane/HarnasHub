@@ -15,8 +15,8 @@ using Microsoft.Extensions.Logging;
 
 namespace HarnasHub.Application.Features.OpponentReport.DownloadOpponentDemos;
 
-/// <summary>Handles <see cref="DownloadOpponentDemosCommand"/>: picks the newest cached FACEIT team games of the linked roster
-/// (same "≥ 3 roster players on one side" rule as the report) on the chosen maps that have no analysis yet, resolves each
+/// <summary>Handles <see cref="DownloadOpponentDemosCommand"/>: picks the newest cached FACEIT team games of the opponent
+/// (same official-games + "≥ 3 of the lineup on one side" rule as the report) on the chosen maps that have no analysis yet, resolves each
 /// map's <c>demo_url</c> from the match details, downloads it through the Downloads API and analyses it like an upload.
 /// A failing demo is counted and skipped — the rest still go through.</summary>
 public class DownloadOpponentDemosHandler(
@@ -52,7 +52,7 @@ public class DownloadOpponentDemosHandler(
 			return OpponentReportErrors.NotLinked;
 		}
 
-		var candidates = await FindCandidatesAsync(key, link.PlayerIds.ToHashSet(), request, cancellationToken);
+		var candidates = await FindCandidatesAsync(key, link.FaceitTeamId, link.PlayerIds.ToHashSet(), request, cancellationToken);
 		var stored = new List<OpponentDemoDto>();
 		var failed = 0;
 		var newMaps = new List<string>();
@@ -83,27 +83,32 @@ public class DownloadOpponentDemosHandler(
 		return new OpponentDemoDownloadResultDto(stored.Count, failed, candidates.Count, await OpponentPlayerNames.ResolveDemosAsync(dbContext, stored, cancellationToken));
 	}
 
-	/// <summary>Newest team games of <paramref name="roster"/> on the requested maps without an analysis yet.</summary>
+	/// <summary>Newest team games of the opponent (<see cref="OpponentTeamGames"/>: official games of <paramref name="faceitTeamId"/>
+	/// plus games of ≥ 3 of its lineup) on the requested maps without an analysis yet.</summary>
 	public static List<FaceitMatch> SelectCandidates(
-		IEnumerable<FaceitMatch> matches,
+		IReadOnlyCollection<FaceitMatch> matches,
 		IReadOnlySet<string> roster,
 		IReadOnlyCollection<MapName>? maps,
 		IReadOnlySet<(string MatchId, int MapNumber)> analysed,
-		int count) =>
-		matches
-			.Where(m => TeamMatchDetector.FindSide(m.Team1PlayerIds, m.Team2PlayerIds, roster) is not null)
+		int count,
+		string? faceitTeamId = null)
+	{
+		var teamRows = OpponentTeamGames.Select(matches, faceitTeamId, roster, DateTime.UtcNow).Games.Select(g => g.RowId).ToHashSet();
+		return matches
+			.Where(m => teamRows.Contains(m.Id))
 			.Where(m => TeamMatchDetector.ParseMap(m.MapName) is { } map && (maps is null || maps.Count == 0 || maps.Contains(map)))
 			.Where(m => !analysed.Contains((m.FaceitMatchId, m.MapNumber)))
 			.OrderByDescending(m => m.PlayedAtUtc)
 			.Take(count)
 			.ToList();
+	}
 
 	#endregion
 
 	#region Private Methods
 
 	private async Task<List<FaceitMatch>> FindCandidatesAsync(
-		string key, IReadOnlySet<string> roster, DownloadOpponentDemosCommand request, CancellationToken cancellationToken)
+		string key, string? faceitTeamId, IReadOnlySet<string> roster, DownloadOpponentDemosCommand request, CancellationToken cancellationToken)
 	{
 		var since = DateTime.UtcNow - FaceitSync.HistoryWindow;
 		var matches = await dbContext.FaceitMatches.AsNoTracking().Where(m => m.PlayedAtUtc >= since).ToListAsync(cancellationToken);
@@ -114,7 +119,7 @@ public class DownloadOpponentDemosHandler(
 			.Select(a => (a.FaceitMatchId!, a.FaceitMapNumber ?? 1))
 			.ToHashSet();
 
-		return SelectCandidates(matches, roster, request.Maps, analysed, request.Count);
+		return SelectCandidates(matches, roster, request.Maps, analysed, request.Count, faceitTeamId);
 	}
 
 	private async Task<OpponentDemoAnalysis?> DownloadAndStoreAsync(

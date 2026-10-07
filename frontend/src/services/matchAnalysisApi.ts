@@ -67,6 +67,12 @@ export interface MatchRound {
   kills: RoundKill[]
 }
 
+/** A player a Coach/Manager excluded from the match analysis. */
+export interface ExcludedPlayer {
+  steamId64: string
+  name: string
+}
+
 /** A match's round-by-round timeline; when ourTeamResolved is false "our" means the team that started on T. */
 export interface MatchTimeline {
   mapName: string | null
@@ -74,6 +80,8 @@ export interface MatchTimeline {
   ourTeamResolved: boolean
   parserVersion: number
   rounds: MatchRound[]
+  /** Players hidden from this match's analysis (restorable by Coach/Manager). */
+  excludedPlayers: ExcludedPlayer[]
 }
 
 /** One automatic, rule-based observation about the match. */
@@ -306,6 +314,10 @@ export const matchAnalysisApi = {
   getInsights: (matchResultId: string) => apiClient.get<MatchInsight[]>(API_ENDPOINTS.matchInsights(matchResultId)),
   getAnalysis: (matchResultId: string) => apiClient.get<MatchAnalysis>(API_ENDPOINTS.matchAnalysis(matchResultId)),
   getMapAnalytics: (mapName: string) => apiClient.get<MapAnalytics>(API_ENDPOINTS.mapAnalytics(mapName)),
+  excludePlayer: (matchResultId: string, steamId64: string) =>
+    apiClient.post<void>(API_ENDPOINTS.excludeAnalysisPlayer(matchResultId), { steamId64 }),
+  includePlayer: (matchResultId: string, steamId64: string) =>
+    apiClient.post<void>(API_ENDPOINTS.includeAnalysisPlayer(matchResultId), { steamId64 }),
   /** Starts a background job (result: MatchDemoAnalysis); objectKey comes from resultsApi.presignDemoUpload after the PUT. */
   attachDemo: (matchResultId: string, objectKey: string) =>
     apiClient.post<JobAccepted>(API_ENDPOINTS.attachResultDemo(matchResultId), { objectKey }),

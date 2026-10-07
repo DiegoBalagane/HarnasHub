@@ -77,6 +77,8 @@ export const API_ENDPOINTS = {
   matchTimeline: (matchResultId: string) => `/api/results/${matchResultId}/timeline`,
   matchInsights: (matchResultId: string) => `/api/results/${matchResultId}/insights`,
   matchAnalysis: (matchResultId: string) => `/api/results/${matchResultId}/analysis`,
+  excludeAnalysisPlayer: (matchResultId: string) => `/api/results/${matchResultId}/analysis/exclude`,
+  includeAnalysisPlayer: (matchResultId: string) => `/api/results/${matchResultId}/analysis/include`,
   mapAnalytics: (mapName: string) => `/api/maps/${mapName}/analytics`,
   roundReplay: (matchResultId: string, roundNumber: number) =>
     `/api/results/${matchResultId}/rounds/${roundNumber}/replay`,
@@ -119,6 +121,14 @@ export const API_ENDPOINTS = {
   teamTrend: '/api/stats/team-trend',
   statsLeaderboard: (category?: string) =>
     category ? `/api/stats/leaderboard?category=${category}` : '/api/stats/leaderboard',
+  statsAdvanced: (category?: string, map?: string, last?: number) => {
+    const params = new URLSearchParams()
+    if (category) params.set('category', category)
+    if (map) params.set('map', map)
+    if (last) params.set('last', String(last))
+    const query = params.toString()
+    return query ? `/api/stats/advanced?${query}` : '/api/stats/advanced'
+  },
   gamePlan: (eventId: string) => `/api/game-plans/${eventId}`,
   veto: {
     suggestion: (opponent: string) => `/api/veto/suggestion?opponent=${encodeURIComponent(opponent)}`,

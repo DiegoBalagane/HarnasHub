@@ -125,6 +125,44 @@ public class SyncOpponentFaceitHandlerTests
 		Assert.Equal(["ex1"], result.Value.ActiveLineup!.Inactive.Select(p => p.PlayerId));
 	}
 
+	[Fact]
+	public async Task Should_store_faction_ids_and_build_the_lineup_from_the_current_esea_season_of_a_linked_team()
+	{
+		await using var dbContext = TestApplicationDbContext.Create();
+		AddLink(dbContext, lastSyncedAtUtc: null);
+		var link = dbContext.OpponentFaceitLinks.Local.Single();
+		link.FaceitTeamId = "team-x";
+		link.PlayerIds = [.. Them, "random"];
+		await dbContext.SaveChangesAsync(CancellationToken.None);
+		var client = new TestFaceitClient();
+		string[] season = ["t1", "t2", "t3", "t4", "k1"];
+		var strangers = Strangers();
+		var item = new FaceitHistoryItem("m59", DateTime.UtcNow.AddDays(-1), "championship", "S59 EU Open10 D - Regular Season", "FINISHED")
+		{
+			CompetitionId = "champ-59",
+			Factions = [new("rival", [.. strangers]), new("team-x", [.. season])]
+		};
+		foreach (var player in Them)
+		{
+			client.Histories[player] = [item];
+		}
+		client.Stats["m59"] = [TestFaceitClient.MapStats("de_mirage", season, strangers)];
+
+		var result = await Handler(dbContext, client).Handle(new("Team X", IsManual: true), CancellationToken.None);
+
+		var row = await dbContext.FaceitMatches.SingleAsync();
+		Assert.Equal(("team-x", "rival", "champ-59"), (row.Team1FactionId, row.Team2FactionId, row.CompetitionId));
+		var lineup = result.Value.ActiveLineup!;
+		Assert.Equal("EseaSeason", lineup.Source);
+		Assert.Equal("S59", lineup.Season);
+		Assert.Equal(season.Order(), lineup.Active.Select(p => p.PlayerId).Order());
+		Assert.Equal(["random", "t5"], lineup.Inactive.Select(p => p.PlayerId).Order());
+		// The season player who isn't on the team page gets his history synced too.
+		Assert.Contains("k1", client.HistoryRequests);
+		var mirage = result.Value.Maps.Single(m => m.MapName == "Mirage");
+		Assert.Equal((1, 1, 0), (mirage.TheirGames, mirage.TheirOfficialGames, mirage.TheirTogetherGames));
+	}
+
 	#endregion
 
 	#region Private Methods

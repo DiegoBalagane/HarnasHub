@@ -35,6 +35,7 @@ internal sealed class RoundCollector(CsDemoParser demo, DemoRoundClock clock) : 
 	#region Private Fields
 
 	private readonly List<RawRound> _rounds = [];
+	private HashSet<long>? _presentAtFreezeEnd;
 	private RawBombEvent? _plant;
 	private RawBombEvent? _defuse;
 
@@ -50,6 +51,7 @@ internal sealed class RoundCollector(CsDemoParser demo, DemoRoundClock clock) : 
 	{
 		demo.Source1GameEvents.RoundAnnounceMatchStart += _ => OnMatchStart();
 		demo.Source1GameEvents.RoundStart += _ => ResetBombEvents();
+		demo.Source1GameEvents.RoundFreezeEnd += _ => _presentAtFreezeEnd = DemoTeams.WithLivePawn(demo);
 		demo.Source1GameEvents.BombPlanted += e => _plant ??= ToBombEvent(e.Player, e.PlayerPawn, e.Site);
 		demo.Source1GameEvents.BombDefused += e => _defuse ??= ToBombEvent(e.Player, e.PlayerPawn, e.Site);
 		demo.Source1GameEvents.RoundEnd += OnRoundEnd;
@@ -111,6 +113,7 @@ internal sealed class RoundCollector(CsDemoParser demo, DemoRoundClock clock) : 
 
 	private void ResetBombEvents()
 	{
+		_presentAtFreezeEnd = null;
 		_plant = null;
 		_defuse = null;
 		_plantedSite = null;
@@ -141,8 +144,8 @@ internal sealed class RoundCollector(CsDemoParser demo, DemoRoundClock clock) : 
 			clock.Now,
 			DemoTeams.WinnerSide(e.Winner),
 			DemoTeams.EndReason(e.Reason),
-			DemoTeams.Roster(demo, CSTeamNumber.Terrorist),
-			DemoTeams.Roster(demo, CSTeamNumber.CounterTerrorist),
+			DemoTeams.FilterPlaying(DemoTeams.Roster(demo, CSTeamNumber.Terrorist), _presentAtFreezeEnd),
+			DemoTeams.FilterPlaying(DemoTeams.Roster(demo, CSTeamNumber.CounterTerrorist), _presentAtFreezeEnd),
 			_plant,
 			_defuse,
 			_plantedSite));

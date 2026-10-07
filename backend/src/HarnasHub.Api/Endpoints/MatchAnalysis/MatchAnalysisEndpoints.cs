@@ -3,11 +3,13 @@
 using HarnasHub.Api.Common;
 using HarnasHub.Application.Features.Jobs.StartJob;
 using HarnasHub.Application.Features.MatchAnalysis.AttachDemoToResult;
+using HarnasHub.Application.Features.MatchAnalysis.ExcludePlayer;
 using HarnasHub.Application.Features.MatchAnalysis.GetMapAnalytics;
 using HarnasHub.Application.Features.MatchAnalysis.GetMatchAnalysis;
 using HarnasHub.Application.Features.MatchAnalysis.GetMatchInsights;
 using HarnasHub.Application.Features.MatchAnalysis.GetMatchTimeline;
 using HarnasHub.Application.Features.MatchAnalysis.GetRoundReplay;
+using HarnasHub.Application.Features.MatchAnalysis.IncludePlayer;
 using HarnasHub.Application.Features.Tactics.GetMatchTacticMatches;
 using HarnasHub.Core.Enums;
 using MediatR;
@@ -56,6 +58,28 @@ public class MatchAnalysisEndpoints : IEndpoint
 			return result.Match(success => Results.Ok(success), errors => errors.ToProblemResult());
 		});
 
+		group.MapPost("/analysis/exclude", async (Guid matchResultId, PlayerAnalysisRequest request, ISender sender, CancellationToken cancellationToken) =>
+		{
+			if (!long.TryParse(request.SteamId64, out var steamId))
+			{
+				return Results.BadRequest();
+			}
+
+			var result = await sender.Send(new ExcludePlayerCommand(matchResultId, steamId), cancellationToken);
+			return result.Match(_ => Results.NoContent(), errors => errors.ToProblemResult());
+		}).RequireAuthorization(policy => policy.RequireRole("Coach", "Manager"));
+
+		group.MapPost("/analysis/include", async (Guid matchResultId, PlayerAnalysisRequest request, ISender sender, CancellationToken cancellationToken) =>
+		{
+			if (!long.TryParse(request.SteamId64, out var steamId))
+			{
+				return Results.BadRequest();
+			}
+
+			var result = await sender.Send(new IncludePlayerCommand(matchResultId, steamId), cancellationToken);
+			return result.Match(_ => Results.NoContent(), errors => errors.ToProblemResult());
+		}).RequireAuthorization(policy => policy.RequireRole("Coach", "Manager"));
+
 		app.MapGet("/api/maps/{map}/analytics", async (MapName map, ISender sender, CancellationToken cancellationToken) =>
 		{
 			var result = await sender.Send(new GetMapAnalyticsQuery(map), cancellationToken);
@@ -75,3 +99,6 @@ public class MatchAnalysisEndpoints : IEndpoint
 
 /// <summary>Request body for POST /api/results/{matchResultId}/demo.</summary>
 public record AttachDemoRequest(string ObjectKey);
+
+/// <summary>Request body for POST /api/results/{matchResultId}/analysis/exclude and /include (SteamID64 as a string).</summary>
+public record PlayerAnalysisRequest(string SteamId64);
