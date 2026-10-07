@@ -13,19 +13,18 @@ public static class MapCalibration
 {
 	#region Private Fields
 
-	// pos_x/pos_y = world coordinate of the overview image's top-left corner; scale = world units per pixel of a
-	// 1024x1024 source image. de_dust2 is the only current-pool map exported "rotated" (rotate=1 in its overview
-	// file), which swaps and mirrors the axes — unlike the rest, this is only verified against the documented
-	// convention, not against a real Dust2 demo (none was available to test).
-	private static readonly Dictionary<MapName, (float PosX, float PosY, float Scale, bool Rotated)> Calibrations = new()
+	// pos_x/pos_y = world coordinate of the overview image's top-left corner; scale = world units per pixel of a 1024x1024 source
+	// image — checked against the game's own resource/overviews/*.txt. de_dust2 says rotate=1, but in CS2 its radar is drawn in the
+	// plain orientation (the same file puts T spawn at the bottom, CT at the top), so every map uses the same formula.
+	private static readonly Dictionary<MapName, (float PosX, float PosY, float Scale)> Calibrations = new()
 	{
-		[MapName.Dust2] = (-2476, 3239, 4.4f, true),
-		[MapName.Mirage] = (-3230, 1713, 5.0f, false),
-		[MapName.Inferno] = (-2087, 3870, 4.9f, false),
-		[MapName.Nuke] = (-3453, 2887, 7.0f, false),
-		[MapName.Ancient] = (-2953, 2164, 5.0f, false),
-		[MapName.Anubis] = (-2796, 3328, 5.22f, false),
-		[MapName.Cache] = (-2000, 3250, 5.5f, false),
+		[MapName.Dust2] = (-2476, 3239, 4.4f),
+		[MapName.Mirage] = (-3230, 1713, 5.0f),
+		[MapName.Inferno] = (-2087, 3870, 4.9f),
+		[MapName.Nuke] = (-3453, 2887, 7.0f),
+		[MapName.Ancient] = (-2953, 2164, 5.0f),
+		[MapName.Anubis] = (-2796, 3328, 5.22f),
+		[MapName.Cache] = (-2000, 3250, 5.5f),
 	};
 
 	// The radar images under frontend/public/maps aren't all the plain 1024x1024 overview: most are tighter,
@@ -35,20 +34,19 @@ public static class MapCalibration
 	// below is the sub-rectangle of the overview (in overview fractions) that the shipped image shows, so the result
 	// stays image-relative, the same convention the coach's own map/nade/tactic markers use.
 	//
-	// Fitted by maximising the overlap between a real demo's player-position cloud and the image's rendered geometry,
-	// then verified by eye against the drawn dots. Only maps a demo was available for are listed; Cache and Anubis
-	// ship the untouched overview (1024x1024 and a 2x copy of it) and verified correct as-is; the rest
-	// ship cropped images — Nuke is fitted (upper level only), Dust2 and Inferno still need a demo to fit against.
+	// Registered against the official radar images extracted from the game files (panorama/images/overheadmaps/*_radar_psd):
+	// L/T/W/H maximise the overlap (IoU 0.96-0.99) of the drawn floor of both images. The shipped images turned out to be
+	// ~1.6x upscaled crops of the official radars (uniform scale), and on real demos 97-99 % of positions now land on drawn
+	// floor (Nuke 87 % → 98 %, Mirage 93 % → 99 %, Anubis 91 % → 97 %). Cache ships the untouched 1024px overview. Nuke's
+	// image only shows the upper level, so lower-level positions are drawn over the upper plan.
 	private static readonly Dictionary<MapName, (float Left, float Top, float Width, float Height)> RadarImageCrops = new()
 	{
-		[MapName.Ancient] = (0.0785f, 0.034f, 0.820f, 0.9325f),
-		[MapName.Mirage] = (0.0815f, 0.127f, 0.862f, 0.7503f),
-		// Fitted on the upper-level samples of a real Nuke demo by maximising both the share of positions on drawn floor and the share
-		// of drawn floor reached by positions (hit rate alone squeezed the cloud vertically, leaving the top tower and the bottom of
-		// outside empty), then checked against anchors: T and CT spawns land at the ends of their corridors and A plants inside the
-		// orange site. The image is stretched horizontally against the overview, hence the separate height; it only shows the upper
-		// level, so lower-level positions are drawn over the upper plan.
-		[MapName.Nuke] = (0.1675f, 0.2125f, 0.71f, 0.575f),
+		[MapName.Ancient] = (0.0933f, 0.0462f, 0.787f, 0.895f),
+		[MapName.Mirage] = (0.0922f, 0.1338f, 0.84f, 0.7311f),
+		[MapName.Nuke] = (0.04f, 0.2536f, 0.9536f, 0.519f),
+		[MapName.Dust2] = (0.041f, 0.0079f, 0.9264f, 0.9893f),
+		[MapName.Inferno] = (0.049f, 0.032f, 0.9152f, 0.9097f),
+		[MapName.Anubis] = (0.014f, 0.003f, 0.9805f, 0.9805f),
 	};
 
 	private const float ImageSizePixels = 1024f;
@@ -107,9 +105,8 @@ public static class MapCalibration
 
 		return (worldX, worldY) =>
 		{
-			var (pixelX, pixelY) = calibration.Rotated
-				? ((worldY - calibration.PosY) / -calibration.Scale, (worldX - calibration.PosX) / calibration.Scale)
-				: ((worldX - calibration.PosX) / calibration.Scale, (calibration.PosY - worldY) / calibration.Scale);
+			var pixelX = (worldX - calibration.PosX) / calibration.Scale;
+			var pixelY = (calibration.PosY - worldY) / calibration.Scale;
 			return (pixelX / ImageSizePixels, pixelY / ImageSizePixels);
 		};
 	}

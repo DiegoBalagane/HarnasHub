@@ -9,7 +9,7 @@ using Xunit.Abstractions;
 
 namespace HarnasHub.Tests.Infrastructure.Demos;
 
-/// <summary>Dev-only helper for fitting a missing <c>MapCalibration.RadarImageCrops</c> entry (Dust2/Inferno/Nuke): set
+/// <summary>Dev-only helper for re-checking a <c>MapCalibration.RadarImageCrops</c> entry against a real demo: set
 /// <c>HARNASHUB_RADAR_FIT_DEMO</c> to a local .dem path and run
 /// <c>dotnet test --filter RadarFitHelper --logger "console;verbosity=detailed"</c> — it prints the extents of every sampled
 /// player position in world units and in overview fractions (the value a crop is expressed in). Without the variable it

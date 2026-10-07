@@ -168,7 +168,7 @@ Odpowiednik opisanej aplikacji GUI („wybierz demkę, rundę i stronę, nazwij 
 - Odtwarzacz 2D rundy (pozycje co 1 s, `PositionSampler`) na naszym radarze z kalibracją z `MapCalibration`.
 - „Utwórz tablicę analizy z tej rundy” — zrzut pozycji/granatów do `AnalysisBoards`.
 - Automatyczne dopasowanie naszych rund do taktyk z Playbooka (pozycje i granaty z pierwszych sekund vs `TacticPoint`) → skuteczność każdej taktyki.
-- Uzupełnienie kalibracji radarów Dust2/Inferno/Nuke (`RadarImageCrops`) — potrzebna demka z każdej mapy.
+- Weryfikacja kadrów radarów Dust2/Inferno (`RadarImageCrops`, już zarejestrowanych względem oficjalnych radarów) — potrzebna demka z każdej mapy.
 
 ## 9. Kolejność i zależności
 

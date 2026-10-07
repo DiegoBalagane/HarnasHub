@@ -42,13 +42,13 @@ public class MapCalibrationTests
 	[Fact]
 	public void ToRadarFraction_RescalesIntoTheCroppedImage_ForMapWhoseImageIsACrop()
 	{
-		// ancient.webp only shows the sub-rectangle of the overview starting at (0.0785, 0.034) and 0.820 x 0.9325
+		// ancient.webp only shows the sub-rectangle of the overview starting at (0.0933, 0.0462) and 0.787 x 0.895
 		// in size, so the overview's own centre sits slightly right of, and slightly above, the image's centre.
 		var centre = MapCalibration.ToRadarFraction(MapName.Ancient, -2953 + (512 * 5f), 2164 - (512 * 5f));
 
 		Assert.NotNull(centre);
-		Assert.Equal((0.5f - 0.0785f) / 0.820f, centre!.Value.X, 4);
-		Assert.Equal((0.5f - 0.034f) / 0.9325f, centre.Value.Y, 4);
+		Assert.Equal((0.5f - 0.0933f) / 0.787f, centre!.Value.X, 4);
+		Assert.Equal((0.5f - 0.0462f) / 0.895f, centre.Value.Y, 4);
 	}
 
 	[Fact]
