@@ -33,7 +33,7 @@ public class GetTeamTrendHandlerTests
 		Assert.Equal(1, last.CumulativeWins);
 		Assert.Equal(1, last.CumulativeLosses);
 		Assert.Equal(1, last.CumulativeDraws);
-		Assert.Equal(100.0 / 3, last.WinRatePercentage, 3);
+		Assert.Equal(50, last.WinRatePercentage, 3);
 	}
 
 	#endregion

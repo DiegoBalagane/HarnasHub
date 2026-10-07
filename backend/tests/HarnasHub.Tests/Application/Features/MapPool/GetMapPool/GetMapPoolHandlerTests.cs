@@ -44,7 +44,7 @@ public class GetMapPoolHandlerTests
 
 		var mirage = result.Value.Single(m => m.MapName == "Mirage");
 		Assert.Equal((2, 1, 1), (mirage.Wins, mirage.Losses, mirage.Draws));
-		Assert.Equal(50, mirage.WinRatePercentage);
+		Assert.Equal(62.5, mirage.WinRatePercentage);
 		Assert.Equal(["W", "D", "L", "W"], mirage.RecentForm);
 		Assert.Equal(now.AddDays(-1), mirage.LastPlayedAtUtc);
 		Assert.Equal(4, result.Value.Sum(m => m.Wins + m.Losses + m.Draws));

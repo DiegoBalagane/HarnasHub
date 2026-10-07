@@ -63,7 +63,7 @@ public class GetMapPoolHandler(IApplicationDbContext dbContext)
 					wins,
 					losses,
 					draws,
-					played.Count == 0 ? null : Math.Round((double)wins / played.Count * 100, 1),
+					played.Count == 0 ? null : Math.Round((wins + draws / 2.0) / played.Count * 100, 1),
 					outcomes.Take(RecentFormLength).ToList(),
 					played.Count == 0 ? null : played[0].PlayedAtUtc,
 					tacticCounts.GetValueOrDefault(map));

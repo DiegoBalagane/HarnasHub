@@ -23,7 +23,7 @@ public class GetTeamTrendHandler(IApplicationDbContext dbContext)
 		var losses = 0;
 		var draws = 0;
 
-		// A draw (e.g. a 12:12 scrim) is its own outcome — counting it as a loss made the trend look worse than reality.
+		// A draw (e.g. a 12:12 scrim) is its own outcome worth half a win — counting it as a loss made the trend look worse than reality.
 		foreach (var match in matches)
 		{
 			if (match.Won)
@@ -39,7 +39,7 @@ public class GetTeamTrendHandler(IApplicationDbContext dbContext)
 				losses++;
 			}
 
-			var winRate = (double)wins / (wins + losses + draws) * 100;
+			var winRate = (wins + draws / 2.0) / (wins + losses + draws) * 100;
 			points.Add(new TeamTrendPointDto(match.PlayedAtUtc, match.Won, wins, losses, winRate, match.Draw, draws));
 		}
 

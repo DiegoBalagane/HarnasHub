@@ -2,7 +2,6 @@
 
 using ErrorOr;
 using HarnasHub.Application.Abstractions;
-using HarnasHub.Application.Common.Notifications;
 using HarnasHub.Application.Features.OpponentNotes.Shared;
 using HarnasHub.Application.Features.OpponentReport.Shared;
 using HarnasHub.Core.Entities;
@@ -27,7 +26,6 @@ public class DownloadOpponentDemosHandler(
 	IFaceitDemoDownloader demoDownloader,
 	ICurrentUserService currentUser,
 	IJobProgress jobProgress,
-	TeamNotifications notifications,
 	ILogger<DownloadOpponentDemosHandler> logger) : IRequestHandler<DownloadOpponentDemosCommand, ErrorOr<OpponentDemoDownloadResultDto>>
 {
 	#region Public Methods
@@ -55,7 +53,6 @@ public class DownloadOpponentDemosHandler(
 		var candidates = await FindCandidatesAsync(key, link.FaceitTeamId, link.PlayerIds.ToHashSet(), request, cancellationToken);
 		var stored = new List<OpponentDemoDto>();
 		var failed = 0;
-		var newMaps = new List<string>();
 
 		foreach (var (match, index) in candidates.Select((m, i) => (m, i)))
 		{
@@ -67,17 +64,7 @@ public class DownloadOpponentDemosHandler(
 			else
 			{
 				stored.Add(OpponentDemoProcessor.ToDto(analysis));
-				if (analysis.FactsJson is not null)
-				{
-					newMaps.Add(analysis.MapName?.ToString() ?? string.Empty);
-				}
 			}
-		}
-
-		// One digest per batch, not per demo, so a download of several demos does not flood the channel.
-		if (newMaps.Count > 0)
-		{
-			await notifications.NotifyOpponentDemosAsync(key, request.OpponentName, newMaps, cancellationToken);
 		}
 
 		return new OpponentDemoDownloadResultDto(stored.Count, failed, candidates.Count, await OpponentPlayerNames.ResolveDemosAsync(dbContext, stored, cancellationToken));

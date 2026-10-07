@@ -2,9 +2,6 @@
 
 using HarnasHub.Application.Abstractions;
 using HarnasHub.Application.Features.MatchAnalysis.Shared;
-using HarnasHub.Application.Features.OpponentNotes.Shared;
-using HarnasHub.Application.Features.OpponentReport.Shared;
-using HarnasHub.Application.Features.OpponentReport.Tendencies;
 using HarnasHub.Application.Features.Results.Shared;
 using HarnasHub.Core.Entities;
 using HarnasHub.Core.Enums;
@@ -63,29 +60,6 @@ public class TeamNotifications(
 		catch (Exception ex) when (ex is not OperationCanceledException)
 		{
 			logger.LogWarning(ex, "Nie udało się wysłać podsumowania demki meczu {MatchResultId}", matchResultId);
-		}
-	}
-
-	/// <summary>Posts a tendencies digest for an opponent whose demos (on <paramref name="newDemoMaps"/>) were just analysed to the scouting channel.</summary>
-	public async Task NotifyOpponentDemosAsync(string opponentKey, string? opponentName, IReadOnlyCollection<string> newDemoMaps, CancellationToken cancellationToken)
-	{
-		try
-		{
-			var name = opponentName;
-			if (string.IsNullOrWhiteSpace(name))
-			{
-				var link = await dbContext.OpponentFaceitLinks.AsNoTracking().FirstOrDefaultAsync(l => l.OpponentKey == opponentKey, cancellationToken);
-				name = string.IsNullOrWhiteSpace(link?.DisplayName) ? opponentKey : link.DisplayName;
-			}
-
-			var tendencies = await OpponentTendencyLoader.LoadAsync(dbContext, OpponentNames.ToKey(opponentKey), cancellationToken);
-			var relevant = tendencies.Where(t => newDemoMaps.Contains(t.MapName)).Concat(tendencies.Where(t => !newDemoMaps.Contains(t.MapName))).ToList();
-			var message = OpponentDigestFormatter.Format(name.Trim(), newDemoMaps, relevant, links.OpponentReport(name.Trim()));
-			await discord.SendAsync(DiscordChannel.OpponentScouting, message, cancellationToken);
-		}
-		catch (Exception ex) when (ex is not OperationCanceledException)
-		{
-			logger.LogWarning(ex, "Nie udało się wysłać podsumowania demek przeciwnika {Opponent}", opponentKey);
 		}
 	}
 
