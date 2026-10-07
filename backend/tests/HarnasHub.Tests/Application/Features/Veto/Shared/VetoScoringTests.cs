@@ -129,9 +129,9 @@ public class VetoScoringTests
 	{
 		var result = VetoScoring.Suggest(
 		[
-			Input(MapName.Mirage, MapPoolStatus.Core, wins: 6, losses: 2),
+			Input(MapName.Mirage, null, wins: 6, losses: 2),
 			Input(MapName.Nuke, null) with { OurSoloPrior = 0.4, OurPlaysIndividually = true },
-			Input(MapName.Inferno, MapPoolStatus.Playable, wins: 3, losses: 3)
+			Input(MapName.Inferno, null, wins: 3, losses: 3)
 		]);
 
 		var nuke = result.Single(m => m.MapName == "Nuke");
