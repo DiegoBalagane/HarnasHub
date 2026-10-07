@@ -42,11 +42,11 @@ public class VetoFamiliarityTests
 	{
 		var result = Suggest(
 		[
-			Input(MapName.Mirage, MapPoolStatus.Core, wins: 6, losses: 2),
+			Input(MapName.Mirage, null, wins: 6, losses: 2),
 			Input(MapName.Dust2, null, losses: 1),
 			Input(MapName.Ancient, null, wins: 1, losses: 5),
-			Input(MapName.Nuke, MapPoolStatus.Playable, wins: 3, losses: 3),
-			Input(MapName.Inferno, MapPoolStatus.Playable, wins: 4, losses: 2)
+			Input(MapName.Nuke, null, wins: 3, losses: 3),
+			Input(MapName.Inferno, null, wins: 4, losses: 2)
 		]);
 
 		Assert.Equal(["Ancient", "Dust2"], Bans(result));
@@ -54,7 +54,7 @@ public class VetoFamiliarityTests
 	}
 
 	[Fact]
-	public void Should_let_pool_ban_and_learning_outrank_familiarity()
+	public void Should_count_a_learning_map_as_ours_and_ban_maps_outside_the_pool_first()
 	{
 		var result = Suggest(
 		[
@@ -67,8 +67,9 @@ public class VetoFamiliarityTests
 			Input(MapName.Cache, MapPoolStatus.Playable, wins: 2, losses: 2)
 		]);
 
-		// Pool ban first, then the Learning map (-25) and one unplayed map fill the remaining two slots.
-		Assert.Equal(["Ancient", "Dust2", "Mirage"], Bans(result));
+		// Pool ban first, then the two maps outside the pool; the Learning map is one we train, so it stays.
+		Assert.Equal(["Dust2", "Inferno", "Mirage"], Bans(result));
+		Assert.Contains("Poza naszą pulą map (trenujemy inne) — ban w pierwszej kolejności", result.Single(m => m.MapName == "Dust2").Reasons);
 		Assert.Equal("Ban", result.Single(m => m.MapName == "Mirage").Recommendation);
 	}
 
@@ -85,6 +86,26 @@ public class VetoFamiliarityTests
 
 		Assert.Equal(["Inferno"], Bans(result));
 		Assert.Contains("Znamy tę mapę (większość składu gra ją regularnie solo)", result.Single(m => m.MapName == "Dust2").Reasons);
+	}
+
+	[Fact]
+	public void Should_ban_the_opponents_best_map_when_it_is_outside_our_pool()
+	{
+		var result = Suggest(
+		[
+			Input(MapName.Mirage, MapPoolStatus.Playable, wins: 5, losses: 5),
+			Input(MapName.Nuke, MapPoolStatus.Learning, wins: 3, losses: 3),
+			Input(MapName.Ancient, MapPoolStatus.Playable, wins: 1, losses: 5),
+			Input(MapName.Anubis, null, wins: 3, losses: 1) with { TheirGames = 9, TheirWins = 6, TheirWinRate = 0.67 },
+			Input(MapName.Cache, null, wins: 1, losses: 1),
+			Input(MapName.Dust2, null, losses: 1),
+			Input(MapName.Inferno, null)
+		]);
+
+		var bans = Bans(result);
+		Assert.Contains("Anubis", bans);
+		Assert.All(bans, map => Assert.Contains(map, new[] { "Anubis", "Cache", "Dust2", "Inferno" }));
+		Assert.DoesNotContain(result, m => m.Recommendation == "Pick" && m.MapName is "Anubis" or "Cache" or "Dust2" or "Inferno");
 	}
 
 	[Fact]
@@ -132,11 +153,11 @@ public class VetoFamiliarityTests
 
 	#region Private Methods
 
-	/// <summary>The reported production case: Anubis 3-1, Ancient 1-5 known; Dust2 (1), Inferno (0), Cache (2) not played.</summary>
+	/// <summary>Familiarity from team games alone (no coach pool): Anubis 3-1, Ancient 1-5 known; Dust2 (1), Inferno (0), Cache (2) not played.</summary>
 	private static List<MapVetoInput> ProductionPool() =>
 	[
-		Input(MapName.Mirage, MapPoolStatus.Core, wins: 6, losses: 2),
-		Input(MapName.Nuke, MapPoolStatus.Playable, wins: 3, losses: 3),
+		Input(MapName.Mirage, null, wins: 6, losses: 2),
+		Input(MapName.Nuke, null, wins: 3, losses: 3),
 		Input(MapName.Ancient, null, wins: 1, losses: 5),
 		Input(MapName.Anubis, null, wins: 3, losses: 1) with { TheirGames = 10, TheirWins = 8, TheirWinRate = 0.75 },
 		Input(MapName.Dust2, null, losses: 1),
