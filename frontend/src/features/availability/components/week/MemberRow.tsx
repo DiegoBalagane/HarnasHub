@@ -43,11 +43,17 @@ export const MemberRow = React.memo(function MemberRow({
           mine ? 'border-l-2 border-l-primary-500' : ''
         }`}
       >
-        <span className={`truncate ${mine ? 'font-semibold text-white' : 'text-neutral-300'}`}>{name}</span>
-        {mine && <span className="text-[10px] text-primary-400">(Ty)</span>}
+        <span title={mine ? `${name} (Ty)` : name} className={`min-w-0 truncate ${mine ? 'font-semibold text-white' : 'text-neutral-300'}`}>
+          {name}
+        </span>
+        {/* "Ty" is already the gold left edge; markers are icons with tooltips so the nickname keeps the room. */}
         {member.hiddenFromCalendar && (
-          <span className="text-[10px] text-neutral-500" title="Manager ukrył Cię w kalendarzu — widzisz tylko Ty">
-            (ukryty)
+          <span
+            className="shrink-0 text-[11px] text-neutral-500"
+            title="Manager ukrył Cię w kalendarzu — widzisz tylko Ty"
+            aria-label="ukryty w kalendarzu"
+          >
+            👁‍🗨
           </span>
         )}
         {mine && onBulk && (
@@ -56,7 +62,7 @@ export const MemberRow = React.memo(function MemberRow({
             aria-label="Ustaw dla tygodnia…"
             title="Ustaw dla tygodnia…"
             onClick={onBulk}
-            className="ml-auto rounded px-1 text-xs text-neutral-400 hover:bg-neutral-800 hover:text-primary-300"
+            className="ml-auto shrink-0 rounded px-1 text-xs text-neutral-400 hover:bg-neutral-800 hover:text-primary-300"
           >
             ✎
           </button>

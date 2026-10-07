@@ -17,7 +17,7 @@ interface WeekGridProps extends RowShared {
   eventsByDate: Map<string, CalendarEvent[]>
 }
 
-/** Day headers plus one slim row per player. Rows share the available height (`minmax(26px,1fr)`), so up to ~12 players fit without scrolling; only beyond that the wrapper scrolls. */
+/** Day headers plus one slim row per player (28–36 px, never stretched); a dozen players fit without scrolling and only beyond that the wrapper scrolls. */
 export function WeekGrid({ members, allMembers, todayIso, eventsByDate, ...rowProps }: WeekGridProps) {
   const { dates } = rowProps
   const headers = useMemo(
@@ -33,12 +33,13 @@ export function WeekGrid({ members, allMembers, todayIso, eventsByDate, ...rowPr
   )
 
   return (
-    <div className="min-h-0 flex-1 overflow-y-auto">
+    <div className="min-h-0 flex-1 overflow-y-auto px-0.5 pt-1">
       <div
-        className="grid min-h-full gap-x-1"
+        className="grid content-start gap-x-1 gap-y-1.5"
         style={{
           gridTemplateColumns: gridColumns(dates.length),
-          gridTemplateRows: `auto repeat(${members.length}, minmax(26px, 1fr))`,
+          // Rows keep a fixed comfortable height instead of stretching over the free space (big gaps with few players).
+          gridTemplateRows: `auto repeat(${members.length}, minmax(28px, 36px))`,
         }}
       >
         <div />
