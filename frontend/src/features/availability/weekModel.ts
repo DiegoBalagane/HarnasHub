@@ -83,5 +83,5 @@ export function summarizeWeek(member: MemberWeek, dates: string[]): string {
 
 /** Column template shared by the grid header, player rows and the coach footer. */
 export function gridColumns(dayCount: number): string {
-  return `minmax(84px,120px) repeat(${dayCount}, minmax(0,1fr))`
+  return `minmax(130px,170px) repeat(${dayCount}, minmax(0,1fr))`
 }
