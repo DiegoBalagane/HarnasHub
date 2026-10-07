@@ -46,6 +46,7 @@ public sealed class AnalysisContext
 	/// <summary>Creates the context for <paramref name="ourTeamSteamIds"/> (empty = unresolved, fall back to the round-1 T team).</summary>
 	public static AnalysisContext Create(DemoTimeline timeline, IReadOnlyCollection<long> ourTeamSteamIds)
 	{
+		timeline = RoundParticipants.Filter(timeline);
 		var resolved = ourTeamSteamIds.Count > 0;
 		var ours = resolved
 			? ourTeamSteamIds.ToHashSet()
@@ -60,8 +61,8 @@ public sealed class AnalysisContext
 	/// <summary>The side our team played in <paramref name="round"/>, or null when none of us took part.</summary>
 	public MapSide? OurSide(DemoTimelineRound round) => TimelineTeamResolver.OurSide(round, _ours);
 
-	/// <summary>The player's display name (falls back to the SteamID64 text).</summary>
-	public string Name(long steamId64) => _names.TryGetValue(steamId64, out var name) ? name : steamId64.ToString();
+	/// <summary>The player's display name (falls back to "Gracz …1234").</summary>
+	public string Name(long steamId64) => _names.TryGetValue(steamId64, out var name) ? name : PlayerNameResolver.Fallback(steamId64);
 
 	#endregion
 }

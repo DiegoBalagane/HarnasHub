@@ -23,7 +23,11 @@ public record PlayerMatchStatDto(
 	int? MultiKill5K,
 	int? UtilityDamage,
 	int? FlashAssists,
-	IReadOnlyList<DeathPositionDto> DeathPositions);
+	IReadOnlyList<DeathPositionDto> DeathPositions)
+{
+	/// <summary>The linked roster member's SteamID64 (string, exceeds JS safe integers), when known — lets the UI exclude the player from the match analysis.</summary>
+	public string? SteamId64 { get; init; }
+}
 
 /// <summary>One player's death, as a radar-relative fraction in [0,1] (see <c>MapPositionAssignment.X/Y</c>) plus which side they were on.</summary>
 public record DeathPositionDto(float X, float Y, string Side);

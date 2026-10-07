@@ -1,308 +1,164 @@
-import { Fragment, useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { useCallback, useMemo, useState } from 'react'
 import type { CalendarEvent } from '../../../services/calendarApi'
 import { useAuthStore } from '../../auth/stores/useAuthStore'
 import { useUpcomingEvents } from '../../calendar/hooks/useCalendar'
-import { computeDaySummary } from '../daySummary'
+import { useIsDesktop } from '../../calendar/hooks/useIsDesktop'
+import { eligibleBulkDays } from '../bulkDays'
 import { useWeekAvailability } from '../hooks/useAvailability'
-import { sectionOf, compareSections } from '../rosterSections'
-import {
-  addDaysIso,
-  buildWeekDates,
-  entryFor,
-  parseIsoDate,
-  toInitials,
-  toIsoDate,
-  weekdayLabelFor,
-} from '../weekDates'
+import { compareSections, sectionOf } from '../rosterSections'
+import { addDaysIso, buildWeekDates, entryFor, toIsoDate } from '../weekDates'
 import { DayAvailabilityEditor } from './DayAvailabilityEditor'
-import { DayStatusBadge } from './DayStatusBadge'
-import { AvailabilityLegend } from './AvailabilityLegend'
-import { NoteHint } from './NoteHint'
+import { BulkAvailabilityDialog } from './week/BulkAvailabilityDialog'
+import { CellPopover } from './week/CellPopover'
+import { RosterFooter } from './week/RosterFooter'
+import { WeekGrid } from './week/WeekGrid'
+import { WeekToolbar, type AvailabilityTab } from './week/WeekToolbar'
 
-const dayNumberFormatter = new Intl.DateTimeFormat('pl-PL', { day: '2-digit', month: '2-digit' })
-const navButtonClass =
-  'rounded-md border border-neutral-700 px-3 py-1 text-xs text-neutral-300 transition hover:border-neutral-500'
+const rangeFormatter = new Intl.DateTimeFormat('pl-PL', { day: '2-digit', month: '2-digit' })
+const dayArrowClass = 'rounded-md border border-neutral-700 px-3 py-1 text-sm text-neutral-300 hover:border-neutral-500'
 
-/** Weekly availability grid: one row per team member, one column per day, own cells are editable. */
+/** Weekly availability: compact day headers with fill bars, slim status pills, a cell popover editor and a one-line coach footer. On phones it shows a single day with prev/next arrows. */
 export function WeeklyCalendar() {
   const currentUserId = useAuthStore((state) => state.userId)
+  const isDesktop = useIsDesktop()
   // A rolling window starting today, not the Monday of the calendar week — otherwise "Upcoming" on a
   // Sunday would show mostly days that already passed instead of what's actually coming up.
   const currentWeekStart = useMemo(() => toIsoDate(new Date()), [])
-  const [activeTab, setActiveTab] = useState<'upcoming' | 'history'>('upcoming')
+  const [tab, setTab] = useState<AvailabilityTab>('upcoming')
   const [weekStart, setWeekStart] = useState(currentWeekStart)
-  const [editingDate, setEditingDate] = useState<string | null>(null)
+  const [dayIndex, setDayIndex] = useState(0)
+  const [cell, setCell] = useState<{ date: string; rect: DOMRect } | null>(null)
+  const [isBulkOpen, setIsBulkOpen] = useState(false)
   const { data, isLoading, isError } = useWeekAvailability(weekStart)
   const { data: events } = useUpcomingEvents()
 
   const weekDates = useMemo(() => buildWeekDates(weekStart), [weekStart])
   const todayIso = toIsoDate(new Date())
-  const isHistory = activeTab === 'history'
+  const isHistory = tab === 'history'
+  const visibleDates = useMemo(() => (isDesktop ? weekDates : [weekDates[dayIndex]]), [isDesktop, weekDates, dayIndex])
 
   const eventsByDate = useMemo(() => {
     const grouped = new Map<string, CalendarEvent[]>()
-
     for (const event of events ?? []) {
       const key = toIsoDate(new Date(event.startsAtUtc))
       grouped.set(key, [...(grouped.get(key) ?? []), event])
     }
-
     return grouped
   }, [events])
 
   const members = useMemo(
     () =>
       [...(data?.members ?? [])].sort((left, right) => {
-        // Main squad above the bench, Coach always last in its own section, matching the backend's own ordering.
+        // Main squad above the bench, Coach always last, matching the backend's own ordering.
         const sectionDiff = compareSections(left, right)
-
-        if (sectionDiff !== 0) {
-          return sectionDiff
-        }
-
-        return (left.inGameNickname ?? left.displayName).localeCompare(
-          right.inGameNickname ?? right.displayName,
-          'pl',
-        )
+        if (sectionDiff !== 0) return sectionDiff
+        return (left.inGameNickname ?? left.displayName).localeCompare(right.inGameNickname ?? right.displayName, 'pl')
       }),
     [data],
   )
-
+  const players = useMemo(() => members.filter((member) => sectionOf(member) !== 'Coach'), [members])
+  const coaches = useMemo(() => members.filter((member) => sectionOf(member) === 'Coach'), [members])
   const myRow = members.find((member) => member.userId === currentUserId)
 
-  function goToWeek(nextWeekStart: string) {
-    setWeekStart(nextWeekStart)
-    setEditingDate(null)
+  const closeCell = useCallback(() => setCell(null), [])
+  // Past days live exclusively in the History tab (read-only), matching the backend's not-in-the-past edit rule.
+  const canEditDate = useCallback((date: string) => !isHistory && date >= todayIso, [isHistory, todayIso])
+  const openCell = useCallback((date: string, rect: DOMRect) => setCell({ date, rect }), [])
+
+  function goToWeek(next: string, nextDayIndex = 0) {
+    setWeekStart(next)
+    setDayIndex(nextDayIndex)
+    setCell(null)
   }
 
-  function switchTab(tab: 'upcoming' | 'history') {
-    setActiveTab(tab)
-    setEditingDate(null)
-    setWeekStart(tab === 'history' ? addDaysIso(currentWeekStart, -7) : currentWeekStart)
+  function switchTab(next: AvailabilityTab) {
+    setTab(next)
+    goToWeek(next === 'history' ? addDaysIso(currentWeekStart, -7) : currentWeekStart)
   }
 
-  // Upcoming never goes earlier than the current week; history never reaches into it — past days
-  // live exclusively in the History tab, matching the backend's own not-in-the-past edit rule.
   const canGoBack = isHistory || weekStart > currentWeekStart
   const canGoForward = !isHistory || addDaysIso(weekStart, 7) < currentWeekStart
 
+  function stepDay(delta: number) {
+    const next = dayIndex + delta
+    if (next < 0) {
+      if (canGoBack) goToWeek(addDaysIso(weekStart, -7), 6)
+    } else if (next > 6) {
+      if (canGoForward) goToWeek(addDaysIso(weekStart, 7), 0)
+    } else {
+      setDayIndex(next)
+      setCell(null)
+    }
+  }
+
+  const rangeLabel = `${rangeFormatter.format(new Date(`${weekDates[0]}T00:00`))} – ${rangeFormatter.format(new Date(`${weekDates[6]}T00:00`))}`
+  const hasData = !isLoading && !isError && members.length > 0
+  const rowProps = {
+    dates: visibleDates,
+    currentUserId,
+    canEditDate,
+    activeDate: cell?.date ?? null,
+    onCellOpen: openCell,
+    onBulk: myRow && !isHistory ? () => setIsBulkOpen(true) : undefined,
+  }
+
   return (
-    <section className="flex w-full flex-col gap-3 rounded-md border border-neutral-800 p-4">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <div className="flex items-center gap-3">
-          <h2 className="font-medium">Dostępność w tygodniu</h2>
-          <div className="flex gap-1 rounded-md border border-neutral-800 p-0.5 text-xs">
-            <button
-              type="button"
-              onClick={() => switchTab('upcoming')}
-              className={`rounded px-2 py-1 transition ${
-                !isHistory ? 'bg-neutral-800 text-neutral-100' : 'text-neutral-500 hover:text-neutral-300'
-              }`}
-            >
-              Nadchodzące
-            </button>
-            <button
-              type="button"
-              onClick={() => switchTab('history')}
-              className={`rounded px-2 py-1 transition ${
-                isHistory ? 'bg-neutral-800 text-neutral-100' : 'text-neutral-500 hover:text-neutral-300'
-              }`}
-            >
-              Historia
-            </button>
-          </div>
-        </div>
-        <div className="flex gap-2">
-          <button
-            type="button"
-            disabled={!canGoBack}
-            className={`${navButtonClass} disabled:cursor-not-allowed disabled:opacity-30`}
-            onClick={() => goToWeek(addDaysIso(weekStart, -7))}
-          >
-            ◀ Poprzedni tydzień
-          </button>
-          {!isHistory && (
-            <button type="button" className={navButtonClass} onClick={() => goToWeek(currentWeekStart)}>
-              Dziś
-            </button>
-          )}
-          <button
-            type="button"
-            disabled={!canGoForward}
-            className={`${navButtonClass} disabled:cursor-not-allowed disabled:opacity-30`}
-            onClick={() => goToWeek(addDaysIso(weekStart, 7))}
-          >
-            Następny tydzień ▶
-          </button>
-        </div>
-      </div>
+    <section className="flex w-full flex-col gap-2 rounded-md border border-neutral-800 p-3 lg:h-[calc(100dvh-13rem)]">
+      <WeekToolbar
+        tab={tab}
+        onTabChange={switchTab}
+        rangeLabel={rangeLabel}
+        canGoBack={canGoBack}
+        canGoForward={canGoForward}
+        onPrev={() => goToWeek(addDaysIso(weekStart, -7))}
+        onNext={() => goToWeek(addDaysIso(weekStart, 7))}
+        onToday={() => goToWeek(currentWeekStart)}
+      />
 
-      {isHistory && (
-        <p className="text-xs text-neutral-500">
-          Historia jest tylko do odczytu — edycja dostępności działa wyłącznie dla dzisiaj i kolejnych dni, w
-          zakładce „Nadchodzące”.
-        </p>
-      )}
-
+      {isHistory && <p className="text-xs text-neutral-500">Historia jest tylko do odczytu — edycja dotyczy dzisiaj i kolejnych dni.</p>}
       {isLoading && <p className="text-neutral-400">Ładowanie dostępności…</p>}
       {isError && <p className="text-danger-400">Nie udało się pobrać dostępności.</p>}
+      {!isLoading && !isError && members.length === 0 && <p className="text-neutral-400">Brak członków drużyny do wyświetlenia.</p>}
 
-      {!isLoading && !isError && members.length === 0 && (
-        <p className="text-neutral-400">Brak członków drużyny do wyświetlenia.</p>
-      )}
-
-      {!isLoading && !isError && members.length > 0 && (
-        <div className="overflow-x-auto overflow-y-visible">
-          <div className="grid min-w-[680px] grid-cols-[minmax(96px,140px)_repeat(7,minmax(0,1fr))] gap-1">
-            <div />
-            {weekDates.map((date) => {
-              const summary = computeDaySummary(members, date)
-
-              return (
-                <div
-                  key={date}
-                  className={`rounded-md border px-2 py-1 text-center ${
-                    date === todayIso ? 'border-primary-500 bg-primary-500/10' : 'border-neutral-800'
-                  }`}
-                >
-                  <p className="text-xs font-medium text-neutral-200">{weekdayLabelFor(date)}</p>
-                  <p className="text-[11px] text-neutral-500">
-                    {dayNumberFormatter.format(parseIsoDate(date))}
-                  </p>
-                  <p
-                    title="Ilu z głównego składu zadeklarowało dostępność tego dnia"
-                    className={`mt-1 text-[11px] font-medium ${
-                      summary.main.totalCount > 0 && summary.main.availableCount === summary.main.totalCount
-                        ? 'text-success-400'
-                        : 'text-neutral-400'
-                    }`}
-                  >
-                    Main: {summary.main.availableCount}/{summary.main.totalCount}
-                  </p>
-                  <p
-                    title="Ilu z reszty drużyny zadeklarowało dostępność tego dnia"
-                    className="text-[11px] text-neutral-500"
-                  >
-                    Reszta: {summary.rest.availableCount}/{summary.rest.totalCount}
-                  </p>
-                  {summary.commonWindow && (
-                    <p className="text-[10px] text-neutral-500">
-                      {summary.commonWindow.from}–{summary.commonWindow.to}
-                    </p>
-                  )}
-                  {(eventsByDate.get(date) ?? []).map((event) => (
-                    <Link
-                      key={event.id}
-                      to={`/calendar?event=${event.id}`}
-                      title="Przejdź do szczegółów wydarzenia"
-                      className="mt-1 block truncate text-[10px] text-primary-400 hover:underline"
-                    >
-                      ● {event.title}
-                    </Link>
-                  ))}
-                </div>
-              )
-            })}
-
-            {members.map((member, memberIndex) => {
-              const isMyRow = member.userId === currentUserId
-              const section = sectionOf(member)
-              const previousSection = memberIndex > 0 ? sectionOf(members[memberIndex - 1]) : null
-              const isNewSection = section !== previousSection
-              const sectionDivider = memberIndex > 0 && isNewSection ? 'border-t border-neutral-700' : ''
-              const rowHighlight = isMyRow
-                ? 'bg-neutral-900 ring-1 ring-inset ring-primary-800/60'
-                : ''
-
-              return (
-                <Fragment key={member.userId}>
-                  {section === 'Coach' && isNewSection && (
-                    <div className="col-span-8 mt-1 px-2 pt-2 text-[11px] font-medium text-neutral-500">
-                      Trener
-                    </div>
-                  )}
-
-                  <div
-                    className={`sticky left-0 z-10 flex items-center gap-2 truncate rounded-l-md px-2 py-1 text-sm ${isMyRow ? '' : 'bg-surface-page'} ${rowHighlight} ${sectionDivider}`}
-                  >
-                    <span className={`truncate ${isMyRow ? 'font-semibold text-white' : 'text-neutral-200'}`}>
-                      {member.inGameNickname ?? member.displayName}
-                    </span>
-                    {isMyRow && <span className="text-[10px] text-primary-400">(Ty)</span>}
-                    {member.hiddenFromCalendar && (
-                      <span className="text-[10px] text-neutral-500" title="Manager ukrył Cię w kalendarzu — widzisz tylko Ty">
-                        (ukryty)
-                      </span>
-                    )}
-                  </div>
-                  {weekDates.map((date, index) => {
-                    const entry = entryFor(member, date)
-                    const isLastColumn = index === weekDates.length - 1
-                    const roundedEnd = `${isLastColumn ? 'rounded-r-md' : ''} ${date === todayIso ? 'bg-primary-500/10' : ''}`
-
-                    if (!entry) {
-                      return <div key={date} className={`${rowHighlight} ${roundedEnd} ${sectionDivider}`} />
-                    }
-
-                    const isEditable = isMyRow && !isHistory && date >= todayIso
-
-                    return isEditable ? (
-                      <button
-                        key={date}
-                        type="button"
-                        title="Kliknij, aby ustawić swoją dostępność"
-                        onClick={() => setEditingDate(editingDate === date ? null : date)}
-                        className={`p-0.5 transition hover:opacity-80 ${rowHighlight} ${roundedEnd} ${sectionDivider} ${
-                          editingDate === date ? 'ring-1 ring-neutral-300' : ''
-                        }`}
-                      >
-                        <DayStatusBadge entry={entry} />
-                      </button>
-                    ) : (
-                      <div key={date} className={`p-0.5 ${rowHighlight} ${roundedEnd} ${sectionDivider}`}>
-                        <DayStatusBadge entry={entry} />
-                      </div>
-                    )
-                  })}
-                </Fragment>
-              )
-            })}
-
-            <div className="mt-2 border-t border-neutral-800 px-2 pt-2 text-xs text-neutral-500">Nie gra</div>
-            {weekDates.map((date) => {
-              const absentMembers = members.filter(
-                (member) => !member.hiddenFromCalendar && entryFor(member, date)?.status === 'Off',
-              )
-
-              return (
-                <div key={date} className="mt-2 flex flex-wrap gap-1 border-t border-neutral-800 pt-2">
-                  {absentMembers.map((member) => (
-                    <span key={member.userId} className="relative inline-block">
-                      <span
-                        title={member.inGameNickname ?? member.displayName}
-                        className="rounded-full border border-neutral-700 bg-neutral-900 px-2 py-0.5 text-[10px] text-neutral-400"
-                      >
-                        {toInitials(member.inGameNickname ?? member.displayName)}
-                      </span>
-                      <NoteHint note={entryFor(member, date)?.note ?? null} />
-                    </span>
-                  ))}
-                </div>
-              )
-            })}
-          </div>
+      {hasData && !isDesktop && (
+        <div className="flex items-center justify-between gap-2">
+          <button type="button" aria-label="Poprzedni dzień" className={dayArrowClass} onClick={() => stepDay(-1)}>
+            ‹
+          </button>
+          <span className="text-xs text-neutral-400">
+            Dzień {dayIndex + 1} z 7
+          </span>
+          <button type="button" aria-label="Następny dzień" className={dayArrowClass} onClick={() => stepDay(1)}>
+            ›
+          </button>
         </div>
       )}
 
-      {!isLoading && !isError && members.length > 0 && <AvailabilityLegend />}
+      {hasData && (
+        <>
+          <WeekGrid
+            members={players}
+            allMembers={members}
+            todayIso={todayIso}
+            eventsByDate={eventsByDate}
+            {...rowProps}
+          />
+          <RosterFooter coaches={coaches} weekDates={weekDates} {...rowProps} />
+        </>
+      )}
 
-      {editingDate !== null && myRow && (
-        <DayAvailabilityEditor
-          key={editingDate}
-          date={editingDate}
-          entry={entryFor(myRow, editingDate)}
-          onClose={() => setEditingDate(null)}
+      {cell && myRow && (
+        <CellPopover anchor={cell.rect} onClose={closeCell}>
+          <DayAvailabilityEditor key={cell.date} date={cell.date} entry={entryFor(myRow, cell.date)} onClose={closeCell} />
+        </CellPopover>
+      )}
+
+      {isBulkOpen && myRow && (
+        <BulkAvailabilityDialog
+          member={myRow}
+          dates={weekDates}
+          eligible={eligibleBulkDays(myRow, weekDates, todayIso)}
+          onClose={() => setIsBulkOpen(false)}
         />
       )}
     </section>

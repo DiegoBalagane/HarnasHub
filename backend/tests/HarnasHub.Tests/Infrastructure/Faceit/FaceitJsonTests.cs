@@ -40,6 +40,28 @@ public class FaceitJsonTests
 	}
 
 	[Fact]
+	public void Should_read_the_competition_id_and_the_team_id_of_each_history_faction()
+	{
+		// Shape of a real ESEA League entry: the faction's team_id is the FACEIT team id.
+		var item = Assert.Single(FaceitJson.ReadHistory(Parse("""
+			{ "items": [ { "match_id": "1-2c5b", "finished_at": 1787279524, "competition_type": "championship",
+			  "competition_id": "de119306-98cc-43a6-afde-37a4c1fc6a14", "competition_name": "S58 EU Open10 B - Regular Season",
+			  "status": "finished", "teams_size": 5,
+			  "teams": {
+			    "faction1": { "team_id": "8bd4877a-4a03-4332-93a3-2a303d4073cc", "nickname": "Adversa Esports Academy", "type": "",
+			      "players": [ { "player_id": "p1", "nickname": "Ludwikun" }, { "player_id": "p2", "nickname": "barzkulec" } ] },
+			    "faction2": { "team_id": "fac8acce-4088-49f2-b6a7-f9ed4f468993", "nickname": "GR5 Fives", "players": [] },
+			    "broken": { "nickname": "no id" } } } ] }
+			""")));
+
+		Assert.Equal("de119306-98cc-43a6-afde-37a4c1fc6a14", item.CompetitionId);
+		Assert.Equal(2, item.Factions.Count);
+		Assert.Equal("8bd4877a-4a03-4332-93a3-2a303d4073cc", item.Factions[0].TeamId);
+		Assert.Equal(["p1", "p2"], item.Factions[0].PlayerIds);
+		Assert.Empty(item.Factions[1].PlayerIds);
+	}
+
+	[Fact]
 	public void Should_read_string_typed_match_stats_per_map()
 	{
 		var maps = FaceitJson.ReadMatchStats(Parse("""

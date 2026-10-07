@@ -26,9 +26,16 @@ public class GetMatchStatsHandler(IApplicationDbContext dbContext)
 			select new { stat, user })
 			.ToListAsync(cancellationToken);
 
+		// Players the coach hid from this match's analysis disappear from the stat lines too (rows stay in the database).
+		var excluded = (await dbContext.MatchDemoAnalyses.AsNoTracking()
+			.Where(a => a.MatchResultId == request.MatchResultId)
+			.Select(a => a.ExcludedSteamIds)
+			.FirstOrDefaultAsync(cancellationToken) ?? []).Select(id => id.ToString()).ToHashSet();
+
 		// DeathPositionsJson deserialization can't be translated to SQL, so it happens here, after the query
 		// that needs the roster join has already run.
 		return rows
+			.Where(row => row.user?.SteamId64 is null || !excluded.Contains(row.user.SteamId64))
 			.Select(row => new PlayerMatchStatDto(
 				row.stat.Id,
 				row.stat.UserId,
@@ -52,7 +59,10 @@ public class GetMatchStatsHandler(IApplicationDbContext dbContext)
 				row.stat.FlashAssists,
 				row.stat.DeathPositionsJson is null
 					? []
-					: JsonSerializer.Deserialize<List<DeathPositionDto>>(row.stat.DeathPositionsJson) ?? []))
+					: JsonSerializer.Deserialize<List<DeathPositionDto>>(row.stat.DeathPositionsJson) ?? [])
+			{
+				SteamId64 = row.user?.SteamId64
+			})
 			.ToList();
 	}
 

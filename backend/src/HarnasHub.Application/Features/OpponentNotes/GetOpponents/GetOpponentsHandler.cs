@@ -45,12 +45,36 @@ public class GetOpponentsHandler(IApplicationDbContext dbContext)
 			.Select(group => Summarize(group.ToList(), now) with { IsHidden = hiddenKeys.Contains(group.Key) })
 			.ToList();
 
+		// Opponents that exist only through scouting data (a FACEIT link or analysed demos) have no note/result/event yet.
+		var listedKeys = summaries.Select(s => OpponentNames.ToKey(s.Name)).ToHashSet();
+		var links = await dbContext.OpponentFaceitLinks
+			.Select(l => new { l.OpponentKey, l.DisplayName })
+			.ToListAsync(cancellationToken);
+		var demoKeys = await dbContext.OpponentDemoAnalyses
+			.Select(d => d.OpponentKey)
+			.Distinct()
+			.ToListAsync(cancellationToken);
+		var linkNames = links.GroupBy(l => l.OpponentKey).ToDictionary(g => g.Key, g => g.First().DisplayName);
+
+		foreach (var key in linkNames.Keys.Concat(demoKeys).Distinct())
+		{
+			if (listedKeys.Contains(key) || (!request.IncludeHidden && hiddenKeys.Contains(key)))
+			{
+				continue;
+			}
+
+			var name = linkNames.TryGetValue(key, out var linkName) && !string.IsNullOrWhiteSpace(linkName)
+				? linkName.Trim()
+				: hidden.FirstOrDefault(h => h.OpponentKey == key)?.DisplayName ?? key;
+			summaries.Add(new OpponentSummaryDto(name, 0, 0, 0, 0, null, null, IsHidden: hiddenKeys.Contains(key)));
+			listedKeys.Add(key);
+		}
+
 		if (request.IncludeHidden)
 		{
-			// A hidden opponent with no history left (e.g. only FACEIT data) is still listed, so it can be restored.
-			var listed = summaries.Select(s => OpponentNames.ToKey(s.Name)).ToHashSet();
+			// A hidden opponent with no history left is still listed, so it can be restored.
 			summaries.AddRange(hidden
-				.Where(h => !listed.Contains(h.OpponentKey))
+				.Where(h => !listedKeys.Contains(h.OpponentKey))
 				.Select(h => new OpponentSummaryDto(h.DisplayName, 0, 0, 0, 0, null, null, IsHidden: true)));
 		}
 

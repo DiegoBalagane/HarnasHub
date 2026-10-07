@@ -28,11 +28,11 @@ function SummarySection({ analysis }: { analysis: MatchAnalysis }) {
       <h2 className="text-lg font-semibold">Trade’y, clutche i flashe</h2>
       <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
         <Stat
-          label="Odpłacone śmierci"
+          label="Zgony pomszczone przez kolegę"
           value={percent(trades.ourTradedDeaths, trades.ourDeaths)}
-          hint={`${trades.ourTradedDeaths}/${trades.ourDeaths} (rywale: ${percent(trades.opponentTradedDeaths, trades.opponentDeaths)})`}
+          hint={`${trades.ourTradedDeaths} z ${trades.ourDeaths} naszych zgonów kolega zabił zabójcę w ≤ 5 s (rywale: ${percent(trades.opponentTradedDeaths, trades.opponentDeaths)})`}
         />
-        <Stat label="Trade kille" value={String(trades.ourTradeKills)} hint="zabójca zabity w ≤ 5 s" />
+        <Stat label="Pomszczenia (trade)" value={String(trades.ourTradeKills)} hint="zabity rywal, który chwilę wcześniej (≤ 5 s) zabił naszego" />
         <Stat
           label="Clutche"
           value={`${clutches.ourWon}/${clutches.ourAttempts}`}

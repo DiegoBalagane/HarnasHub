@@ -24,6 +24,9 @@ public class MatchDemoAnalysis
 	/// <summary>SteamID64s of our team as they stood in round 1 — empty when it couldn't be determined.</summary>
 	public List<long> OurTeamSteamIds { get; set; } = [];
 
+	/// <summary>SteamID64s the coach/manager hid from this match's analysis (a coach, a stand-in...) — applied on read, the stored timeline is untouched.</summary>
+	public List<long> ExcludedSteamIds { get; set; } = [];
+
 	/// <summary>When the timeline was stored.</summary>
 	public DateTime CreatedAtUtc { get; set; }
 

@@ -1,4 +1,4 @@
-import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useCallback } from 'react'
 import { ApiError } from '../../../services/apiClient'
 import { matchAnalysisApi, type MatchDemoAnalysis } from '../../../services/matchAnalysisApi'
@@ -70,4 +70,27 @@ export function useMapAnalytics(mapName: string | undefined) {
     queryFn: () => matchAnalysisApi.getMapAnalytics(mapName as string),
     enabled: Boolean(mapName),
   })
+}
+
+/** Excludes / restores a player in one match's analysis (Coach/Manager) and refreshes everything derived from the timeline. */
+export function useAnalysisPlayerExclusion(matchResultId: string) {
+  const queryClient = useQueryClient()
+  const refresh = useCallback(() => {
+    queryClient.invalidateQueries({ queryKey: ['match-analysis', matchResultId] })
+    queryClient.invalidateQueries({ queryKey: ['tactics', 'match-matches', matchResultId] })
+    queryClient.invalidateQueries({ queryKey: ['round-replay', 'Match', matchResultId] })
+    queryClient.invalidateQueries({ queryKey: ['map-analytics'] })
+    queryClient.invalidateQueries({ queryKey: ['stats'] })
+  }, [queryClient, matchResultId])
+
+  const exclude = useMutation({
+    mutationFn: (steamId64: string) => matchAnalysisApi.excludePlayer(matchResultId, steamId64),
+    onSuccess: refresh,
+  })
+  const include = useMutation({
+    mutationFn: (steamId64: string) => matchAnalysisApi.includePlayer(matchResultId, steamId64),
+    onSuccess: refresh,
+  })
+
+  return { exclude, include }
 }

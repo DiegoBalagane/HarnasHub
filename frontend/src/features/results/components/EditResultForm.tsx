@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { DateTimePicker } from '../../../components/ui/DateTimePicker'
 import type { MapName } from '../../../services/nadesApi'
 import { ApiError } from '../../../services/apiClient'
 import type { MatchCategory, MatchResult } from '../../../services/resultsApi'
@@ -139,12 +140,7 @@ export function EditResultForm({ result, onClose }: EditResultFormProps) {
           ))}
         </select>
 
-        <input
-          type="datetime-local"
-          value={playedAt}
-          onChange={(event) => setPlayedAt(event.target.value)}
-          className={inputClass}
-        />
+        <DateTimePicker label="Data i godzina meczu" value={playedAt} onChange={setPlayedAt} className={inputClass} />
       </div>
 
       {category === 'Tournament' && (

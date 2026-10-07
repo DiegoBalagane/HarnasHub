@@ -4,8 +4,7 @@ import type { MapName } from '../../../services/nadesApi'
 import { useIsCoachOrManager } from '../../auth/hooks/useIsCoachOrManager'
 import { mapNames } from '../../nades/labels'
 import { useMapPositions, useMapTextAnnotations } from '../hooks/useMapStrategy'
-import { useSideFilter } from '../hooks/useSideFilter'
-import { mapSideLabels, mapSides, sideFilterOptions, sideStyles, type SideFilter } from '../labels'
+import { mapSideLabels, mapSides, sharedAnnotationSide, sideStyles } from '../labels'
 import { pinColorFor } from '../pinColors'
 import { pinColorSwatch, teamRoleLabels } from '../../roster/labels'
 import { AddPositionControl } from './AddPositionControl'
@@ -17,31 +16,15 @@ interface MapRadarViewProps {
   mapName?: MapName
 }
 
-/** Per-map starting-position board: one shared radar with both sides' pins; a filter picks which sides are visible and
- * (for Coach/Manager) a segmented control picks the side that new placements are saved to. */
+/** Per-map starting-position board: one shared radar always showing both sides' pins (told apart only by the pin's side
+ * marker) and shared text callouts; for Coach/Manager a segmented control picks the side new pins are saved to. */
 export function MapRadarView({ mapName: controlledMapName }: MapRadarViewProps) {
   const [ownMapName, setMapName] = useState<MapName>('Mirage')
   const mapName = controlledMapName ?? ownMapName
   const [editSide, setEditSide] = useState<MapSide>('CT')
-  const [filter, setFilter] = useSideFilter()
   const { data: positions, isLoading, isError } = useMapPositions(mapName)
   const annotations = useMapTextAnnotations(mapName)
   const canEdit = useIsCoachOrManager()
-
-  const visibleSides = filter === 'both' ? mapSides : [filter]
-  const visiblePositions = (positions ?? []).filter((position) => visibleSides.includes(position.side))
-  const visibleAnnotations = annotations.filter((annotation) => visibleSides.includes(annotation.side))
-
-  function chooseFilter(next: SideFilter) {
-    setFilter(next)
-    // Placing on a hidden side would look like nothing happened, so the control follows a single-side filter.
-    if (next !== 'both') setEditSide(next)
-  }
-
-  function chooseEditSide(next: MapSide) {
-    setEditSide(next)
-    if (filter !== 'both' && filter !== next) setFilter('both')
-  }
 
   return (
     <section className="flex w-full flex-col gap-4">
@@ -60,19 +43,12 @@ export function MapRadarView({ mapName: controlledMapName }: MapRadarViewProps) 
           </select>
         )}
 
-        <SegmentedControl
-          label="Pokaż"
-          options={sideFilterOptions}
-          value={filter}
-          onChange={chooseFilter}
-        />
-
         {canEdit && (
           <SegmentedControl
             label="Ustawiasz"
             options={mapSides.map((side) => ({ value: side, label: side }))}
             value={editSide}
-            onChange={chooseEditSide}
+            onChange={setEditSide}
             title={mapSideLabels[editSide]}
           />
         )}
@@ -87,7 +63,7 @@ export function MapRadarView({ mapName: controlledMapName }: MapRadarViewProps) 
               .filter((position) => position.side === editSide)
               .map((position) => position.userId)}
           />
-          <AddTextAnnotationControl mapName={mapName} side={editSide} />
+          <AddTextAnnotationControl mapName={mapName} side={sharedAnnotationSide} />
         </div>
       )}
 
@@ -98,22 +74,22 @@ export function MapRadarView({ mapName: controlledMapName }: MapRadarViewProps) 
         <>
           <MapRadar
             mapName={mapName}
-            positions={visiblePositions}
-            annotations={visibleAnnotations}
+            positions={positions}
+            annotations={annotations}
             canEdit={canEdit}
           />
 
-          <MapLegend positions={visiblePositions} />
+          <MapLegend positions={positions} />
 
           <p className="text-xs text-neutral-500">
-            {visiblePositions.length === 0
-              ? 'Nikt nie ma jeszcze przypisanej pozycji na tej mapie (w wybranym widoku).'
+            {positions.length === 0
+              ? 'Nikt nie ma jeszcze przypisanej pozycji na tej mapie.'
               : canEdit
                 ? 'Przeciągnij pinezkę lub notatkę, aby zmienić pozycję (pinezka zapisuje się na swojej stronie), kliknij, aby edytować. Kółkiem myszy przybliżysz mapę.'
                 : 'Najedź na pinezkę, aby zobaczyć zawodnika i jego rolę. Kółkiem myszy przybliżysz mapę.'}
           </p>
 
-          <PositionNotesList positions={visiblePositions} />
+          <PositionNotesList positions={positions} />
         </>
       )}
     </section>
@@ -128,7 +104,7 @@ interface SegmentedControlProps<T extends string> {
   title?: string
 }
 
-/** Small labelled toggle group (radio semantics) used for the visibility filter and the editing-side control. */
+/** Small labelled toggle group (radio semantics) used for the side new pins are placed on. */
 function SegmentedControl<T extends string>({ label, options, value, onChange, title }: SegmentedControlProps<T>) {
   return (
     <div role="radiogroup" aria-label={label} title={title} className="flex items-center gap-2 text-sm text-neutral-400">
@@ -142,7 +118,7 @@ function SegmentedControl<T extends string>({ label, options, value, onChange, t
             aria-checked={value === option.value}
             onClick={() => onChange(option.value)}
             className={`px-3 py-2 ${
-              value === option.value ? 'bg-neutral-100 text-neutral-900' : 'text-neutral-400 hover:text-white'
+              value === option.value ? 'bg-primary-500 text-primary-950' : 'text-neutral-400 hover:text-white'
             }`}
           >
             {option.label}

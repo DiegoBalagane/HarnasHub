@@ -1,3 +1,4 @@
+import { scoreToneClass } from '../scoreTone'
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import type { MatchResult } from '../../../services/resultsApi'
@@ -89,7 +90,6 @@ interface ResultCardProps {
 }
 
 function ResultCard({ result }: ResultCardProps) {
-  const won = result.ourScore > result.opponentScore
   const canManage = useIsCoachOrManager()
   const deleteResult = useDeleteResult()
   const [isEditing, setIsEditing] = useState(false)
@@ -112,7 +112,7 @@ function ResultCard({ result }: ResultCardProps) {
         <Link to={`/results/${result.id}`} className="flex flex-1 items-center justify-between text-left hover:text-white">
           <p className="font-medium">
             vs {result.opponent}{' '}
-            <span className={won ? 'text-success-400' : 'text-danger-400'}>
+            <span className={scoreToneClass(result.ourScore, result.opponentScore)}>
               {result.ourScore}:{result.opponentScore}
             </span>
           </p>

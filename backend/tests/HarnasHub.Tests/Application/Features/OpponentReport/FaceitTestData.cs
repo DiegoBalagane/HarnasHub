@@ -41,6 +41,24 @@ public static class FaceitTestData
 			FetchedAtUtc = playedAtUtc
 		};
 
+	/// <summary>A cached championship map where team 1's faction is the FACEIT team <paramref name="teamId"/> (as in ESEA League).</summary>
+	public static FaceitMatch Official(
+		string teamId,
+		string competitionName,
+		IEnumerable<string> team1,
+		DateTime playedAtUtc,
+		string? matchId = null,
+		string map = "de_mirage",
+		bool won = true)
+	{
+		var match = Match(map, team1, Strangers(), won ? 13 : 7, won ? 7 : 13, playedAtUtc, matchId);
+		match.CompetitionType = "championship";
+		match.CompetitionName = competitionName;
+		match.Team1FactionId = teamId;
+		match.Team2FactionId = Guid.NewGuid().ToString();
+		return match;
+	}
+
 	/// <summary>Five random strangers for the other side of a game.</summary>
 	public static string[] Strangers() => Enumerable.Range(0, 5).Select(_ => Guid.NewGuid().ToString()).ToArray();
 

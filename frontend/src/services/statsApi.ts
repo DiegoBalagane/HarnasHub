@@ -17,6 +17,8 @@ export interface PlayerMatchStat {
   id: string
   userId: string | null
   displayName: string
+  /** Linked roster member's SteamID64 — enables excluding the player from the match analysis. */
+  steamId64?: string | null
   kills: number
   deaths: number
   assists: number

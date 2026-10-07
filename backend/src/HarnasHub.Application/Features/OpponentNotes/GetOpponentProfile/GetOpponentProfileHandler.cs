@@ -51,7 +51,11 @@ public class GetOpponentProfileHandler(IApplicationDbContext dbContext)
 			.Concat(upcomingEvents.Select(e => (Name: e.Opponent!, At: e.StartsAtUtc)))
 			.OrderByDescending(s => s.At)
 			.Select(s => s.Name.Trim())
-			.FirstOrDefault() ?? request.Name.Trim();
+			.FirstOrDefault() ?? await dbContext.OpponentFaceitLinks
+				.Where(l => l.OpponentKey == key)
+				.Select(l => l.DisplayName)
+				.FirstOrDefaultAsync(cancellationToken)
+			?? request.Name.Trim();
 
 		return new OpponentProfileDto(
 			displayName,

@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { TimeRangePicker } from '../../../components/ui/DateTimePicker'
 import type { DayAvailabilityStatus, DayEntry } from '../../../services/availabilityApi'
 import { useSetDayAvailability } from '../hooks/useAvailability'
 import { parseIsoDate, toShortTime } from '../weekDates'
@@ -71,9 +72,11 @@ export function DayAvailabilityEditor({ date, entry, onClose }: DayAvailabilityE
     saveStatus('Off')
   }
 
-  function handleTimeBlur() {
+  function handleRangeChange(range: { from: string; to: string }) {
+    setFrom(range.from)
+    setTo(range.to)
     if (status === 'PartiallyAvailable') {
-      saveStatus('PartiallyAvailable', { from, to })
+      saveStatus('PartiallyAvailable', range)
     }
   }
 
@@ -126,25 +129,7 @@ export function DayAvailabilityEditor({ date, entry, onClose }: DayAvailabilityE
       </div>
 
       {!fullDay && status !== 'Off' && (
-        <div className="flex items-center gap-2">
-          <input
-            required
-            type="time"
-            value={from}
-            onChange={(event) => setFrom(event.target.value)}
-            onBlur={handleTimeBlur}
-            className={`flex-1 ${inputClass}`}
-          />
-          <span className="text-xs text-neutral-500">–</span>
-          <input
-            required
-            type="time"
-            value={to}
-            onChange={(event) => setTo(event.target.value)}
-            onBlur={handleTimeBlur}
-            className={`flex-1 ${inputClass}`}
-          />
-        </div>
+        <TimeRangePicker from={from} to={to} onChange={handleRangeChange} />
       )}
 
       <button

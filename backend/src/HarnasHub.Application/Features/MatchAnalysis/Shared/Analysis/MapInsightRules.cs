@@ -165,8 +165,8 @@ public static class MapInsightRules
 		if (rate <= 0.4 || rate >= 0.6)
 		{
 			yield return new MatchInsightDto("trades", rate >= 0.6 ? InsightTone.Positive : InsightTone.Negative,
-				$"Trade'y: {Percent(data.Trades.OurTradedDeaths, data.Trades.OurDeaths)}",
-				$"{data.Trades.OurTradedDeaths} z {data.Trades.OurDeaths} Waszych śmierci zostało odpłaconych w 5 s.", data.Trades.OurDeaths);
+				$"Pomszczone zgony: {Percent(data.Trades.OurTradedDeaths, data.Trades.OurDeaths)}",
+				$"Po {data.Trades.OurTradedDeaths} z {data.Trades.OurDeaths} Waszych śmierci kolega zabił zabójcę w ciągu 5 s.", data.Trades.OurDeaths);
 		}
 	}
 
