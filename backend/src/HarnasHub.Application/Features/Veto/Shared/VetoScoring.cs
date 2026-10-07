@@ -54,7 +54,7 @@ public static class VetoScoring
 	/// the opponent's strength on one of our comfortable maps never turns a map into a ban. Picks need a familiar map with a positive score.</summary>
 	public static List<RankedVetoMap> Rank(IEnumerable<MapVetoInput> maps)
 	{
-		var inputs = maps.ToList();
+		var inputs = VetoFamiliarity.ApplyCoachPool(maps.ToList());
 		var context = VetoFamiliarity.Context(inputs);
 		var scored = inputs
 			.Select(map => (Input: map, Result: VetoMapScorer.Score(map, context)))

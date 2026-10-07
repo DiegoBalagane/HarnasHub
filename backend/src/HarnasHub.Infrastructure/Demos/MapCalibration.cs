@@ -43,11 +43,12 @@ public static class MapCalibration
 	{
 		[MapName.Ancient] = (0.0785f, 0.034f, 0.820f, 0.9325f),
 		[MapName.Mirage] = (0.0815f, 0.127f, 0.862f, 0.7503f),
-		// Fitted numerically on ~7 000 upper-level samples of a real Nuke demo (lower floor excluded by world Z): the T-spawn
-		// end is anchored to the image's leftmost playable column, then L/T/W/H maximise the share of positions landing on
-		// drawn floor (94.6 %, was 86.9 % with the earlier eyeballed fit). The image only shows the upper level and is not
-		// scaled uniformly against the overview, hence the free height; lower-level positions are drawn over the upper plan.
-		[MapName.Nuke] = (0.1863f, 0.148f, 0.67f, 0.692f),
+		// Fitted on the upper-level samples of a real Nuke demo by maximising both the share of positions on drawn floor and the share
+		// of drawn floor reached by positions (hit rate alone squeezed the cloud vertically, leaving the top tower and the bottom of
+		// outside empty), then checked against anchors: T and CT spawns land at the ends of their corridors and A plants inside the
+		// orange site. The image is stretched horizontally against the overview, hence the separate height; it only shows the upper
+		// level, so lower-level positions are drawn over the upper plan.
+		[MapName.Nuke] = (0.1675f, 0.2125f, 0.71f, 0.575f),
 	};
 
 	private const float ImageSizePixels = 1024f;

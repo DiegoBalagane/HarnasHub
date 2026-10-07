@@ -68,6 +68,13 @@ public static class VetoFamiliarity
 		map.Status == MapPoolStatus.Core
 		|| (IsFamiliar(map) && TeamGames(map) >= MinTeamGamesForFamiliarity && Wins(map) > Losses(map));
 
+	/// <summary>The coach's pool is the source of truth once it names maps we play (Core/Playable): then a map without status is familiar
+	/// only from real team games, never from our players' solo play alone — otherwise solo FACEIT habits picked maps the team never trained.</summary>
+	public static List<MapVetoInput> ApplyCoachPool(IReadOnlyCollection<MapVetoInput> maps) =>
+		maps.Any(m => m.Status is MapPoolStatus.Core or MapPoolStatus.Playable)
+			? maps.Select(m => m.Status is null ? m with { OurPlaysIndividually = false } : m).ToList()
+			: maps.ToList();
+
 	/// <summary>The context of one veto over <paramref name="maps"/>.</summary>
 	public static VetoFamiliarityContext Context(IReadOnlyCollection<MapVetoInput> maps) =>
 		new(maps.Any(IsFamiliar), maps.Any(IsUnplayed));
