@@ -24,31 +24,52 @@ public class AuthEndpoints : IEndpoint
 			return result.Match(
 				success => Results.Ok(success),
 				errors => errors.ToProblemResult());
-		}).WithTags("Auth").RequireAuthorization();
+		}).WithTags("Auth").RequireAuthorization().RequireRateLimiting(RateLimitPolicies.Auth);
 
-		var group = app.MapGroup("/api/auth/discord").WithTags("Auth");
+		var group = app.MapGroup("/api/auth/discord").WithTags("Auth").RequireRateLimiting(RateLimitPolicies.Auth);
 
-		group.MapGet("/login", (IOptions<DiscordOAuthSettings> settings) =>
+		group.MapGet("/login", (HttpContext http, IOptions<DiscordOAuthSettings> settings) =>
 		{
 			var options = settings.Value;
+
+			// Anti-CSRF "state": random value bound to this browser via a short-lived cookie and echoed back by Discord.
+			var state = Convert.ToHexString(System.Security.Cryptography.RandomNumberGenerator.GetBytes(32));
+			http.Response.Cookies.Append(OAuthStateCookie, state, new CookieOptions
+			{
+				HttpOnly = true,
+				Secure = http.Request.IsHttps,
+				SameSite = SameSiteMode.Lax,
+				MaxAge = TimeSpan.FromMinutes(10),
+				Path = "/api/auth/discord"
+			});
+
 			var authorizeUrl = QueryHelpers.AddQueryString("https://discord.com/oauth2/authorize", new Dictionary<string, string?>
 			{
 				["client_id"] = options.ClientId,
 				["redirect_uri"] = options.RedirectUri,
 				["response_type"] = "code",
-				["scope"] = "identify guilds"
+				["scope"] = "identify guilds",
+				["state"] = state
 			});
 
 			return Results.Redirect(authorizeUrl);
 		});
 
-		group.MapGet("/callback", async (string? code, string? error, ISender sender, IOptions<DiscordOAuthSettings> settings, CancellationToken cancellationToken) =>
+		group.MapGet("/callback", async (HttpContext http, string? code, string? error, string? state, ISender sender, IOptions<DiscordOAuthSettings> settings, CancellationToken cancellationToken) =>
 		{
 			var frontendUrl = settings.Value.FrontendCallbackUrl;
+
+			var expectedState = http.Request.Cookies[OAuthStateCookie];
+			http.Response.Cookies.Delete(OAuthStateCookie, new CookieOptions { Path = "/api/auth/discord" });
 
 			if (error is not null || code is null)
 			{
 				return Results.Redirect($"{frontendUrl}/login?error=discord_denied");
+			}
+
+			if (!IsStateValid(expectedState, state))
+			{
+				return Results.Redirect($"{frontendUrl}/login?error=discord_failed");
 			}
 
 			var result = await sender.Send(new DiscordLoginCommand(code), cancellationToken);
@@ -58,6 +79,25 @@ public class AuthEndpoints : IEndpoint
 				errors => Results.Redirect($"{frontendUrl}/login?error=discord_failed"));
 		});
 	}
+
+	/// <summary>Compares the OAuth state cookie with the state echoed by Discord in constant time; both must be present.</summary>
+	public static bool IsStateValid(string? expected, string? actual)
+	{
+		if (string.IsNullOrEmpty(expected) || string.IsNullOrEmpty(actual))
+		{
+			return false;
+		}
+
+		return System.Security.Cryptography.CryptographicOperations.FixedTimeEquals(
+			System.Text.Encoding.UTF8.GetBytes(expected),
+			System.Text.Encoding.UTF8.GetBytes(actual));
+	}
+
+	#endregion
+
+	#region Private Fields
+
+	private const string OAuthStateCookie = "hh_oauth_state";
 
 	#endregion
 }
