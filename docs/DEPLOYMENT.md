@@ -12,7 +12,7 @@ Cały ten model jest zbudowany i **przetestowany lokalnie** — `Dockerfile` w r
 |---|---|---|
 | Backend + frontend | Railway (deploy z `Dockerfile`) | Jedna platforma, jeden branch do deployu, automatyczny HTTPS i domena `*.up.railway.app`, prosty custom domain później |
 | Baza danych | Railway Postgres (plugin) | Ten sam projekt/dashboard, `DATABASE_URL` wstrzykiwany automatycznie, nie trzeba osobnego konta na Neon/Supabase |
-| Pliki (demka, materiały) | Na razie linki zewnętrzne (Drive itp.) — patrz `docs/ARCHITECTURE.md` | Nie wymaga dodatkowej infrastruktury na start |
+| Pliki (demka, osie czasu meczów) | Bucket S3-compatible (np. Cloudflare R2; lokalnie SeaweedFS z `docker-compose.yml`) — zmienne `S3__*` poniżej, patrz `docs/ARCHITECTURE.md` | Demki 100–300 MB nie mogą trafiać do bazy; klient wgrywa je prosto do bucketa przez presigned URL |
 
 Render jest równoważną alternatywą (też wspiera deploy z Dockerfile + managed Postgres) — wybór między nimi to głównie kwestia darmowego limitu/UI, mechanika ta sama.
 
@@ -20,7 +20,7 @@ Render jest równoważną alternatywą (też wspiera deploy z Dockerfile + manag
 
 1. Railway → **New Project** → **Deploy from GitHub repo** → wskaż `HarnasHub`. Railway wykryje `Dockerfile` w root i zbuduje z niego.
 2. **Add a plugin → PostgreSQL** w tym samym projekcie. Railway sam ustawi zmienną `DATABASE_URL`.
-3. W ustawieniach serwisu backendu dodaj zmienne środowiskowe (Railway zamienia `:` na `__` w nazwach zmiennych .NET):
+3. W ustawieniach serwisu backendu dodaj zmienne środowiskowe (Railway zamienia `:` na `__` w nazwach zmiennych .NET). Pełna lista kluczy w jednym pliku: [`.env.example`](../.env.example) — to szablon, nie zapisuj w nim prawdziwych wartości:
 
    | Zmienna | Wartość |
    |---|---|
@@ -43,6 +43,13 @@ Render jest równoważną alternatywą (też wspiera deploy z Dockerfile + manag
    | `Reminders__CheckIntervalSeconds` | `60` |
    | `Reminders__MatchBriefingHoursBefore` | `24` — ile godzin przed meczem wysłać na Discorda odprawę z raportu rywala (`0` = wyłączone) |
    | `Frontend__BaseUrl` | publiczny adres aplikacji, np. `https://<twoja-domena-railway>` — używany do linku do raportu w odprawie (puste = bez linku) |
+   | `S3__Endpoint` | Adres API bucketa S3-compatible (np. Cloudflare R2). Bez konfiguracji `S3__*` `IFileStorage.IsConfigured` = false — funkcje oparte na storage (presigned upload demek, osie czasu meczów, demki rywala, tła tablic analiz) są niedostępne; status widać w Panelu admina → Integracje. Origin tego adresu trafia też do `connect-src` w CSP |
+   | `S3__AccessKey` | Klucz dostępu do bucketa — **traktuj jak hasło** |
+   | `S3__SecretKey` | Klucz tajny bucketa — **traktuj jak hasło** |
+   | `S3__BucketName` | Nazwa bucketa (lokalnie `harnashub`) |
+   | `Jobs__DemoConcurrency` | `2` (opcjonalne) — ile demek parsuje się równolegle; parsowanie jest pamięciożerne, nie podnoś bez zapasu RAM |
+   | `Jobs__FaceitConcurrency` | `2` (opcjonalne) — równoległe zadania FACEIT |
+   | `Jobs__RetentionDays` | `7` (opcjonalne) — po ilu dniach zakończone zadania są usuwane z bazy |
    | `Faceit__ApiKey` | Klucz serwerowy FACEIT Data API v4 ([developers.faceit.com](https://developers.faceit.com) → App Studio → API Keys → Server side) — **traktuj jak hasło**. Bez niego aplikacja działa, ale raport rywala nie pobiera danych z FACEIT |
    | `Faceit__DownloadsApiToken` | (opcjonalne) Token z uprawnieniem Downloads API — przyznaje go FACEIT po wniosku ([fce.gg/downloads-api-application](https://fce.gg/downloads-api-application), odpowiedź do ~30 dni) — **traktuj jak hasło**. Bez niego demki rywala wgrywa się ręcznie; z nim raport rywala ma przycisk „Pobierz automatycznie” (wymaga też `Faceit__ApiKey` i skonfigurowanego S3) |
    | `Faceit__SyncIntervalHours` | `6` (opcjonalne) — co ile godzin odświeżać w tle rywali z meczem w najbliższych dniach |
@@ -80,6 +87,7 @@ Aplikację Discord (Client ID/Secret) już masz założoną z testów lokalnych 
    (Discord ID znajdziesz tak samo jak ID serwera w kroku wyżej — prawym klikiem na swój nick zamiast na serwer). Wyloguj się i zaloguj ponownie, żeby dostać token z nową rolą. Od tego momentu zarządzasz rolami reszty drużyny z poziomu UI (`/roster`).
 6. Sprawdź **live-update**: otwórz appkę na dwóch urządzeniach (albo telefon + laptop) zalogowaną jako różni gracze, zmień dostępność na jednym — drugie powinno zaktualizować się samo, bez odświeżania.
 7. Sprawdź **Discorda**: dodaj wydarzenie albo zadanie — wiadomość powinna przyjść na skonfigurowany kanał w ciągu kilku sekund.
+8. Sprawdź **nagłówki bezpieczeństwa i CSP**: w konsoli przeglądarki nie powinno być naruszeń `Content-Security-Policy-Report-Only` (YouTube, avatary Discorda, upload do S3). CSP działa tylko w trybie raportowania — dopiero czysta konsola uzasadnia przełączenie go na wymuszający (zmiana w `Program.cs`). Aplikacja zakłada proxy platformy przed sobą (ufa `X-Forwarded-For`/`X-Forwarded-Proto`), więc limity zapytań (30/min na IP dla logowania i `POST /api/auth/refresh`, 600/min na użytkownika globalnie; po przekroczeniu `429`) liczą się po prawdziwym IP klienta — nie wystawiaj kontenera bezpośrednio do internetu bez takiego proxy.
 
 ## Środowisko testowe (staging) — osobne od produkcji
 
@@ -118,4 +126,4 @@ Drugi komplet serwisów (backend + Postgres) działający równolegle liczy się
 ## Czego świadomie nie ma (i dlaczego)
 
 - **Prawdziwe powiadomienia push** (natywny prompt o zgodę na telefonie) — wymagają VAPID + custom service workera; odłożone do momentu, gdy appka będzie realnie wdrożona i będzie na czym testować prawdziwe zezwolenia przeglądarki na urządzeniu.
-- **Upload plików (demek) do własnego storage** — na razie `DemoUrl` to zwykły link (np. do Google Drive). Realny upload do S3-compatible bucketa (Cloudflare R2) to sensowny następny krok, gdy pojawi się potrzeba i konto na taki bucket.
+- **Trwałe przechowywanie demek** — upload do S3-compatible bucketa działa (presigned URL, `S3__*`), ale plik `.dem` jest usuwany po analizie; w buckecie zostają tylko osie czasu meczów i rywali. `MatchResult.DemoUrl` to nadal zwykły link do zewnętrznie hostowanej demki. Trwałe trzymanie plików do pobrania to osobna decyzja (koszt storage).
