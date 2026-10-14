@@ -4,7 +4,7 @@
 
 ![.NET](https://img.shields.io/badge/.NET-10-512BD4?logo=dotnet&logoColor=white)
 ![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black)
-![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript&logoColor=white)
+![TypeScript](https://img.shields.io/badge/TypeScript-6-3178C6?logo=typescript&logoColor=white)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-EF%20Core-4169E1?logo=postgresql&logoColor=white)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
@@ -46,6 +46,7 @@ It doubles as a hands-on playground for practicing AI-assisted software developm
 | Database | PostgreSQL (EF Core 10) |
 | Frontend | React 19, TypeScript, Vite, TailwindCSS 4, TanStack Query, Zustand, React Router, dnd-kit |
 | Real-time | SignalR |
+| Security | Discord OAuth2 with an anti-CSRF `state` cookie, JWT, per-client rate limiting (strict on sign-in), HSTS and hardening headers (CSP in report-only mode) |
 | PWA | vite-plugin-pwa — installable, offline-capable for static views |
 | Deployment | Single Docker image (backend serves the built frontend) |
 
@@ -90,9 +91,11 @@ docker run -p 8080:8080 \
   harnashub
 ```
 
+Every environment variable the app reads is listed in [`.env.example`](.env.example).
+
 ## Status
 
-All 10 delivery phases are built and tested — auth/roster, calendar & availability, results/nade library/map positions, stats & analysis, PWA/live updates, coach-role and calendar UX polish, tactics library, task-linked materials, roster member removal, and grenade map pins/richer video embeds/tournament-league grouping/automatic demo stat import. See [docs/ROADMAP.md](docs/ROADMAP.md) for the detailed breakdown and what's planned next.
+All 13 delivery phases are built and tested — auth/roster, calendar & availability, results/nade library/map positions, stats & analysis, PWA/live updates, coach-role and calendar UX polish, tactics library, task-linked materials, roster member removal, grenade map pins/richer video embeds/tournament-league grouping/automatic demo stat import, opponent scouting and match preparation, 2D round replay with tactic matching, and background jobs with live progress. See [docs/ROADMAP.md](docs/ROADMAP.md) for the detailed breakdown and what's planned next.
 
 ### Project closure
 
