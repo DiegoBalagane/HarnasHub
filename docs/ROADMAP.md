@@ -175,3 +175,7 @@ Porównanie wyników z HarnasHuba z zaufanym serwisem statystyk na tych samych d
 - Wewnętrzny ranking/ELO na bazie sparingów — liczony z już istniejących `MatchResult`/`PlayerMatchStat`, niezależny od źródła danych
 - Prawdziwe powiadomienia push (VAPID + custom service worker) — po realnym wdrożeniu
 - Upload plików (demek) do własnego storage (Cloudflare R2) zamiast linków — częściowo pokrywa się z 10.4, ale to osobna decyzja (trwałe przechowywanie demki do pobrania, nie tylko jednorazowy parsing)
+
+## Zamknięcie projektu
+
+Projekt jest zamknięty: aplikacja w obecnym kształcie w pełni wystarcza zawodnikom do codziennej pracy drużyny (kalendarz i dostępność, zadania, wyniki i analiza demek, taktyki, scouting rywali). Dalszy rozwój tylko na realną prośbę drużyny; poprawki bezpieczeństwa i zależności nadal są w zakresie utrzymania.
