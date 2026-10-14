@@ -93,3 +93,7 @@ docker run -p 8080:8080 \
 ## Status
 
 All 10 delivery phases are built and tested — auth/roster, calendar & availability, results/nade library/map positions, stats & analysis, PWA/live updates, coach-role and calendar UX polish, tactics library, task-linked materials, roster member removal, and grenade map pins/richer video embeds/tournament-league grouping/automatic demo stat import. See [docs/ROADMAP.md](docs/ROADMAP.md) for the detailed breakdown and what's planned next.
+
+### Project closure
+
+The project is considered complete: the app is sufficient for the players' day-to-day needs. Further work happens only on a concrete team request; security and dependency maintenance continue.

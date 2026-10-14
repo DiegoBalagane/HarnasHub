@@ -9,6 +9,8 @@ using HarnasHub.Core.Options;
 using HarnasHub.Infrastructure;
 using HarnasHub.Infrastructure.Database;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.HttpOverrides;
+using System.Threading.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 
@@ -80,6 +82,32 @@ builder.Services.AddCors(options =>
 	});
 });
 
+// The app sits behind a platform proxy (Railway): trust its X-Forwarded-* headers so rate limiting
+// partitions by the real client IP and HTTPS redirection sees the original scheme.
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+	options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+	options.KnownIPNetworks.Clear();
+	options.KnownProxies.Clear();
+});
+
+// Auth endpoints are a brute-force/abuse target; a generous global per-client cap protects the costly ones (demo parsing, FACEIT).
+builder.Services.AddRateLimiter(options =>
+{
+	options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+
+	options.AddPolicy(RateLimitPolicies.Auth, context => RateLimitPartition.GetFixedWindowLimiter(
+		context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+		_ => new FixedWindowRateLimiterOptions { PermitLimit = 30, Window = TimeSpan.FromMinutes(1) }));
+
+	options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(context =>
+		RateLimitPartition.GetFixedWindowLimiter(
+			context.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value is { Length: > 0 } userId
+				? $"user:{userId}"
+				: $"ip:{context.Connection.RemoteIpAddress}",
+			_ => new FixedWindowRateLimiterOptions { PermitLimit = 600, Window = TimeSpan.FromMinutes(1) }));
+});
+
 builder.Services.ConfigureHttpJsonOptions(options =>
 	options.SerializerOptions.Converters.Add(new JsonStringEnumConverter()));
 
@@ -101,9 +129,50 @@ if (app.Environment.IsDevelopment())
 	app.UseSwaggerUI();
 }
 
+app.UseForwardedHeaders();
+
+if (!app.Environment.IsDevelopment())
+{
+	app.UseHsts();
+}
+
 app.UseHttpsRedirection();
+
+// CSP ships as Report-Only first: it lists the origins the SPA really uses (YouTube embeds, Discord avatars,
+// presigned S3 uploads) and is switched to enforcing once the browser console shows no violations.
+var s3Endpoint = builder.Configuration["S3:Endpoint"];
+var s3Origin = Uri.TryCreate(s3Endpoint, UriKind.Absolute, out var s3Uri) ? s3Uri.GetLeftPart(UriPartial.Authority) : null;
+var contentSecurityPolicy = string.Join("; ",
+	"default-src 'self'",
+	"script-src 'self'",
+	"style-src 'self' 'unsafe-inline'",
+	"img-src 'self' data: blob: https://cdn.discordapp.com https://img.youtube.com",
+	"font-src 'self' data:",
+	$"connect-src 'self' {s3Origin}".TrimEnd(),
+	"frame-src https://www.youtube-nocookie.com https://www.youtube.com",
+	"worker-src 'self'",
+	"manifest-src 'self'",
+	"object-src 'none'",
+	"base-uri 'self'",
+	"form-action 'self'",
+	"frame-ancestors 'none'");
+
+// Baseline hardening headers.
+app.Use(async (context, next) =>
+{
+	var headers = context.Response.Headers;
+	headers["Content-Security-Policy-Report-Only"] = contentSecurityPolicy;
+	headers["X-Content-Type-Options"] = "nosniff";
+	headers["X-Frame-Options"] = "DENY";
+	headers["Referrer-Policy"] = "strict-origin-when-cross-origin";
+	headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=(), payment=()";
+
+	await next();
+});
+
 app.UseCors("Frontend");
 app.UseAuthentication();
+app.UseRateLimiter();
 app.UseAuthorization();
 
 // Some client-side proxies (VPN extensions, corporate caches) will otherwise cache API

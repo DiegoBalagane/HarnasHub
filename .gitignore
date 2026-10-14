@@ -33,3 +33,8 @@ CLAUDE.md
 CLAUDE.local.md
 .claude/
 .mcp.json
+
+# Local agent tooling state
+.omc/
+**/.omc/
+.serena/
